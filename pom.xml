@@ -1,6 +1,6 @@
 <project>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.mycompany.app</groupId>
-  <artifactId>my-app</artifactId>
+  <groupId>com.comp3111h.app</groupId>
+  <artifactId>comp3111h</artifactId>
   <version>1</version>
 </project>
