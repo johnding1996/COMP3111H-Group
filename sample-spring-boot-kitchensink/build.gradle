@@ -14,7 +14,9 @@
  * under the License.
  */
 
+apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'jacoco'
 
 dependencies {
     compile project(':line-bot-spring-boot')
@@ -23,4 +25,11 @@ dependencies {
 
 test {
     environment "DATABASE_URL", "postgres://lrzsprrlpzdsoh:caf28524b79f1d77e9ab4e50346e5fc35e53598793011a7a5969f11c79e6b74f@ec2-54-221-254-72.compute-1.amazonaws.com:5432/d5u9ovsu5vtnj2"
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.enabled false
+    }
 }
