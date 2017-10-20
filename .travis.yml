@@ -9,7 +9,7 @@ after_script:
 notifications:
   slack:
     rooms:
-      - comp3111h-group:VHx5gqZ97HVITVu271FgNsMb#general
+      - comp3111h-group:LNziRF7cZV2So8b7DN046Xy9#automated
     on_success: always
     on_failure: always
   email:
