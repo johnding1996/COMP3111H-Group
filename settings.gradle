@@ -20,6 +20,6 @@ include 'line-bot-spring-boot'
  */
 
 // samples
-include 'sample-spring-boot-kitchensink'
+include 'dieting-chatbot'
 
 
