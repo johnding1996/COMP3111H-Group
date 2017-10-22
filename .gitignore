@@ -1,6 +1,7 @@
 # Build output
 target/
 build/
+*/bin
 
 # gradle
 /.gradle/
