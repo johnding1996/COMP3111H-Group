@@ -16,11 +16,26 @@
 
 apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'idea'
 apply plugin: 'jacoco'
 
 dependencies {
     compile project(':line-bot-spring-boot')
     compile group: 'postgresql', name: 'postgresql', version: '9.0-801.jdbc4'
+}
+
+jar {
+  baseName = 'gs-messaging-reactor'
+  version = '0.3.0'
+}
+
+dependencies {
+  compile "org.springframework.boot:spring-boot-starter",
+      "org.springframework:spring-web",
+      "com.fasterxml.jackson.core:jackson-databind",
+      "io.projectreactor:reactor-bus"
+
+  testCompile("junit:junit")
 }
 
 test {

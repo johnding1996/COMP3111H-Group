@@ -2,16 +2,18 @@ package com.example.bot.spring;
 
 import org.json.JSONObject;
 import com.linecorp.bot.client.MessageContentResponse;
+import com.linecorp.bot.model.PushMessage;
 import com.linecorp.bot.model.ReplyMessage;
 import com.linecorp.bot.model.response.BotApiResponse;
 import com.linecorp.bot.model.event.MessageEvent;
-import com.linecorp.bot.client.LineMessagingClient;
+import com.linecorp.bot.client.LineMessagingServiceBuilder;
 import com.linecorp.bot.client.MessageContentResponse;
 import com.linecorp.bot.model.message.TextMessage;
 import com.linecorp.bot.model.message.ImageMessage;
 import com.linecorp.bot.model.message.Message;
 
 import java.util.concurrent.ExecutionException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -32,40 +34,32 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
-public class Formatter {
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import reactor.bus.Event;
+import reactor.fn.Consumer;
+import retrofit2.Response;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
-    private LineMessagingClient lineMessagingClient;
+@Service
+public class Formatter implements Consumer<Event<FormatterMessageJSON> > {
 
-    public Formatter(JSONObject jsonObject, LineMessagingClient lineMessagingClient) {
+    //private LineMessagingClient lineMessagingClient;
+
+    @Autowired
+    private FormatterMessageJSON formatterMessageJSON;
+
+	public void accept(Event<FormatterMessageJSON> ev) {
+        this.formatterMessageJSON = ev.getData();
+        //String type = this.formatterMessageJSON.getType();
+        //formatting();
+	}
+   /* 
+    public Formatter(LineMessagingClient lineMessagingClient) {
         // methods for decoposing JSON file
         this.lineMessagingClient = lineMessagingClient;
-        String replyType = jsonObject.getString("replyType");
-        String messageType = jsonObject.getString("messageType");
-        switch(replyType) {
-            case "reply":
-                switch(messageType) {
-                    case "text":
-                        reply(jsonObject.getString("replyToken"), new TextMessage(jsonObject.getString("textContent")));
-                        break;
-                    case "image":
-                        reply(jsonObject.getString("replyToken"), new ImageMessage(jsonObject.getString("originalContentUrl"), jsonObject.getString("previewContentUrl")));
-                        break;
-                }
-            break;
-            case "push":
-                switch(messageType) {
-                    case "text":
-                        break;
-                    case "image":
-                        break;
-                }
-            break;
-        }
-        
-
-        
-        
-
     }
 
    private void reply(@NonNull String replyToken, @NonNull List<Message> messages) {
@@ -78,5 +72,43 @@ public class Formatter {
     private void reply(@NonNull String replyToken, @NonNull Message message) {
         reply(replyToken, Collections.singletonList(message));
     }
+    
+    private void push(@NonNull String userId, @NonNull List<Message> messages) {
+        PushMessage pushMessage = new PushMessage(userId, messages);
+        this.lineMessagingClient.pushMessage(pushMessage);
+    }
+    */
+    public FormatterMessageJSON getFormatterMessageJSON() {
+        return this.formatterMessageJSON;
+    }
+    
+    /*
+    public void formatting() {
 
+        List<Message> messages = new ArrayList<Message>();
+        for(MsgJSON msg : this.formatterMessageJSON.getMessages()) {
+            switch(msg.getType()) {
+                case "text":
+                messages.add(new TextMessage(((TextMessageJSON) msg).getTextContent()));
+                break;
+                case "image":
+                messages.add(new ImageMessage(((FormatterImageMessageJSON) msg).getOriginalContentUrl(), ((FormatterImageMessageJSON) msg).getPreviewContentUrl()));
+                break;
+            }
+
+        }
+
+        String type = this.formatterMessageJSON.getType();
+        switch(type) {
+            case "reply":
+                reply(this.formatterMessageJSON.getReplyToken(), messages);
+                break;
+            case "push":
+                reply(this.formatterMessageJSON.getUserId(), messages);
+            break;
+        }
+
+      
+    }
+*/
 }

@@ -3,11 +3,17 @@ package com.example.bot.spring;
 import com.linecorp.bot.model.event.message.TextMessageContent;
 import java.util.*;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
+import reactor.bus.Event;
+import reactor.bus.EventBus;
 
 /**
  * Parser.java - use to comine information into a JSONObject and pass to the observer
@@ -22,6 +28,7 @@ import org.json.JSONObject;
  * and controller uniform
  * @version 1.0
  */
+
 public class Parser {
 
     private String userID;
@@ -36,8 +43,14 @@ public class Parser {
     private String previewContentStringUrl;
 
     // the package to be thrown
+    @Autowired
     private JSONObject msgObject;
 
+    @Autowired
+	EventBus eventBus;
+
+	@Autowired
+	CountDownLatch latch;
 
     // Constructors overloading
 
@@ -96,5 +109,9 @@ public class Parser {
         msgObject.put("userID", userID).put("state", state).put("replyToken", replyToken).put("messageType", messageType);
 	}
 
+    public void publishParserMessageJSON(ParserMessageJSON parserMessageJSON) throws InterruptedException {
+        eventBus.notify("ParserMessageJSON", Event.wrap(parserMessageJSON));
+        latch.await();
+    }
 
 }

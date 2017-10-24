@@ -88,9 +88,7 @@ import java.net.URI;
 @LineMessageHandler
 public class KitchenSinkController {
 	
-	private Parser parser;
-	private Formatter formatter;
-	private String state;
+
 
 	@Autowired
 	private LineMessagingClient lineMessagingClient;
@@ -128,9 +126,8 @@ public class KitchenSinkController {
 			throw new RuntimeException(e);
 		}
 		DownloadedContent jpg = saveContent("jpg", response);
-		//reply(((MessageEvent) event).getReplyToken(), new ImageMessage(jpg.getUri(), jpg.getUri()));
-		parser = new Parser(event.getSource().getUserId(), state, replyToken, "image", jpg.getUri(), jpg.getUri());
-		formatter = new Formatter(parser.getJSON(), lineMessagingClient);
+		reply(((MessageEvent) event).getReplyToken(), new ImageMessage(jpg.getUri(), jpg.getUri()));
+
 	}
 
 	@EventMapping
@@ -214,8 +211,7 @@ public class KitchenSinkController {
             throws Exception {
         String text = content.getText();
 
-		log.info("Got text message from {}: {}", replyToken, text);
-		/*
+        log.info("Got text message from {}: {}", replyToken, text);
         switch (text) {
             case "profile": {
                 String userId = event.getSource().getUserId();
@@ -274,10 +270,7 @@ public class KitchenSinkController {
                         itscLOGIN + " says " + reply
                 );
                 break;
-		}
-		*/
-		parser = new Parser(event.getSource().getUserId(), state, replyToken, "text", text); 
-		formatter = new Formatter(parser.getJSON(), lineMessagingClient);
+        }
     }
 
 	static String createUri(String path) {
