@@ -9,16 +9,16 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 @Service
-class ParserReceiver implements Consumer<Event<ParserMessageJSON> > {
+class TemplateModule implements Consumer<Event<ParserMessageJSON> > {
 
-    ParserMessageJSON parserMessageJSON;
-    
     @Autowired
-	CountDownLatch latch;
+    ParserMessageJSON parserMessageJSON;
 
+    @Autowired
+    Publisher publisher;
+    
 	public void accept(Event<ParserMessageJSON> ev) {
         this.parserMessageJSON = ev.getData();
-        latch.countDown();
 	}
 	
 	public String getUserId() {
@@ -32,5 +32,8 @@ class ParserReceiver implements Consumer<Event<ParserMessageJSON> > {
     }
     public List<MsgJSON> getMessages() {
         return parserMessageJSON.getMessages();
+    }
+    public Publisher getPublisher() {
+        return publisher;
     }
 }

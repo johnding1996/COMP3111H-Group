@@ -12,22 +12,17 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
-public class FormatterPublisher {
+public class Publisher {
 
-  
 	@Autowired
 	EventBus eventBus; 
-	//= EventBus.create(Environment.initializeIfEmpty().assignErrorJournal(), Environment.THREAD_POOL);
-
-	//@Autowired
-	//CountDownLatch latch = new CountDownLatch(10); 
 
 	public void publishFormatterMessageJSON(FormatterMessageJSON formatterMessageJSON) throws InterruptedException {
-
         eventBus.notify("FormatterMessageJSON", Event.wrap(formatterMessageJSON));
-        
-		//latch.await();
+	}
 
+	public void publishParserMessageJSON(ParserMessageJSON parserMessageJSON) throws InterruptedException {
+        eventBus.notify("ParserMessageJSON", Event.wrap(parserMessageJSON));
 	}
 
 }

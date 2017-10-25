@@ -79,17 +79,34 @@ public class KitchenSinkTester {
 	private ModuleController moduleController;
 
 	@Test
-	public void testParserMessageJSON() throws Exception {
-		this.PM.setUserId("abc");
-		String id = this.PM.getUserId();
-		assertThat(id).isEqualTo("abc");
+	public void testTemplateModule() {
+		this.PM.setUserId("Thomas");
+		this.moduleController.registration();
+		try {
+			this.moduleController.getTemplateModule().getPublisher().publishParserMessageJSON(this.PM);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
+		assertThat(this.moduleController.getTemplateModule().getUserId()).isEqualTo("Thomas");
+		
 	}
 
 	@Test
-	public void testFormatterMessageJSON() throws Exception {
+	public void testFormatter() {
 		this.FM.setUserId("agong");
-		this.FM.setType("text");
-		this.FM.getMessages().add(this.msg);
+		this.moduleController.getEventBus().on($("FormatterMessageJSON"), this.moduleController.getFormatter());
+		//assertThat(this.moduleController.getFormatterPublisher()).isEqualTo(null);
+		
+		try {
+			this.moduleController.getPublisher().publishFormatterMessageJSON(this.FM);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		//assertThat(this.moduleController.getFormatter().getFormatterMessageJSON()).isEqualTo(null);
+		assertThat(this.moduleController.getFormatter().getFormatterMessageJSON().getUserId()).isEqualTo("agong");
+		
 	}
 
 	@Test
@@ -103,21 +120,22 @@ public class KitchenSinkTester {
 	}
 
 	@Test
-	public void testFormatter() {
+	public void testFormatterMessageJSON() throws Exception {
 		this.FM.setUserId("agong");
-		this.moduleController.getEventBus().on($("FormatterMessageJSON"), this.moduleController.getFormatter());
-		//assertThat(this.moduleController.getFormatterPublisher()).isEqualTo(null);
-		
-		try {
-			this.moduleController.getFormatterPublisher().publishFormatterMessageJSON(this.FM);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		//assertThat(this.moduleController.getFormatter().getFormatterMessageJSON()).isEqualTo(null);
-		assertThat(this.moduleController.getFormatter().getFormatterMessageJSON().getUserId()).isEqualTo("agong");
-		
+		this.FM.setType("text");
+		this.FM.getMessages().add(this.msg);
+	}
+
+	@Test
+	public void testParserMessageJSON() throws Exception {
+		this.PM.setUserId("Thomas");
+		String id = this.PM.getUserId();
+		assertThat(id).isEqualTo("Thomas");
 	}
 	
+	
+	
+	
+
 	
 }

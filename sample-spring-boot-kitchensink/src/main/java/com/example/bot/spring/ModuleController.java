@@ -17,7 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 
-//@ComponentScan({"com.example.bot.spring.formatterPublisher", "com.example.bot.spring.Formatter", "com.example,bot.spring.ParserReceiver"})
+import static reactor.bus.selector.Selectors.$;
+
+//@ComponentScan({"com.example.bot.spring.formatterPublisher", "com.example.bot.spring.Formatter", "com.example,bot.spring.TemplateModule"})
 
 @Component
 public class ModuleController {
@@ -39,25 +41,25 @@ public class ModuleController {
 	}
 
     @Bean
-    public FormatterPublisher fp() {
-        return new FormatterPublisher();
+    public Publisher commonPublisher() {
+        return new Publisher();
     }
 
     @Bean 
-    public Formatter f() {
+    public Formatter controllerFormatter() {
         return new Formatter();
     }
 
     @Bean
-    public ParserReceiver pr() {
-        return new ParserReceiver();
+    public TemplateModule template() {
+        return new TemplateModule();
     }
 
 	@Autowired
     private EventBus eventBus;
     
     @Autowired
-    private FormatterPublisher formatterPublisher;
+    private Publisher Publisher;
 
     @Autowired
     private Formatter formatter;
@@ -68,14 +70,14 @@ public class ModuleController {
     */
 
     @Autowired
-    private ParserReceiver parserReceiver;
+    private TemplateModule templateModule;
 
     public EventBus getEventBus() {
         return eventBus;
     }
     
-    public FormatterPublisher getFormatterPublisher() {
-        return formatterPublisher;
+    public Publisher getPublisher() {
+        return Publisher;
     }
 
     public Formatter getFormatter() {
@@ -86,8 +88,12 @@ public class ModuleController {
         return parser;
     }
     */
-    public ParserReceiver getParserReceiver() {
-        return parserReceiver;
+    public TemplateModule getTemplateModule() {
+        return templateModule;
+    }
+
+    public void registration() {
+        this.eventBus.on($("ParserMessageJSON"), this.templateModule);
     }
  
 }
