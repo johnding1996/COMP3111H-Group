@@ -158,78 +158,78 @@ public class StateMachine {
         log.info(String.format("To new state %s by %s", currentState,
             transition));
     }
-}
 
-@Slf4j
-class State {
-    private String stateName;
+    class State {
+        private String stateName;
 
-    private int timeout;
-    private String timeoutState;
-    static final int DEFAULT_TIMEOUT = 3600; // 1 hour
+        private int timeout;
+        private String timeoutState;
+        static final int DEFAULT_TIMEOUT = 3600; // 1 hour
 
-    /**
-     * Construct a state with default timeoutState and timeout
-     * @param stateName
-     */
-    public State(String stateName) throws Exception {
-        if (validateStateName(stateName))
-            this.stateName = stateName;
-        else {
-            log.info("Invalid state name: " + stateName);
-            assert false;
+        /**
+        * Construct a state with default timeoutState and timeout
+        * @param stateName
+        */
+        public State(String stateName) throws Exception {
+            if (validateStateName(stateName))
+                this.stateName = stateName;
+            else {
+                log.info("Invalid state name: " + stateName);
+                assert false;
+            }
+            this.timeout = DEFAULT_TIMEOUT;
+            this.timeoutState = "Idle";
+            assert validateStateName(timeoutState);
         }
-        this.timeout = DEFAULT_TIMEOUT;
-        this.timeoutState = "Idle";
-        assert validateStateName(timeoutState);
-    }
 
-    /**
-     * Construct a state that will change to timeoutState after timeout
-     * @param stateName
-     * @param timeout the time period in sec after which timeout event triggered
-     * @param timeoutState the new state after timeout occurs
-     */
-    public State(String stateName, int timeout, String timeoutState) throws Exception {
-        if (validateStateName(stateName))
-            this.stateName = stateName;
-        else {
-            log.info("Invalid state name: " + stateName);
-            assert false;
+        /**
+        * Construct a state that will change to timeoutState after timeout
+        * @param stateName
+        * @param timeout the time period in sec after which timeout event triggered
+        * @param timeoutState the new state after timeout occurs
+        */
+        public State(String stateName, int timeout, String timeoutState) throws Exception {
+            if (validateStateName(stateName))
+                this.stateName = stateName;
+            else {
+                log.info("Invalid state name: " + stateName);
+                assert false;
+            }
+            this.timeout = timeout;
+            if (validateStateName(timeoutState))
+                this.timeoutState = timeoutState;
+            else {
+                log.info("Invalid timeout state: " + timeoutState);
+                assert false;
+            }
         }
-        this.timeout = timeout;
-        if (validateStateName(timeoutState))
-            this.timeoutState = timeoutState;
-        else {
-            log.info("Invalid timeout state: " + timeoutState);
-            assert false;
+
+        private boolean validateStateName(String name) {
+            switch (name) {
+                case "Idle": case "ParseMenu": case "AskMeal":
+                case "Recommend": case "RecordMeal":
+                case "InitialInput": case "Feedback":
+                    return true;
+                default:
+                    return false;
+            }
         }
-    }
 
-    private boolean validateStateName(String name) {
-        switch (name) {
-            case "Idle": case "ParseMenu": case "AskMeal":
-            case "Recommend": case "RecordMeal":
-            case "InitialInput": case "Feedback":
-            return true;
+        public String getName() {
+            return stateName;
         }
-        return false;
-    }
 
-    public String getName() {
-        return stateName;
-    }
+        public int getTimeout() {
+            return timeout;
+        }
 
-    public int getTimeout() {
-        return timeout;
-    }
+        public String getTimeoutState() {
+            return timeoutState;
+        }
 
-    public String getTimeoutState() {
-        return timeoutState;
-    }
-
-    @Override
-    public String toString() {
-        return "State " + stateName;
+        @Override
+        public String toString() {
+            return "State " + stateName;
+        }
     }
 }
