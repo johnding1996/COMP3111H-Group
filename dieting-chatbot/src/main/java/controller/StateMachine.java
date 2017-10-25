@@ -1,4 +1,4 @@
-package com.example.bot.spring;
+package controller;
 
 import java.util.List;
 import java.util.ArrayList;

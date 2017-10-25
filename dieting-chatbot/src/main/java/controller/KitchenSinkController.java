@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package com.example.bot.spring;
+package controller;
 
 import java.io.IOException;
 import java.io.OutputStream;
