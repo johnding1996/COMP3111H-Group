@@ -1,5 +1,4 @@
-package com.example.bot.spring;
-
+package controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -42,7 +41,7 @@ import com.linecorp.bot.spring.boot.annotation.LineBotMessages;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-import com.example.bot.spring.DatabaseEngine;
+import controller.DatabaseEngine;
 
 
 @RunWith(SpringRunner.class)
