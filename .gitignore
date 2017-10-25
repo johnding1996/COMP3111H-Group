@@ -1,6 +1,7 @@
 # Build output
 target/
 build/
+*/bin
 
 # gradle
 /.gradle/
@@ -54,3 +55,6 @@ local.properties
 
 # PDT-specific
 .buildpath
+
+# vscode
+.vscode/

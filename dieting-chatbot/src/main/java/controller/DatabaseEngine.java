@@ -1,4 +1,4 @@
-package com.example.bot.spring;
+package controller;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 // order to make it work.
 // After you fix the code, the bot should be able to response based on 
 // database.txt located in 
-// sample-spring-boot-kitchensink/resources/static/database.txt.
+// dieting-chatbot/resources/static/database.txt.
 //
 // This file contains a few lines with the format <input>:<output>.
 // The program below wish to perform an exact word match the input text

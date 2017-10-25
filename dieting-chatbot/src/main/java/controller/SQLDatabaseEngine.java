@@ -1,4 +1,4 @@
-package com.example.bot.spring;
+package controller;
 
 import lombok.extern.slf4j.Slf4j;
 import javax.annotation.PostConstruct;
