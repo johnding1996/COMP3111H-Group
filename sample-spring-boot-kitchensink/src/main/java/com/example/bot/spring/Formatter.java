@@ -6,6 +6,7 @@ import com.linecorp.bot.model.PushMessage;
 import com.linecorp.bot.model.ReplyMessage;
 import com.linecorp.bot.model.response.BotApiResponse;
 import com.linecorp.bot.model.event.MessageEvent;
+import com.linecorp.bot.client.LineMessagingClient;
 import com.linecorp.bot.client.LineMessagingServiceBuilder;
 import com.linecorp.bot.client.MessageContentResponse;
 import com.linecorp.bot.model.message.TextMessage;
@@ -46,7 +47,7 @@ import java.util.concurrent.CountDownLatch;
 @Service
 public class Formatter implements Consumer<Event<FormatterMessageJSON> > {
 
-    //private LineMessagingClient lineMessagingClient;
+    private LineMessagingClient lineMessagingClient;
 
     @Autowired
     private FormatterMessageJSON formatterMessageJSON;
@@ -54,21 +55,28 @@ public class Formatter implements Consumer<Event<FormatterMessageJSON> > {
 	public void accept(Event<FormatterMessageJSON> ev) {
         this.formatterMessageJSON = ev.getData();
         //String type = this.formatterMessageJSON.getType();
-        //formatting();
-	}
+        formatting();
+    }
+    
    /* 
     public Formatter(LineMessagingClient lineMessagingClient) {
         // methods for decoposing JSON file
         this.lineMessagingClient = lineMessagingClient;
     }
+    */
 
-   private void reply(@NonNull String replyToken, @NonNull List<Message> messages) {
+    public void setLineMessagingClient(LineMessagingClient lineMessagingClient) {
+        this.lineMessagingClient = lineMessagingClient;
+    }
+
+    private void reply(@NonNull String replyToken, @NonNull List<Message> messages) {
        try {
            BotApiResponse apiResonse = this.lineMessagingClient.replyMessage(new ReplyMessage(replyToken, messages)).get();
        } catch (InterruptedException | ExecutionException e) {
            throw new RuntimeException(e);
         }
     }
+
     private void reply(@NonNull String replyToken, @NonNull Message message) {
         reply(replyToken, Collections.singletonList(message));
     }
@@ -77,12 +85,12 @@ public class Formatter implements Consumer<Event<FormatterMessageJSON> > {
         PushMessage pushMessage = new PushMessage(userId, messages);
         this.lineMessagingClient.pushMessage(pushMessage);
     }
-    */
+    
     public FormatterMessageJSON getFormatterMessageJSON() {
         return this.formatterMessageJSON;
     }
     
-    /*
+    
     public void formatting() {
 
         List<Message> messages = new ArrayList<Message>();
@@ -110,5 +118,5 @@ public class Formatter implements Consumer<Event<FormatterMessageJSON> > {
 
       
     }
-*/
+
 }

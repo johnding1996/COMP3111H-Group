@@ -10,15 +10,24 @@ public class TextMessageJSON extends MsgJSON {
     String id;
     String textContent;
 
+    TextMessageJSON() {
+        id = null;
+        textContent = null;
+        type = "text";
+    }
+
     public String getId() {
         return id;
     }
+
     public String getTextContent() {
         return textContent;
     }
+
     public void setId(String id) {
         this.id = id;
     }
+    
     public void setTextContent(String textContent) {
         this.textContent = textContent;
     }

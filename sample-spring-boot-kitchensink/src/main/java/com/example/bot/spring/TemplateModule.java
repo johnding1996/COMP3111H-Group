@@ -30,8 +30,8 @@ class TemplateModule implements Consumer<Event<ParserMessageJSON> > {
     public String getReplyToken() {
         return parserMessageJSON.getReplyToken();
     }
-    public List<MsgJSON> getMessages() {
-        return parserMessageJSON.getMessages();
+    public MsgJSON getMessages() {
+        return parserMessageJSON.getMessage();
     }
     public Publisher getPublisher() {
         return publisher;

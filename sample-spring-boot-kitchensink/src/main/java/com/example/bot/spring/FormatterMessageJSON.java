@@ -42,6 +42,12 @@ public class FormatterMessageJSON {
             e.printStackTrace();
 		}
     }
+
+    public void setMessage(MsgJSON msg) {
+        if(messages.size() < 5)
+            messages.add(msg);
+    }
+
     public void setUserId(String userId) {
         this.userId = userId;
     }

@@ -8,9 +8,15 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class ParserImageMessageJSON extends MsgJSON {
     String id;
 
+    ParserImageMessageJSON() {
+        id = null;
+        type = "image";
+    }
+
     public String getId() {
         return id;
     }
+    
     public void setId(String id) {
         this.id = id;
     }

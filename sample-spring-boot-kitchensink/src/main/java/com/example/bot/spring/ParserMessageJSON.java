@@ -9,7 +9,7 @@ public class ParserMessageJSON {
     String userId;
     String state;
     String replyToken;
-    List<MsgJSON> message = new ArrayList<MsgJSON>(); 
+    MsgJSON message; 
     public void setUserId(String userId) {
         this.userId = userId;
     }
@@ -20,7 +20,7 @@ public class ParserMessageJSON {
         this.replyToken = replyToken;
     }
     public void setMessage(MsgJSON msg) {
-        message.add(msg);
+        this.message = msg;
     }
 
     public String getUserId() {
@@ -32,7 +32,7 @@ public class ParserMessageJSON {
     public String getReplyToken() {
         return replyToken;
     }
-    public List<MsgJSON> getMessages() {
+    public MsgJSON getMessage() {
         return message;
     }
 

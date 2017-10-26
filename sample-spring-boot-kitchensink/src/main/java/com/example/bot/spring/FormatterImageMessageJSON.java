@@ -10,9 +10,16 @@ public class FormatterImageMessageJSON extends MsgJSON{
     String originalContentUrl;
     String previewContentUrl;
     
+    FormatterImageMessageJSON() {
+        originalContentUrl = null;
+        previewContentUrl = null;
+        type = "image";
+    }
+
     public String getOriginalContentUrl() {
         return originalContentUrl;
     }
+
     public String getPreviewContentUrl() {
         return previewContentUrl;
     }
@@ -20,6 +27,7 @@ public class FormatterImageMessageJSON extends MsgJSON{
     public void setOriginalContentUrl(String originalContentUrl) {
         this.originalContentUrl = originalContentUrl;
     }
+
     public void setPreviewContentUrl(String previewContentUrl) {
         this.previewContentUrl = previewContentUrl;
     }

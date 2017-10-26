@@ -62,15 +62,17 @@ import com.example.bot.spring.DatabaseEngine;
 import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = { KitchenSinkTester.class, ModuleController.class, ParserMessageJSON.class, MsgJSON.class, TextMessageJSON.class, FormatterMessageJSON.class})
-public class KitchenSinkTester {
+@SpringBootTest(classes = { ControllerTester.class, ModuleController.class, ParserMessageJSON.class, MsgJSON.class, TextMessageJSON.class, FormatterMessageJSON.class})
+public class ControllerTester {
 
+	//@Autowired
+	private FormatterImageMessageJSON FIM = new FormatterImageMessageJSON();
 	
 	@Autowired
 	private ParserMessageJSON PM;
 
 	@Autowired
-	private FormatterMessageJSON FM = new FormatterMessageJSON();
+	private FormatterMessageJSON FM;
 	
 	@Autowired
 	TextMessageJSON msg = new TextMessageJSON();
@@ -94,7 +96,15 @@ public class KitchenSinkTester {
 
 	@Test
 	public void testFormatter() {
+		// test TextMessageJSON
 		this.FM.setUserId("agong");
+		msg.setTextContent("def");
+		this.FM.setMessage(this.msg);
+
+		//test FormatterMessageJSON
+		this.FIM.setOriginalContentUrl("abc");
+		this.FIM.setPreviewContentUrl("def");
+		this.FM.setMessage(this.FIM);
 		this.moduleController.getEventBus().on($("FormatterMessageJSON"), this.moduleController.getFormatter());
 		//assertThat(this.moduleController.getFormatterPublisher()).isEqualTo(null);
 		
@@ -106,15 +116,18 @@ public class KitchenSinkTester {
 		}
 		//assertThat(this.moduleController.getFormatter().getFormatterMessageJSON()).isEqualTo(null);
 		assertThat(this.moduleController.getFormatter().getFormatterMessageJSON().getUserId()).isEqualTo("agong");
-		
+		assertThat(((TextMessageJSON) this.moduleController.getFormatter().getFormatterMessageJSON().getMessages().get(0)).getTextContent()).isEqualTo(("def"));
+		assertThat(this.moduleController.getFormatter().getFormatterMessageJSON().getMessages().get(1).getType()).isEqualTo("image");
+		assertThat(((FormatterImageMessageJSON) this.moduleController.getFormatter().getFormatterMessageJSON().getMessages().get(1)).getOriginalContentUrl()).isEqualTo("abc");
+
 	}
 
 	@Test
 	public void testMsgJSON() throws Exception {
 		msg.setId("1");
-		msg.setType("text");
 		msg.setTextContent("def");
-		this.PM.getMessages().add(this.msg);
+		this.PM.setMessage(this.msg);
+		assertThat(((TextMessageJSON) this.PM.getMessage()).getTextContent()).isEqualTo("def");
 		//log.info("Array: {}", this.PM.getMessages());
 		//assertThat(this.PM.getMessages()).isEqualTo("[{text, 1, def}]");
 	}
@@ -132,10 +145,5 @@ public class KitchenSinkTester {
 		String id = this.PM.getUserId();
 		assertThat(id).isEqualTo("Thomas");
 	}
-	
-	
-	
-	
-
 	
 }
