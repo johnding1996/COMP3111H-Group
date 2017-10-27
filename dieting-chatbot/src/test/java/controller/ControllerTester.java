@@ -1,4 +1,4 @@
-package com.example.bot.spring;
+package controller;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,11 +58,10 @@ import java.util.concurrent.TimeUnit;
 
 import static reactor.bus.selector.Selectors.$;
 
-import com.example.bot.spring.DatabaseEngine;
 import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = { ControllerTester.class, ModuleController.class, ParserMessageJSON.class, MsgJSON.class, TextMessageJSON.class, FormatterMessageJSON.class})
+@SpringBootTest(classes = { ControllerTester.class, ModuleController.class, ParserMessageJSON.class, FormatterMessageJSON.class})
 public class ControllerTester {
 
 	

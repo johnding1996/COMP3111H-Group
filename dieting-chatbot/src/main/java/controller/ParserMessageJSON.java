@@ -1,9 +1,11 @@
-package com.example.bot.spring;
+package controller;
 
 import java.util.ArrayList;
 import java.util.List;
 import javax.json.Json;
 import javax.json.JsonObject;
+import javax.annotation.Nullable;
+
 import org.springframework.stereotype.Component;
 
 @Component
@@ -22,8 +24,9 @@ public class ParserMessageJSON {
         this.replyToken = replyToken;
     }
 
-    public void addTextMessage(String id, String textContent) {
-        message = Json.createObjectBuilder().add("type", "text").add("id", id).add("textContent", textContent).build();
+    public void addTextMessage(@Nullable String id, String textContent) {
+        message = Json.createObjectBuilder().add("type", "text")
+          .add("id", id==null?"NULL":id).add("textContent", textContent).build();
     }
     
     public void addParserImageMessage(String id) {

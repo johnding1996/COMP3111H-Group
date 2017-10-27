@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package com.example.bot.spring;
+package controller;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -260,7 +260,7 @@ public class KitchenSinkController {
             default:
             	String reply = null;
             	try {
-            		reply = database.search(text);
+            		reply = "ha";
             	} catch (Exception e) {
             		reply = text;
             	}
@@ -316,11 +316,9 @@ public class KitchenSinkController {
 
 
 	public KitchenSinkController() {
-		database = new SQLDatabaseEngine();
 		itscLOGIN = System.getenv("ITSC_LOGIN");
 	}
 
-	private DatabaseEngine database;
 	private String itscLOGIN;
 	
 

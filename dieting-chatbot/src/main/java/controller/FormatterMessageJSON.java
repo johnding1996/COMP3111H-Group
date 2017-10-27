@@ -1,4 +1,5 @@
-package com.example.bot.spring;
+package controller;
+
 import org.json.JSONArray;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -7,6 +8,7 @@ import java.util.List;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
+import javax.annotation.Nullable;
 
 @Component
 public class FormatterMessageJSON {
@@ -36,25 +38,27 @@ public class FormatterMessageJSON {
 
     public void setType(String type) {
         try{
-            if(type == "text" || type == "image") {
+            if(type.equals("reply") || type.equals("push")) {
                 this.type = type;
             } else {
 				throw new Exception("Invalid Type !!!");
             } 
-            
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
 		}
     }
 
-    public void addTextMessage(String id, String textContent) {
+    public void addTextMessage(@Nullable String id, String textContent) {
         if(messages == null || messages.size() < 5) 
-            jsonArrayBuilder.add(Json.createObjectBuilder().add("type", "text").add("id", id).add("textContent", textContent).build());
+            jsonArrayBuilder.add(Json.createObjectBuilder().add("type", "text")
+                .add("id", id==null?"NULL":id).add("textContent", textContent).build());
     }
     public void addFormatterImageMessage(String originalContentUrl, String previewContentUrl) {
         if(messages == null || messages.size() < 5)
-            jsonArrayBuilder.add(Json.createObjectBuilder().add("type", "image").add("originalContentUrl", originalContentUrl).add("previewContentUrl", previewContentUrl).build());
+            jsonArrayBuilder.add(Json.createObjectBuilder().add("type", "image")
+                .add("originalContentUrl", originalContentUrl)
+                .add("previewContentUrl", previewContentUrl).build());
     }
     public void buildArray() {
         messages = jsonArrayBuilder.build();

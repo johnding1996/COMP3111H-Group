@@ -31,11 +31,12 @@ jar {
 
 dependencies {
   compile "org.springframework.boot:spring-boot-starter",
-      "org.springframework:spring-web",
-      "com.fasterxml.jackson.core:jackson-databind",
-      "io.projectreactor:reactor-bus",
-        'javax.json:javax.json-api:1.0'
+          "org.springframework:spring-web",
+          "com.fasterxml.jackson.core:jackson-databind",
+          "io.projectreactor:reactor-bus",
+          "javax.json:javax.json-api:1.0"
   compile group: 'org.glassfish', name: 'javax.json', version: '1.0.4'
+  compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
   testCompile("junit:junit")
 }
 

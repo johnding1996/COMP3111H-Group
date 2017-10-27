@@ -1,4 +1,4 @@
-package com.example.bot.spring;
+package controller;
 
 import com.linecorp.bot.model.event.message.TextMessageContent;
 import java.util.*;

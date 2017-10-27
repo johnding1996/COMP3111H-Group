@@ -1,4 +1,4 @@
-package com.example.bot.spring;
+package controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

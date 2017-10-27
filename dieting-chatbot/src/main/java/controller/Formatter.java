@@ -1,4 +1,4 @@
-package com.example.bot.spring;
+package controller;
 
 import org.json.JSONObject;
 import com.linecorp.bot.client.MessageContentResponse;
