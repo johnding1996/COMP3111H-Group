@@ -14,17 +14,20 @@
  * under the License.
  */
 
-apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'java'
 apply plugin: 'jacoco'
+apply plugin: 'idea'
 
 dependencies {
     compile project(':line-bot-spring-boot')
     compile group: 'postgresql', name: 'postgresql', version: '9.0-801.jdbc4'
+    compile 'redis.clients:jedis:2.9.0'
 }
 
 test {
-    environment "DATABASE_URL", "postgres://lrzsprrlpzdsoh:caf28524b79f1d77e9ab4e50346e5fc35e53598793011a7a5969f11c79e6b74f@ec2-54-221-254-72.compute-1.amazonaws.com:5432/d5u9ovsu5vtnj2"
+    environment "DATABASE_URL", "postgres://lcepujgoulxdin:40aeb5b7ca23b637293f769642cf1636e384065f0c5e93d7a7594986a458b1ef@ec2-107-20-250-195.compute-1.amazonaws.com:5432/d3u92m2tkcnrcn"
+    environment "REDIS_URL", "redis://h:p809e88912c2a3bb599da873265454cd9fd7bf4eed47af7ad2904ee13b5fe44fa@ec2-34-235-35-224.compute-1.amazonaws.com:54289"
 }
 
 jacocoTestReport {
