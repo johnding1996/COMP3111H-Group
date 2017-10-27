@@ -4,13 +4,18 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;
 import java.util.List;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
 
 @Component
 public class FormatterMessageJSON {
     String type;    // reply or push
     String userId;  
     String replyToken;
-    List<MsgJSON> messages = new ArrayList<MsgJSON>();
+    //List<MsgJSON> messages = new ArrayList<MsgJSON>();
+    JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
+    JsonArray messages;
     String stateTransition;
 
     public String getType() {
@@ -25,7 +30,7 @@ public class FormatterMessageJSON {
     public String getStateTransition() {
         return stateTransition;
     }
-    public List<MsgJSON> getMessages() {
+    public JsonArray getMessages() {
         return messages;
     }
 
@@ -43,11 +48,23 @@ public class FormatterMessageJSON {
 		}
     }
 
+    public void addTextMessage(String id, String textContent) {
+        if(messages == null || messages.size() < 5) 
+            jsonArrayBuilder.add(Json.createObjectBuilder().add("type", "text").add("id", id).add("textContent", textContent).build());
+    }
+    public void addFormatterImageMessage(String originalContentUrl, String previewContentUrl) {
+        if(messages == null || messages.size() < 5)
+            jsonArrayBuilder.add(Json.createObjectBuilder().add("type", "image").add("originalContentUrl", originalContentUrl).add("previewContentUrl", previewContentUrl).build());
+    }
+    public void buildArray() {
+        messages = jsonArrayBuilder.build();
+    }
+    /*
     public void setMessage(MsgJSON msg) {
         if(messages.size() < 5)
             messages.add(msg);
     }
-
+    */
     public void setUserId(String userId) {
         this.userId = userId;
     }

@@ -14,6 +14,8 @@ import com.linecorp.bot.model.message.ImageMessage;
 import com.linecorp.bot.model.message.Message;
 
 import java.util.concurrent.ExecutionException;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -94,13 +96,15 @@ public class Formatter implements Consumer<Event<FormatterMessageJSON> > {
     public void formatting() {
 
         List<Message> messages = new ArrayList<Message>();
-        for(MsgJSON msg : this.formatterMessageJSON.getMessages()) {
-            switch(msg.getType()) {
+        for(int i = 0; i < this.formatterMessageJSON.getMessages().size(); i++) {
+            JsonObject obj = this.formatterMessageJSON.getMessages().getJsonObject(i);
+            
+            switch(obj.getString("type")) {
                 case "text":
-                messages.add(new TextMessage(((TextMessageJSON) msg).getTextContent()));
+                messages.add(new TextMessage(obj.getString("textContent")));
                 break;
                 case "image":
-                messages.add(new ImageMessage(((FormatterImageMessageJSON) msg).getOriginalContentUrl(), ((FormatterImageMessageJSON) msg).getPreviewContentUrl()));
+                messages.add(new ImageMessage(obj.getString("originalContentUrl"), obj.getString("previewContentUrl")));
                 break;
             }
 

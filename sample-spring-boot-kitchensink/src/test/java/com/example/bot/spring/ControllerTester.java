@@ -65,8 +65,6 @@ import lombok.extern.slf4j.Slf4j;
 @SpringBootTest(classes = { ControllerTester.class, ModuleController.class, ParserMessageJSON.class, MsgJSON.class, TextMessageJSON.class, FormatterMessageJSON.class})
 public class ControllerTester {
 
-	//@Autowired
-	private FormatterImageMessageJSON FIM = new FormatterImageMessageJSON();
 	
 	@Autowired
 	private ParserMessageJSON PM;
@@ -75,14 +73,12 @@ public class ControllerTester {
 	private FormatterMessageJSON FM;
 	
 	@Autowired
-	TextMessageJSON msg = new TextMessageJSON();
-
-	@Autowired
 	private ModuleController moduleController;
 
 	@Test
 	public void testTemplateModule() {
 		this.PM.setUserId("Thomas");
+		this.PM.addTextMessage("abc", "hahaha");
 		this.moduleController.registration();
 		try {
 			this.moduleController.getTemplateModule().getPublisher().publishParserMessageJSON(this.PM);
@@ -90,7 +86,7 @@ public class ControllerTester {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}	
-		assertThat(this.moduleController.getTemplateModule().getUserId()).isEqualTo("Thomas");
+		assertThat(this.moduleController.getTemplateModule().getMessage().getString("textContent")).isEqualTo("hahaha");
 		
 	}
 
@@ -98,13 +94,9 @@ public class ControllerTester {
 	public void testFormatter() {
 		// test TextMessageJSON
 		this.FM.setUserId("agong");
-		msg.setTextContent("def");
-		this.FM.setMessage(this.msg);
-
-		//test FormatterMessageJSON
-		this.FIM.setOriginalContentUrl("abc");
-		this.FIM.setPreviewContentUrl("def");
-		this.FM.setMessage(this.FIM);
+		this.FM.addFormatterImageMessage("abc", "def");
+		this.FM.addTextMessage("123", "haha");
+		this.FM.buildArray();
 		this.moduleController.getEventBus().on($("FormatterMessageJSON"), this.moduleController.getFormatter());
 		//assertThat(this.moduleController.getFormatterPublisher()).isEqualTo(null);
 		
@@ -116,34 +108,15 @@ public class ControllerTester {
 		}
 		//assertThat(this.moduleController.getFormatter().getFormatterMessageJSON()).isEqualTo(null);
 		assertThat(this.moduleController.getFormatter().getFormatterMessageJSON().getUserId()).isEqualTo("agong");
-		assertThat(((TextMessageJSON) this.moduleController.getFormatter().getFormatterMessageJSON().getMessages().get(0)).getTextContent()).isEqualTo(("def"));
-		assertThat(this.moduleController.getFormatter().getFormatterMessageJSON().getMessages().get(1).getType()).isEqualTo("image");
-		assertThat(((FormatterImageMessageJSON) this.moduleController.getFormatter().getFormatterMessageJSON().getMessages().get(1)).getOriginalContentUrl()).isEqualTo("abc");
-
+		//assertThat(this.moduleController.getFormatter().getFormatterMessageJSON().getMessages()).isEqualTo(null);
+		
+		assertThat(this.moduleController.getFormatter().getFormatterMessageJSON().getMessages().getJsonObject(1).getString("textContent")).isEqualTo(("haha"));
+		assertThat(this.moduleController.getFormatter().getFormatterMessageJSON().getMessages().getJsonObject(0).getString("originalContentUrl")).isEqualTo("abc");
+		
 	}
 
-	@Test
-	public void testMsgJSON() throws Exception {
-		msg.setId("1");
-		msg.setTextContent("def");
-		this.PM.setMessage(this.msg);
-		assertThat(((TextMessageJSON) this.PM.getMessage()).getTextContent()).isEqualTo("def");
-		//log.info("Array: {}", this.PM.getMessages());
-		//assertThat(this.PM.getMessages()).isEqualTo("[{text, 1, def}]");
-	}
+	
 
-	@Test
-	public void testFormatterMessageJSON() throws Exception {
-		this.FM.setUserId("agong");
-		this.FM.setType("text");
-		this.FM.getMessages().add(this.msg);
-	}
 
-	@Test
-	public void testParserMessageJSON() throws Exception {
-		this.PM.setUserId("Thomas");
-		String id = this.PM.getUserId();
-		assertThat(id).isEqualTo("Thomas");
-	}
 	
 }

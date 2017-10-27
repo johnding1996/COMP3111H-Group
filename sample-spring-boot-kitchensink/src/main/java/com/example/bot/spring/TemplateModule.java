@@ -7,6 +7,7 @@ import reactor.bus.Event;
 import reactor.fn.Consumer;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import javax.json.JsonObject;
 
 @Service
 class TemplateModule implements Consumer<Event<ParserMessageJSON> > {
@@ -30,7 +31,7 @@ class TemplateModule implements Consumer<Event<ParserMessageJSON> > {
     public String getReplyToken() {
         return parserMessageJSON.getReplyToken();
     }
-    public MsgJSON getMessages() {
+    public JsonObject getMessage() {
         return parserMessageJSON.getMessage();
     }
     public Publisher getPublisher() {
