@@ -85,135 +85,148 @@ import java.net.URI;
 @LineMessageHandler
 @Component
 public class Controller {
-    // private HashMap<String, StateMachine> stateMachines;
+    private HashMap<String, StateMachine> stateMachines;
 
-    // @Autowired
-    // private Publisher publisher;
+    @Autowired
+    private Publisher publisher;
 
-    // @Autowired
-    // private DebugReceiver dbg;
+    @Autowired
+    private DebugReceiver dbg;
 
-    // @Autowired
-    // private EventBus eventBus;
+    @Autowired
+    private EventBus eventBus;
 
-    // // @Bean
-    // // Environment env() {
-    // //     return Environment.initializeIfEmpty()
-    // //                       .assignErrorJournal();
-    // // }
+    // @Bean
+    // Environment env() {
+    //     return Environment.initializeIfEmpty()
+    //                       .assignErrorJournal();
+    // }
     
-    // // @Bean
-    // // EventBus createEventBus(Environment env) {
-    // //     return EventBus.create(env, Environment.THREAD_POOL);
-    // // }
+    // @Bean
+    // EventBus createEventBus(Environment env) {
+    //     return EventBus.create(env, Environment.THREAD_POOL);
+    // }
+
+    @EventMapping
+    public void handleTextMessageEvent(MessageEvent<TextMessageContent> event)
+        throws Exception {
+
+        log.info("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        log.info("x                                          x");
+        log.info("x                                          x");
+        log.info("x                                          x");
+        log.info("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        log.info("x                                          x");
+        log.info("x                                          x");
+        log.info("x                                          x");
+        log.info("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        log.info("x                                          x");
+        log.info("x                                          x");
+        log.info("x                                          x");
+        log.info("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+        handleTextContent(event.getReplyToken(), event,
+            event.getMessage(), event.getMessage().getId());
+    }
 
     // @EventMapping
-    // public void handleTextMessageEvent(MessageEvent<TextMessageContent> event)
-    //     throws Exception {
+    // public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event)
+    //     throws IOException {
 
-    //     handleTextContent(event.getReplyToken(), event,
-    //         event.getMessage(), event.getMessage().getId());
+    //     final MessageContentResponse response;
+    //     DownloadedContent jpg = saveContent("jpg", response);
+    //     handleImageContent(event.getReplyToken(), event,
+    //         event.getMessage().getId());    
     // }
 
-    // // @EventMapping
-    // // public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event)
-    // //     throws IOException {
+    /**
+     * Event Handler for Text
+     */
+    private void handleTextContent(String replyToken, Event event,
+        TextMessageContent content, String id) throws Exception {
 
-    // //     final MessageContentResponse response;
-    // //     DownloadedContent jpg = saveContent("jpg", response);
-    // //     handleImageContent(event.getReplyToken(), event,
-    // //         event.getMessage().getId());    
-    // // }
+        // ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
+        // parserMessageJSON.set("userId", event.getSource().getUserId())
+        //     .set("state", "Idle").set("replyToken", replyToken)
+        //     .setTextMessage(id, content.getText());
+        log.info("Handling text info from {}", id);
+        // publisher.publish(parserMessageJSON);
+    }
 
-    // /**
-    //  * Event Handler for Text
-    //  */
-    // private void handleTextContent(String replyToken, Event event,
-    //     TextMessageContent content, String id) throws Exception {
+    /**
+     * Event Handler for Image
+     */
+    private void handleImageContent(String replyToken, Event event, String id) {
+        ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
+        parserMessageJSON.set("userId", event.getSource().getUserId())
+            .set("state", "Idle").set("replyToken", replyToken)
+            .setImageMessage(id);
+        publisher.publish(parserMessageJSON);
+    }
 
-    //     // ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
-    //     // parserMessageJSON.set("userId", event.getSource().getUserId())
-    //     //     .set("state", "Idle").set("replyToken", replyToken)
-    //     //     .setTextMessage(id, content.getText());
-    //     log.info("Handling text info from {}", id);
-    //     // publisher.publish(parserMessageJSON);
+
+    static String createUri(String path) {
+        return ServletUriComponentsBuilder.fromCurrentContextPath().path(path).build().toUriString();
+    }
+
+    private void system(String... args) {
+        ProcessBuilder processBuilder = new ProcessBuilder(args);
+        try {
+            Process start = processBuilder.start();
+            int i = start.waitFor();
+            log.info("result: {} => {}", Arrays.toString(args), i);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } catch (InterruptedException e) {
+            log.info("Interrupted", e);
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static DownloadedContent saveContent(String ext, MessageContentResponse responseBody) {
+        log.info("Got content-type: {}", responseBody);
+
+        DownloadedContent tempFile = createTempFile(ext);
+        try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
+            ByteStreams.copy(responseBody.getStream(), outputStream);
+            log.info("Saved {}: {}", ext, tempFile);
+            return tempFile;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static DownloadedContent createTempFile(String ext) {
+        String fileName = LocalDateTime.now().toString() + '-'
+            + UUID.randomUUID().toString() + '.' + ext;
+        Path tempFile = DietingChatbotApplication.downloadedContentDir
+            .resolve(fileName);
+        tempFile.toFile().deleteOnExit();
+        return new DownloadedContent(tempFile, createUri("/downloaded/" + tempFile.getFileName()));
+    }
+
+    @Value
+    public static class DownloadedContent {
+        Path path;
+        String uri;
+    }
+
+    // @Bean
+    // public Publisher createPublisher() {
+    //     return new Publisher();
     // }
 
-    // /**
-    //  * Event Handler for Image
-    //  */
-    // private void handleImageContent(String replyToken, Event event, String id) {
-    //     ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
-    //     parserMessageJSON.set("userId", event.getSource().getUserId())
-    //         .set("state", "Idle").set("replyToken", replyToken)
-    //         .setImageMessage(id);
-    //     publisher.publish(parserMessageJSON);
+    // @Bean 
+    // public Formatter createFormatter() {
+    //     return new Formatter();
     // }
 
-
-    // static String createUri(String path) {
-    //     return ServletUriComponentsBuilder.fromCurrentContextPath().path(path).build().toUriString();
+    // @Bean
+    // public TemplateModule createTemplateModule() {
+    //     return new TemplateModule();
     // }
 
-    // private void system(String... args) {
-    //     ProcessBuilder processBuilder = new ProcessBuilder(args);
-    //     try {
-    //         Process start = processBuilder.start();
-    //         int i = start.waitFor();
-    //         log.info("result: {} => {}", Arrays.toString(args), i);
-    //     } catch (IOException e) {
-    //         throw new UncheckedIOException(e);
-    //     } catch (InterruptedException e) {
-    //         log.info("Interrupted", e);
-    //         Thread.currentThread().interrupt();
-    //     }
+    // @Bean
+    // public DebugReceiver createDebugReceiver() {
+    //     return new DebugReceiver();
     // }
-
-    // private static DownloadedContent saveContent(String ext, MessageContentResponse responseBody) {
-    //     log.info("Got content-type: {}", responseBody);
-
-    //     DownloadedContent tempFile = createTempFile(ext);
-    //     try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
-    //         ByteStreams.copy(responseBody.getStream(), outputStream);
-    //         log.info("Saved {}: {}", ext, tempFile);
-    //         return tempFile;
-    //     } catch (IOException e) {
-    //         throw new UncheckedIOException(e);
-    //     }
-    // }
-
-    // private static DownloadedContent createTempFile(String ext) {
-    //     String fileName = LocalDateTime.now().toString() + '-'
-    //         + UUID.randomUUID().toString() + '.' + ext;
-    //     Path tempFile = DietingChatbotApplication.downloadedContentDir
-    //         .resolve(fileName);
-    //     tempFile.toFile().deleteOnExit();
-    //     return new DownloadedContent(tempFile, createUri("/downloaded/" + tempFile.getFileName()));
-    // }
-
-    // @Value
-    // public static class DownloadedContent {
-    //     Path path;
-    //     String uri;
-    // }
-
-    // // @Bean
-    // // public Publisher createPublisher() {
-    // //     return new Publisher();
-    // // }
-
-    // // @Bean 
-    // // public Formatter createFormatter() {
-    // //     return new Formatter();
-    // // }
-
-    // // @Bean
-    // // public TemplateModule createTemplateModule() {
-    // //     return new TemplateModule();
-    // // }
-
-    // // @Bean
-    // // public DebugReceiver createDebugReceiver() {
-    // //     return new DebugReceiver();
-    // // }
 }
