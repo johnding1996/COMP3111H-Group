@@ -111,19 +111,6 @@ public class Controller {
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event)
         throws Exception {
 
-        log.info("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-        log.info("x                                          x");
-        log.info("x                                          x");
-        log.info("x                                          x");
-        log.info("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-        log.info("x                                          x");
-        log.info("x                                          x");
-        log.info("x                                          x");
-        log.info("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-        log.info("x                                          x");
-        log.info("x                                          x");
-        log.info("x                                          x");
-        log.info("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
         handleTextContent(event.getReplyToken(), event,
             event.getMessage(), event.getMessage().getId());
     }
@@ -142,13 +129,13 @@ public class Controller {
      * Event Handler for Text
      */
     private void handleTextContent(String replyToken, Event event,
-        TextMessageContent content, String id) throws Exception {
+        TextMessageContent content, String msgId) throws Exception {
 
         ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
         parserMessageJSON.set("userId", event.getSource().getUserId())
             .set("state", "Idle").set("replyToken", replyToken)
-            .setTextMessage(id, content.getText());
-        log.info("Handling text info from {}", id);
+            .setTextMessage(msgId, content.getText());
+        log.info("Handling text info from {}", msgId);
         publisher.publish(parserMessageJSON);
     }
 
@@ -209,24 +196,4 @@ public class Controller {
         Path path;
         String uri;
     }
-
-    // @Bean
-    // public Publisher createPublisher() {
-    //     return new Publisher();
-    // }
-
-    // @Bean 
-    // public Formatter createFormatter() {
-    //     return new Formatter();
-    // }
-
-    // @Bean
-    // public TemplateModule createTemplateModule() {
-    //     return new TemplateModule();
-    // }
-
-    // @Bean
-    // public DebugReceiver createDebugReceiver() {
-    //     return new DebugReceiver();
-    // }
 }

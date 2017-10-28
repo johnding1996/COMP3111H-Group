@@ -30,19 +30,6 @@ public class DebugReceiver implements Consumer<Event<MessageJSON>> {
             formatterMessageJSON = (FormatterMessageJSON)json;
         if (json instanceof ParserMessageJSON)
             parserMessageJSON = (ParserMessageJSON)json;
-        log.info("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-        log.info("x                                          x");
-        log.info("x                                          x");
-        log.info("x                                          x");
-        log.info("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-        log.info("x                                          x");
-        log.info("x                                          x");
-        log.info("x                                          x");
-        log.info("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
-        log.info("x                                          x");
-        log.info("x                                          x");
-        log.info("x                                          x");
-        log.info("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
         log.info("\nDEBUGGER:\n" + ev.getData().toString());
     }
 
