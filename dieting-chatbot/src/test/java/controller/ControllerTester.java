@@ -19,6 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 @SpringBootTest(classes = { ControllerTester.class, ParserMessageJSON.class, FormatterMessageJSON.class})
 public class ControllerTester {
 
+    @Test
+    public void test() {
+
+    }
     /*
     @Autowired
     private ModuleController moduleController;
