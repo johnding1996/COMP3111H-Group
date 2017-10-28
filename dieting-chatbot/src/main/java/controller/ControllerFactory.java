@@ -23,9 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class ControllerFactory {
     @Autowired
-    private EventBus eventBus;
-
-    @Autowired
     private DebugReceiver dbg;
 
     @Bean
@@ -39,13 +36,6 @@ public class ControllerFactory {
 	    return EventBus.create(env, Environment.THREAD_POOL);
     }
 
-    /**
-     * register each module to its subscribed channel(s)
-     */
-    @PostConstruct
-    public void registration() {
-    }
- 
     @Bean
     public Publisher createPublisher() {
         return new Publisher();
