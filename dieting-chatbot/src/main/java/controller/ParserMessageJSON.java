@@ -81,24 +81,28 @@ public class ParserMessageJSON extends MessageJSON {
      * set content of text message
      * @param id LINE message id in String
      * @param textContent String of text message
+     * @return This object
      */
-    public void setTextMessage(String id, String text) {
+    public ParserMessageJSON setTextMessage(String id, String text) {
         JSONObject msg = new JSONObject();
         msg.put("id", id);
         msg.put("type", "text");
         msg.put("textContent", text);
         jo.put("message", msg);
+        return this;
     }
 
     /**
      * set content of image message
      * @param id LINE message id in String
+     * @return This object
      */
-    public void setImageMessage(String id) {
+    public ParserMessageJSON setImageMessage(String id) {
         JSONObject msg = new JSONObject();
         msg.put("id", id);
         msg.put("type", "image");
         jo.put("message", msg);
+        return this;
     }
 
     /**
@@ -108,6 +112,8 @@ public class ParserMessageJSON extends MessageJSON {
     public String getMessageType() {
         try {
             JSONObject msg = (JSONObject)jo.get("message");
+            for (int i=0; i<10; ++i)
+                log.info(msg.toString());
             String ret = (String)msg.get("type");
             return ret;
         } catch (Exception e) {
@@ -118,10 +124,10 @@ public class ParserMessageJSON extends MessageJSON {
 
     /**
      * Get text message content
-     * @return String of message text
+     * @return String of message text, null if is not a text message
      */
     public String getTextContent() {
-        assert getMessageType().equals("text");
+        if (!getMessageType().equals("text")) return null;
         try {
             JSONObject msg = (JSONObject)jo.get("message");
             String ret = (String)msg.get("textContent");
@@ -134,10 +140,10 @@ public class ParserMessageJSON extends MessageJSON {
 
     /**
      * Get image message content
-     * @return String (to be changed)
+     * @return String (to be changed), null if not an image
      */
     public String getImageContent() {
-        assert getMessageType().equals("image");
+        if (!getMessageType().equals("image")) return null;
         try {
             JSONObject msg = (JSONObject)jo.get("message");
             String ret = (String)msg.get("id");
