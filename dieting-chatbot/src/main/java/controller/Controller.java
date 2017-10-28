@@ -87,17 +87,11 @@ import java.net.URI;
 public class Controller {
     private HashMap<String, StateMachine> stateMachines;
 
-    @Autowired
+    @Autowired(required = false)
     private LineMessagingClient lineMessagingClient;
 
-    @Autowired
+    @Autowired(required = false)
     private Publisher publisher;
-
-    @Autowired
-    private DebugReceiver dbg;
-
-    @Autowired
-    private EventBus eventBus;
 
     @EventMapping
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event)

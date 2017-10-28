@@ -22,8 +22,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RunWith(SpringRunner.class)
+@SpringBootTest(classes = {Controller.class})
 public class ControllerTester {
+    @Autowired
+    private Controller controller;
+
     @Test
     public void testConstruct() {
+        assert controller != null;
     }
 }
