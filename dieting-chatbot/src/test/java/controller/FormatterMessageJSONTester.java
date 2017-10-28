@@ -1,5 +1,7 @@
 package controller;
 
+import java.util.Date;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,7 +73,6 @@ public class FormatterMessageJSONTester {
 
     @Test
     public void testPublish() {
-        dbg.init();
         FormatterMessageJSON fmt = new FormatterMessageJSON();
         fmt.set("userId", "szhouan")
            .set("type", "reply")
@@ -79,10 +80,12 @@ public class FormatterMessageJSONTester {
            .appendTextMessage("Java");
         assert publisher != null;
         publisher.publish(fmt);
-        FormatterMessageJSON fmt_rcv = dbg.json;
-        assert fmt_rcv != null;
-        assert fmt_rcv.toString().equals(fmt.toString());
-        log.info(fmt_rcv.toString());
+        try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        assert fmt.toString().equals(dbg.formatterMessageJSON.toString());
     }
 
     @Test

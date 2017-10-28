@@ -9,17 +9,24 @@ import reactor.bus.EventBus;
 
 import static reactor.bus.selector.Selectors.$;
 
+import javax.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * ControllerFactory
  * 
  * Construct all beans
  * Register modules to channels
  */
+@Slf4j
 @Component
 @Configuration
 public class ControllerFactory {
     @Autowired
     private EventBus eventBus;
+
+    @Autowired
+    private DebugReceiver dbg;
 
     @Bean
     Environment env() {
@@ -35,8 +42,9 @@ public class ControllerFactory {
     /**
      * register each module to its subscribed channel(s)
      */
+    @PostConstruct
     public void registration() {
-        this.eventBus.on($("ParserMessageJSON"), this.templateModule);
+        eventBus.on($("ParserMessageJSON"), this.templateModule);
     }
  
     @Bean
