@@ -10,6 +10,8 @@ import reactor.bus.EventBus;
 
 import static reactor.bus.selector.Selectors.$;
 
+import com.linecorp.bot.client.LineMessagingClient;
+import com.linecorp.bot.client.LineMessagingClientImpl;
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 

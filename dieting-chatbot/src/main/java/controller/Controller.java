@@ -20,6 +20,7 @@ import com.linecorp.bot.model.profile.UserProfileResponse;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -83,9 +84,11 @@ import java.net.URI;
  */
 @Slf4j
 @LineMessageHandler
-@Component
 public class Controller {
     private HashMap<String, StateMachine> stateMachines;
+
+    @Autowired(required=false)
+    private LineMessagingClient lineMessagingClient;
 
     @Autowired
     private Publisher publisher;
@@ -96,17 +99,6 @@ public class Controller {
     @Autowired
     private EventBus eventBus;
 
-    // @Bean
-    // Environment env() {
-    //     return Environment.initializeIfEmpty()
-    //                       .assignErrorJournal();
-    // }
-    
-    // @Bean
-    // EventBus createEventBus(Environment env) {
-    //     return EventBus.create(env, Environment.THREAD_POOL);
-    // }
-
     @EventMapping
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event)
         throws Exception {
@@ -115,15 +107,22 @@ public class Controller {
             event.getMessage(), event.getMessage().getId());
     }
 
-    // @EventMapping
-    // public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event)
-    //     throws IOException {
+    @EventMapping
+    public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event)
+        throws IOException {
 
-    //     final MessageContentResponse response;
-    //     DownloadedContent jpg = saveContent("jpg", response);
-    //     handleImageContent(event.getReplyToken(), event,
-    //         event.getMessage().getId());    
-    // }
+        final MessageContentResponse response;
+        String messageId = event.getMessage().getId();
+        String replyToken = event.getReplyToken();
+        try {
+            response = lineMessagingClient.getMessageContent(messageId).get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.info("Cannot get image: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+        DownloadedContent jpg = saveContent("jpg", response);
+        handleImageContent(replyToken, event, messageId);
+    }
 
     /**
      * Event Handler for Text
@@ -131,11 +130,12 @@ public class Controller {
     private void handleTextContent(String replyToken, Event event,
         TextMessageContent content, String msgId) throws Exception {
 
+        log.info("Handling text info from {}", msgId);
+
         ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
         parserMessageJSON.set("userId", event.getSource().getUserId())
             .set("state", "Idle").set("replyToken", replyToken)
             .setTextMessage(msgId, content.getText());
-        log.info("Handling text info from {}", msgId);
         publisher.publish(parserMessageJSON);
     }
 
