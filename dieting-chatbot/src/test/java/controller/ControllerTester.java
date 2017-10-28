@@ -1,121 +1,71 @@
 package controller;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.InputStream;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.WebApplicationContext;
 
-import com.google.common.io.ByteStreams;
-
-import com.linecorp.bot.model.ReplyMessage;
-import com.linecorp.bot.model.event.Event;
-import com.linecorp.bot.model.event.FollowEvent;
-import com.linecorp.bot.model.event.MessageEvent;
-import com.linecorp.bot.model.event.message.MessageContent;
-import com.linecorp.bot.model.event.message.TextMessageContent;
-import com.linecorp.bot.model.message.TextMessage;
-import com.linecorp.bot.spring.boot.annotation.LineBotMessages;
-
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import reactor.Environment;
-import reactor.bus.EventBus;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static reactor.bus.selector.Selectors.$;
 
 import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = { ControllerTester.class, ModuleController.class, ParserMessageJSON.class, FormatterMessageJSON.class})
 public class ControllerTester {
 
-	
-	@Autowired
-	private ParserMessageJSON PM;
+    @Autowired
+    private ParserMessageJSON PM;
 
-	@Autowired
-	private FormatterMessageJSON FM;
-	
-	@Autowired
-	private ModuleController moduleController;
+    @Autowired
+    private FormatterMessageJSON FM;
 
-	@Test
-	public void testTemplateModule() {
-		this.PM.setUserId("Thomas");
-		this.PM.addTextMessage("abc", "hahaha");
-		this.moduleController.registration();
-		try {
-			this.moduleController.getTemplateModule().getPublisher().publishParserMessageJSON(this.PM);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}	
-		assertThat(this.moduleController.getTemplateModule().getMessage().getString("textContent")).isEqualTo("hahaha");
-		
-	}
+    @Autowired
+    private ModuleController moduleController;
 
-	@Test
-	public void testFormatter() {
-		// test TextMessageJSON
-		this.FM.setUserId("agong");
-		this.FM.addFormatterImageMessage("abc", "def");
-		this.FM.addTextMessage("123", "haha");
-		this.FM.buildArray();
-		this.moduleController.getEventBus().on($("FormatterMessageJSON"), this.moduleController.getFormatter());
-		//assertThat(this.moduleController.getFormatterPublisher()).isEqualTo(null);
-		
-		try {
-			this.moduleController.getPublisher().publishFormatterMessageJSON(this.FM);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		//assertThat(this.moduleController.getFormatter().getFormatterMessageJSON()).isEqualTo(null);
-		assertThat(this.moduleController.getFormatter().getFormatterMessageJSON().getUserId()).isEqualTo("agong");
-		//assertThat(this.moduleController.getFormatter().getFormatterMessageJSON().getMessages()).isEqualTo(null);
-		
-		assertThat(this.moduleController.getFormatter().getFormatterMessageJSON().getMessages().getJsonObject(1).getString("textContent")).isEqualTo(("haha"));
-		assertThat(this.moduleController.getFormatter().getFormatterMessageJSON().getMessages().getJsonObject(0).getString("originalContentUrl")).isEqualTo("abc");
-		
-	}
+    @Test
+    public void testTemplateModule() {
+        this.PM.setUserId("Thomas");
+        this.PM.addTextMessage("abc", "hahaha");
+        this.moduleController.registration();
+        try {
+            this.moduleController.getTemplateModule()
+                .getPublisher().publishParserMessageJSON(this.PM);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } 
+        assertThat(this.moduleController.getTemplateModule()
+            .getMessage().getString("textContent")).isEqualTo("hahaha");
+    }
 
-	
-
-
-	
+    @Test
+    public void testFormatter() {
+        this.FM.setUserId("agong");
+        this.FM.addFormatterImageMessage("abc", "def");
+        this.FM.addTextMessage("123", "haha");
+        this.FM.buildArray();
+        this.moduleController.getEventBus().on($("FormatterMessageJSON"), this.moduleController.getFormatter());
+        
+        try {
+            this.moduleController.getPublisher()
+                .publishFormatterMessageJSON(this.FM);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        assertThat(this.moduleController.getFormatter()
+            .getFormatterMessageJSON().getUserId()).isEqualTo("agong");
+        
+        assertThat(this.moduleController.getFormatter()
+            .getFormatterMessageJSON().getMessages()
+            .getJsonObject(1).getString("textContent")).isEqualTo(("haha"));
+        assertThat(this.moduleController.getFormatter()
+            .getFormatterMessageJSON().getMessages()
+            .getJsonObject(0).getString("originalContentUrl")).isEqualTo("abc");
+        
+    }
 }

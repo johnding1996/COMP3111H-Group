@@ -14,15 +14,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class Publisher {
 
-	@Autowired
-	EventBus eventBus; 
+    @Autowired
+    EventBus eventBus;
 
-	public void publishFormatterMessageJSON(FormatterMessageJSON formatterMessageJSON) throws InterruptedException {
+    public void publishFormatterMessageJSON(FormatterMessageJSON formatterMessageJSON) throws InterruptedException {
         eventBus.notify("FormatterMessageJSON", Event.wrap(formatterMessageJSON));
-	}
+    }
 
-	public void publishParserMessageJSON(ParserMessageJSON parserMessageJSON) throws InterruptedException {
+    public void publishParserMessageJSON(ParserMessageJSON parserMessageJSON) throws InterruptedException {
         eventBus.notify("ParserMessageJSON", Event.wrap(parserMessageJSON));
-	}
+    }
 
 }

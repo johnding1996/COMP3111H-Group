@@ -1,12 +1,8 @@
 package controller;
 
-import com.linecorp.bot.model.event.message.TextMessageContent;
-import java.util.*;
-import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
