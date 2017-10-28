@@ -9,13 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.HashSet;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.annotation.Nullable;
-
 import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 public class FormatterMessageJSON {
     static private HashSet<String> keySet;
@@ -28,24 +24,39 @@ public class FormatterMessageJSON {
         keySet.add("stateTransition");
     }
 
-    // private String type = "push";    // "reply" or "push"
-    // private String userId = "NULL";  
-    // private String replyToken = "314159";
-    // private JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
-    // JsonArray messages;
-    // String stateTransition;
-
-    private JSONObject jo;
+    private JSONObject jo = new JSONObject();
     {
-        jo.put("type", "push");
-        jo.put("userId", "NULL");
         jo.put("messages", new JSONArray());
     }
 
     private boolean isKey(String key) {
         return keySet.contains(key);
     }
+    
+    private boolean validateKeyValue(String key, Object value) {
+        switch (key) {
+            case "type": case "userId":
+            case "replyToken": case "stateTransition":
+                if (!(value instanceof String)) return false;
+                String str = (String)value;
+                if (key.equals("type")) {
+                    if (!str.equals("reply") && !str.equals("push"))
+                        return false;
+                }
+                break;
 
+            default:
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * get a field of FormatterMessageJSON
+     * @param key String of key
+     * @return The corresponding value of key in Object
+     *         Return null if no such key
+     */
     public Object get(String key) {
         if (!isKey(key)) {
             log.info(String.format("%s is not a valid key", key));
@@ -55,68 +66,57 @@ public class FormatterMessageJSON {
         }
     }
 
-    public void set(String key, Object value) {
+    /**
+     * set a field of FormatterMessageJSON
+     * @param key String of key, only some values are allowed
+     * @param value Object to be set
+     * @return This object
+     */
+    public FormatterMessageJSON set(String key, Object value) {
         if (!isKey(key)) {
             log.info(String.format("%s is not a valid key", key));
-            return null;
         } else {
-            switch (key) {
-                case "type":
-                if (!value.equals("reply") && !value.equals)
-            }
+            if (validateKeyValue(key, value))
+                jo.put(key, value);
         }
-    }
-    /*
-    public String getType() {
-        return type;
-    }
-    public String getUserId() {
-        return userId;
-    }
-    public String getReplyToken() {
-        return replyToken;
-    }
-    public String getStateTransition() {
-        return stateTransition;
-    }
-    public JsonArray getMessages() {
-        return messages;
-    }
-    */
-
-    /*
-    public void setType(String type) {
-        if(type.equals("reply") || type.equals("push")) {
-            this.type = type;
-        } else {
-            log.info(String.format("Invalid value %s for type", type));
-        }
-    }
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-    public void setReplyToken(String replyToken) {
-        this.replyToken = replyToken;
-    }
-    public void setStateTransition(String stateTransition) {
-        this.stateTransition = stateTransition;
+        return this;
     }
 
-    public void addTextMessage(@Nullable String id, String textContent) {
-        if(messages == null || messages.size() < 5) 
-            jsonArrayBuilder.add(Json.createObjectBuilder().add("type", "text")
-                .add("id", id==null?"NULL":id).add("textContent", textContent)
-                .build());
+    /**
+     * Append a text message to `messages` field
+     * @param text String of text content
+     * @return This object
+     */
+    public FormatterMessageJSON appendTextMessage(String text) {
+        JSONObject msg = new JSONObject();
+        msg.put("type", "text");
+        msg.put("textContent", text);
+        jo.append("messages", msg);
+        return this;
     }
 
-    public void addFormatterImageMessage(String originalContentUrl, String previewContentUrl) {
-        if(messages == null || messages.size() < 5)
-            jsonArrayBuilder.add(Json.createObjectBuilder().add("type", "image")
-                .add("originalContentUrl", originalContentUrl)
-                .add("previewContentUrl", previewContentUrl).build());
+    /**
+     * Append an image message to `messages` field
+     * @param originalContentUrl URL to original image
+     * @param previewContentUrl URL to preview image (may be the same as
+     *                          originalContentUrl)
+     * @return This object
+     */
+    public FormatterMessageJSON appendImageMessage(String originalContentUrl,
+                                   String previewContentUrl) {
+        JSONObject msg = new JSONObject();
+        msg.put("type", "image");
+        msg.put("originalContentUrl", originalContentUrl);
+        msg.put("previewContentUrl", previewContentUrl);
+        jo.append("messages", msg);
+        return this;
     }
-    public void buildArray() {
-        messages = jsonArrayBuilder.build();
+
+    /**
+     * Return a pretty formatted JSON
+     */
+    @Override
+    public String toString() {
+        return "\n"+jo.toString(4);
     }
-    */
 }
