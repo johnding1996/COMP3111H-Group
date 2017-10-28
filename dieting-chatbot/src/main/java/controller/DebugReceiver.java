@@ -17,20 +17,25 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-public class DebugReceiver
-    implements Consumer<Event<FormatterMessageJSON>> {
+public class DebugReceiver implements Consumer<Event<MessageJSON>> {
 
     @Autowired
     private EventBus eventBus;
 
-    public FormatterMessageJSON formatterMessageJSON;
-    public void accept(Event<FormatterMessageJSON> ev) {
-        formatterMessageJSON = ev.getData();
+    public FormatterMessageJSON formatterMessageJSON = null;
+    public ParserMessageJSON parserMessageJSON = null;
+    public void accept(Event<MessageJSON> ev) {
+        MessageJSON json = ev.getData();
+        if (json instanceof FormatterMessageJSON)
+            formatterMessageJSON = (FormatterMessageJSON)json;
+        if (json instanceof ParserMessageJSON)
+            parserMessageJSON = (ParserMessageJSON)json;
         log.info("\nDEBUGGER:\n" + ev.getData().toString());
     }
 
     @PostConstruct
     public void init() {
         eventBus.on($("FormatterMessageJSON"), this);
+        eventBus.on($("ParserMessageJSON"), this);
     }
 }

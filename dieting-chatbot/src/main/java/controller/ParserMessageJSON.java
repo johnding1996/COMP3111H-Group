@@ -9,9 +9,12 @@ import controller.StateMachine;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Wrapper class for LINE message
+ */
 @Slf4j
 @Service
-public class ParserMessageJSON {
+public class ParserMessageJSON extends MessageJSON {
     static private HashSet<String> keySet;
     {
         keySet = new HashSet<String>();
@@ -33,7 +36,7 @@ public class ParserMessageJSON {
                 if (!(value instanceof String)) return false;
                 String str = (String)value;
                 if (key.equals("state")) {
-                    if (!StateMachine.isValidState(str)) return false;
+                    if (!State.validateStateName(str)) return false;
                 }
                 break;
 
@@ -72,6 +75,77 @@ public class ParserMessageJSON {
                 jo.put(key, value);
         }
         return this;
+    }
+
+    /**
+     * set content of text message
+     * @param id LINE message id in String
+     * @param textContent String of text message
+     */
+    public void setTextMessage(String id, String text) {
+        JSONObject msg = new JSONObject();
+        msg.put("id", id);
+        msg.put("type", "text");
+        msg.put("textContent", text);
+        jo.put("message", msg);
+    }
+
+    /**
+     * set content of image message
+     * @param id LINE message id in String
+     */
+    public void setImageMessage(String id) {
+        JSONObject msg = new JSONObject();
+        msg.put("id", id);
+        msg.put("type", "image");
+        jo.put("message", msg);
+    }
+
+    /**
+     * Get message type
+     * @return Type of LINE message, either "text" or "image"
+     */
+    public String getMessageType() {
+        try {
+            JSONObject msg = (JSONObject)jo.get("message");
+            String ret = (String)msg.get("type");
+            return ret;
+        } catch (Exception e) {
+            log.info("Error occurs in getting message type");
+            return null;
+        }
+    }
+
+    /**
+     * Get text message content
+     * @return String of message text
+     */
+    public String getTextContent() {
+        assert getMessageType().equals("text");
+        try {
+            JSONObject msg = (JSONObject)jo.get("message");
+            String ret = (String)msg.get("textContent");
+            return ret;
+        } catch (Exception e) {
+            log.info("Error in getting text content");
+            return null;
+        }
+    }
+
+    /**
+     * Get image message content
+     * @return String (to be changed)
+     */
+    public String getImageContent() {
+        assert getMessageType().equals("image");
+        try {
+            JSONObject msg = (JSONObject)jo.get("message");
+            String ret = (String)msg.get("id");
+            return ret;
+        } catch (Exception e) {
+            log.info("Error in getting image content");
+            return null;
+        }
     }
 
     /**

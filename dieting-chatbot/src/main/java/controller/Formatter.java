@@ -49,7 +49,6 @@ public class Formatter implements Consumer<Event<FormatterMessageJSON> > {
 
     private LineMessagingClient lineMessagingClient;
 
-    @Autowired
     private FormatterMessageJSON formatterMessageJSON;
 
 	public void accept(Event<FormatterMessageJSON> ev) {

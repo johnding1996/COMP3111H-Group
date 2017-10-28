@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-public class FormatterMessageJSON {
+public class FormatterMessageJSON extends MessageJSON {
     static private HashSet<String> keySet;
     {
         keySet = new HashSet<String>();
