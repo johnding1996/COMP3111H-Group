@@ -44,7 +44,6 @@ public class ControllerFactory {
      */
     @PostConstruct
     public void registration() {
-        eventBus.on($("ParserMessageJSON"), this.templateModule);
     }
  
     @Bean
@@ -58,11 +57,6 @@ public class ControllerFactory {
     }
 
     @Bean
-    public TemplateModule createTemplateModule() {
-        return new TemplateModule();
-    }
-
-    @Bean
     public DebugReceiver createDebugReceiver() {
         return new DebugReceiver();
     }
@@ -71,7 +65,4 @@ public class ControllerFactory {
     public Controller createController() {
         return new Controller();
     }
-
-    @Autowired
-    private TemplateModule templateModule;
 }
