@@ -144,12 +144,12 @@ public class Controller {
     private void handleTextContent(String replyToken, Event event,
         TextMessageContent content, String id) throws Exception {
 
-        // ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
-        // parserMessageJSON.set("userId", event.getSource().getUserId())
-        //     .set("state", "Idle").set("replyToken", replyToken)
-        //     .setTextMessage(id, content.getText());
+        ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
+        parserMessageJSON.set("userId", event.getSource().getUserId())
+            .set("state", "Idle").set("replyToken", replyToken)
+            .setTextMessage(id, content.getText());
         log.info("Handling text info from {}", id);
-        // publisher.publish(parserMessageJSON);
+        publisher.publish(parserMessageJSON);
     }
 
     /**
