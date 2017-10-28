@@ -37,13 +37,11 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import reactor.bus.Event;
 import reactor.fn.Consumer;
 import retrofit2.Response;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 @Service
@@ -56,17 +54,10 @@ public class Formatter implements Consumer<Event<FormatterMessageJSON> > {
 
 	public void accept(Event<FormatterMessageJSON> ev) {
         this.formatterMessageJSON = ev.getData();
-        //String type = this.formatterMessageJSON.getType();
-        formatting();
+        //formatting();
     }
     
-   /* 
-    public Formatter(LineMessagingClient lineMessagingClient) {
-        // methods for decoposing JSON file
-        this.lineMessagingClient = lineMessagingClient;
-    }
-    */
-
+    /*
     public void setLineMessagingClient(LineMessagingClient lineMessagingClient) {
         this.lineMessagingClient = lineMessagingClient;
     }
@@ -87,14 +78,14 @@ public class Formatter implements Consumer<Event<FormatterMessageJSON> > {
         PushMessage pushMessage = new PushMessage(userId, messages);
         this.lineMessagingClient.pushMessage(pushMessage);
     }
+    */
     
     public FormatterMessageJSON getFormatterMessageJSON() {
         return this.formatterMessageJSON;
     }
     
-    
+    /*
     public void formatting() {
-
         List<Message> messages = new ArrayList<Message>();
         for(int i = 0; i < this.formatterMessageJSON.getMessages().size(); i++) {
             JsonObject obj = this.formatterMessageJSON.getMessages().getJsonObject(i);
@@ -119,8 +110,6 @@ public class Formatter implements Consumer<Event<FormatterMessageJSON> > {
                 reply(this.formatterMessageJSON.getUserId(), messages);
             break;
         }
-
-      
     }
-
+    */
 }
