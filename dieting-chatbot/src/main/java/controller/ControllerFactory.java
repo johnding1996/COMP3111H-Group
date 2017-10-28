@@ -22,9 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Configuration
 public class ControllerFactory {
-    @Autowired
-    private DebugReceiver dbg;
-
     @Bean
     Environment env() {
         return Environment.initializeIfEmpty()
