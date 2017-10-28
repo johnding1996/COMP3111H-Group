@@ -22,36 +22,25 @@ import lombok.extern.slf4j.Slf4j;
  * Register modules to channels
  */
 @Slf4j
-@Configuration
+// @Configuration
 public class ControllerFactory {
-    @Bean
-    Environment env() {
-        return Environment.initializeIfEmpty()
-                          .assignErrorJournal();
-    }
-    
-    @Bean
-    EventBus createEventBus(Environment env) {
-	    return EventBus.create(env, Environment.THREAD_POOL);
-    }
+    // @Bean
+    // public Publisher createPublisher() {
+    //     return new Publisher();
+    // }
 
-    @Bean
-    public Publisher createPublisher() {
-        return new Publisher();
-    }
+    // @Bean 
+    // public Formatter createFormatter() {
+    //     return new Formatter();
+    // }
 
-    @Bean 
-    public Formatter createFormatter() {
-        return new Formatter();
-    }
+    // @Bean @Primary
+    // public DebugReceiver createDebugReceiver() {
+    //     return new DebugReceiver();
+    // }
 
-    @Bean @Primary
-    public DebugReceiver createDebugReceiver() {
-        return new DebugReceiver();
-    }
-
-    @Bean
-    public Controller createController() {
-        return new Controller();
-    }
+    // @Bean
+    // public Controller createController() {
+    //     return new Controller();
+    // }
 }

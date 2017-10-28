@@ -15,14 +15,7 @@ import static reactor.bus.selector.Selectors.$;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = { ParserMessageJSON.class, ControllerFactory.class })
 public class ParserMessageJSONTester {
-    @Autowired
-    private DebugReceiver dbg;
-
-    @Autowired
-    private Publisher publisher;
-
     @Test
     public void testSetValidField() {
         ParserMessageJSON psr = new ParserMessageJSON();
@@ -83,6 +76,7 @@ public class ParserMessageJSONTester {
         log.info(psr.toString());
     }
 
+    /*
     @Test
     public void testPublish() {
         ParserMessageJSON psr = new ParserMessageJSON();
@@ -98,6 +92,7 @@ public class ParserMessageJSONTester {
         }
         assert psr.toString().equals(dbg.parserMessageJSON.toString());
     }
+    */
 
     @Test
     public void testConstruct() {

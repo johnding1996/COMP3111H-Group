@@ -11,18 +11,16 @@ import org.json.JSONArray;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.context.annotation.Bean;
+
+import reactor.Environment;
+import reactor.bus.Event;
+import reactor.bus.EventBus;
 import static reactor.bus.selector.Selectors.$;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = { FormatterMessageJSON.class, ControllerFactory.class })
 public class FormatterMessageJSONTester {
-    @Autowired
-    private DebugReceiver dbg;
-
-    @Autowired
-    private Publisher publisher;
-
     @Test
     public void testSetValidField() {
         FormatterMessageJSON fmt = new FormatterMessageJSON();
@@ -71,6 +69,7 @@ public class FormatterMessageJSONTester {
         log.info(fmt.toString());
     }
 
+    /*
     @Test
     public void testPublish() {
         FormatterMessageJSON fmt = new FormatterMessageJSON();
@@ -87,6 +86,7 @@ public class FormatterMessageJSONTester {
         }
         assert fmt.toString().equals(dbg.formatterMessageJSON.toString());
     }
+    */
 
     @Test
     public void testContruct() {

@@ -27,6 +27,5 @@ public class Publisher {
 
     @PostConstruct
     public void registration() {
-
     }
 }
