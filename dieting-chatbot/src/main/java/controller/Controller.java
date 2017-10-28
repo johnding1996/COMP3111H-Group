@@ -16,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import com.linecorp.bot.model.profile.UserProfileResponse;
 
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -73,30 +74,19 @@ import java.net.URI;
 public class Controller {
 	
 
+	@Autowired
+	private ModuleController moduleController;
+
+	private StateMachine stateMachine;
 
 	@Autowired
 	private LineMessagingClient lineMessagingClient;
 
 	@EventMapping
 	public void handleTextMessageEvent(MessageEvent<TextMessageContent> event) throws Exception {
-		log.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-		log.info("This is your entry point:");
-		log.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-		TextMessageContent message = event.getMessage();
-		handleTextContent(event.getReplyToken(), event, message);
+		handleTextContent(event.getReplyToken(), event, (TextMessageContent) event.getMessage(), event.getMessage().getId());
 	}
 
-	@EventMapping
-	public void handleStickerMessageEvent(MessageEvent<StickerMessageContent> event) {
-		handleSticker(event.getReplyToken(), event.getMessage());
-	}
-
-	@EventMapping
-	public void handleLocationMessageEvent(MessageEvent<LocationMessageContent> event) {
-		LocationMessageContent locationMessage = event.getMessage();
-		reply(event.getReplyToken(), new LocationMessage(locationMessage.getTitle(), locationMessage.getAddress(),
-				locationMessage.getLatitude(), locationMessage.getLongitude()));
-	}
 
 	@EventMapping
 	public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) throws IOException {
@@ -110,23 +100,8 @@ public class Controller {
 			throw new RuntimeException(e);
 		}
 		DownloadedContent jpg = saveContent("jpg", response);
-		reply(((MessageEvent) event).getReplyToken(), new ImageMessage(jpg.getUri(), jpg.getUri()));
+		handleImageContent();	
 
-	}
-
-	@EventMapping
-	public void handleAudioMessageEvent(MessageEvent<AudioMessageContent> event) throws IOException {
-		final MessageContentResponse response;
-		String replyToken = event.getReplyToken();
-		String messageId = event.getMessage().getId();
-		try {
-			response = lineMessagingClient.getMessageContent(messageId).get();
-		} catch (InterruptedException | ExecutionException e) {
-			reply(replyToken, new TextMessage("Cannot get image: " + e.getMessage()));
-			throw new RuntimeException(e);
-		}
-		DownloadedContent mp4 = saveContent("mp4", response);
-		reply(event.getReplyToken(), new AudioMessage(mp4.getUri(), 100));
 	}
 
 	@EventMapping
@@ -137,125 +112,41 @@ public class Controller {
 	@EventMapping
 	public void handleFollowEvent(FollowEvent event) {
 		String replyToken = event.getReplyToken();
-		this.replyText(replyToken, "Got followed event");
-	}
-
-	@EventMapping
-	public void handleJoinEvent(JoinEvent event) {
-		String replyToken = event.getReplyToken();
-		this.replyText(replyToken, "Joined " + event.getSource());
-	}
-
-	@EventMapping
-	public void handlePostbackEvent(PostbackEvent event) {
-		String replyToken = event.getReplyToken();
-		this.replyText(replyToken, "Got postback " + event.getPostbackContent().getData());
-	}
-
-	@EventMapping
-	public void handleBeaconEvent(BeaconEvent event) {
-		String replyToken = event.getReplyToken();
-		this.replyText(replyToken, "Got beacon message " + event.getBeacon().getHwid());
-	}
-
-	@EventMapping
-	public void handleOtherEvent(Event event) {
-		log.info("Received message(Ignored): {}", event);
-	}
-
-	private void reply(@NonNull String replyToken, @NonNull Message message) {
-		reply(replyToken, Collections.singletonList(message));
-	}
-
-	private void reply(@NonNull String replyToken, @NonNull List<Message> messages) {
-		try {
-			BotApiResponse apiResponse = lineMessagingClient.replyMessage(new ReplyMessage(replyToken, messages)).get();
-			log.info("Sent messages: {}", apiResponse);
-		} catch (InterruptedException | ExecutionException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	private void replyText(@NonNull String replyToken, @NonNull String message) {
-		if (replyToken.isEmpty()) {
-			throw new IllegalArgumentException("replyToken must not be empty");
-		}
-		if (message.length() > 1000) {
-			message = message.substring(0, 1000 - 2) + "..";
-		}
-		this.reply(replyToken, new TextMessage(message));
 	}
 
 
+	/**
+	 * Event Handler for Sticker
+	 */
 	private void handleSticker(String replyToken, StickerMessageContent content) {
 		reply(replyToken, new StickerMessage(content.getPackageId(), content.getStickerId()));
 	}
 
-	private void handleTextContent(String replyToken, Event event, TextMessageContent content)
+	/**
+	 * Event Handler for Text
+	 */
+	private void handleTextContent(String replyToken, Event event, TextMessageContent content, String id)
             throws Exception {
-        String text = content.getText();
-
-        log.info("Got text message from {}: {}", replyToken, text);
-        switch (text) {
-            case "profile": {
-                String userId = event.getSource().getUserId();
-                if (userId != null) {
-                    lineMessagingClient
-                            .getProfile(userId)
-                            .whenComplete(new ProfileGetter (this, replyToken));
-                } else {
-                    this.replyText(replyToken, "Bot can't use profile API without user ID");
-                }
-                break;
-            }
-            case "confirm": {
-                ConfirmTemplate confirmTemplate = new ConfirmTemplate(
-                        "Do it?",
-                        new MessageAction("Yes", "Yes!"),
-                        new MessageAction("No", "No!")
-                );
-                TemplateMessage templateMessage = new TemplateMessage("Confirm alt text", confirmTemplate);
-                this.reply(replyToken, templateMessage);
-                break;
-            }
-            case "carousel": {
-                String imageUrl = createUri("/static/buttons/1040.jpg");
-                CarouselTemplate carouselTemplate = new CarouselTemplate(
-                        Arrays.asList(
-                                new CarouselColumn(imageUrl, "hoge", "fuga", Arrays.asList(
-                                        new URIAction("Go to line.me",
-                                                      "https://line.me"),
-                                        new PostbackAction("Say hello1",
-                                                           "hello ã�“ã‚“ã�«ã�¡ã�¯")
-                                )),
-                                new CarouselColumn(imageUrl, "hoge", "fuga", Arrays.asList(
-                                        new PostbackAction("è¨€ hello2",
-                                                           "hello ã�“ã‚“ã�«ã�¡ã�¯",
-                                                           "hello ã�“ã‚“ã�«ã�¡ã�¯"),
-                                        new MessageAction("Say message",
-                                                          "Rice=ç±³")
-                                ))
-                        ));
-                TemplateMessage templateMessage = new TemplateMessage("Carousel alt text", carouselTemplate);
-                this.reply(replyToken, templateMessage);
-                break;
-            }
-
-            default:
-            	String reply = null;
-            	try {
-            		reply = "ha";
-            	} catch (Exception e) {
-            		reply = text;
-            	}
-                log.info("Returns echo message {}: {}", replyToken, reply);
-                this.replyText(
-                        replyToken,
-                        itscLOGIN + " says " + reply
-                );
-                break;
-        }
+		ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
+		parserMessageJSON.set("userId", event.getSource().getUserId())
+		.set("state", "").set("replyToken", replyToken)
+		.set("message", (new JSONObject()).put("type", "text").put("id", id)
+		.put("textContent", content.getText());
+		this.moduleController.getEventBus().notify("ParserMessageJSON", Event.wrap(parserMessageJSON));
     }
+
+	/**
+	 * Event Handler for Image
+	 */
+	private void handleMessageContent(String replyToken, Event event, String id) {
+		ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
+		parserMessageJSON.set("userId", event.getSource().getUserId())
+		.set("state", "").set("replyToken", replyToken)
+		.set("message", (new JSONObject()).put("type", "image").put("id", id));
+		this.moduleController.getEventBus().notify("ParserMessageJSON", Event.wrap(parserMessageJSON));
+
+	}
+
 
 	static String createUri(String path) {
 		return ServletUriComponentsBuilder.fromCurrentContextPath().path(path).build().toUriString();
@@ -295,20 +186,6 @@ public class Controller {
 		return new DownloadedContent(tempFile, createUri("/downloaded/" + tempFile.getFileName()));
 	}
 
-
-	
-
-
-	public KitchenSinkController() {
-		itscLOGIN = System.getenv("ITSC_LOGIN");
-	}
-
-	private String itscLOGIN;
-	
-
-	//The annontation @Value is from the package lombok.Value
-	//Basically what it does is to generate constructor and getter for the class below
-	//See https://projectlombok.org/features/Value
 	@Value
 	public static class DownloadedContent {
 		Path path;
