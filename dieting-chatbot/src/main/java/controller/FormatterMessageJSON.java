@@ -3,7 +3,14 @@ package controller;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.springframework.context.annotation.Bean;
+
+import reactor.Environment;
+import reactor.bus.Event;
+import reactor.bus.EventBus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +19,7 @@ import java.util.HashSet;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component
+@Service
 public class FormatterMessageJSON {
     static private HashSet<String> keySet;
     {
@@ -29,11 +36,11 @@ public class FormatterMessageJSON {
         jo.put("messages", new JSONArray());
     }
 
-    private boolean isKey(String key) {
+    private static boolean isKey(String key) {
         return keySet.contains(key);
     }
     
-    private boolean validateKeyValue(String key, Object value) {
+    private static boolean validateKeyValue(String key, Object value) {
         switch (key) {
             case "type": case "userId":
             case "replyToken": case "stateTransition":

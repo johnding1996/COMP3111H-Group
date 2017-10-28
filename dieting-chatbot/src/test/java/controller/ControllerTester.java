@@ -16,15 +16,10 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = { ControllerTester.class, ModuleController.class, ParserMessageJSON.class, FormatterMessageJSON.class})
+@SpringBootTest(classes = { ControllerTester.class, ParserMessageJSON.class, FormatterMessageJSON.class})
 public class ControllerTester {
 
-    @Autowired
-    private ParserMessageJSON PM;
-
-    @Autowired
-    private FormatterMessageJSON FM;
-
+    /*
     @Autowired
     private ModuleController moduleController;
 
@@ -67,4 +62,5 @@ public class ControllerTester {
     //         .getJsonObject(0).getString("originalContentUrl")).isEqualTo("abc");
         
     // }
+    */
 }

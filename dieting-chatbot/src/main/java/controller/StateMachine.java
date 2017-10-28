@@ -117,14 +117,23 @@ public class StateMachine {
 
     /**
      * Overwrite state of the state machine, for testing only
+     * @param newState new state
      */
     public void setState(String newState) {
-        if (!states.containsKey(newState)) {
+        if (!isValidState(newState)) {
             log.info("Set to invalid newState: " + newState);
             return;
         }
         currentState = newState;        
         log.info("State overwritten to " + newState);
+    }
+
+    /**
+     * Check whether a String is a valid state
+     * @param stateName Name of state in String
+     */
+    public static boolean isValidState(String stateName) {
+        return states.containsKey(stateName);
     }
 
     /**
@@ -159,6 +168,9 @@ public class StateMachine {
             transition));
     }
 
+    /**
+     * Inner class for state representation
+     */
     class State {
         private String stateName;
 

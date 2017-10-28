@@ -2,6 +2,7 @@ package controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import reactor.Environment;
 import reactor.bus.EventBus;
@@ -9,14 +10,17 @@ import reactor.bus.EventBus;
 import static reactor.bus.selector.Selectors.$;
 
 /**
- * ContextManager
+ * ControllerFactory
  * 
  * Construct all beans
  * Register modules to channels
  */
 @Component
-public class ModuleController {
-    
+@Configuration
+public class ControllerFactory {
+    @Autowired
+    private EventBus eventBus;
+
     @Bean
     Environment env() {
         return Environment.initializeIfEmpty()
@@ -46,36 +50,15 @@ public class ModuleController {
     }
 
     @Bean
-    public TemplateModule template() {
+    public TemplateModule createTemplateModule() {
         return new TemplateModule();
     }
 
-	@Autowired
-    private EventBus eventBus;
-    
-    @Autowired
-    private Publisher publisher;
+    @Bean
+    public DebugReceiver createDebugReceiver() {
+        return new DebugReceiver();
+    }
 
-    @Autowired
-    private Formatter formatter;
-    
     @Autowired
     private TemplateModule templateModule;
-
-    public EventBus getEventBus() {
-        return eventBus;
-    }
-    
-    public Publisher getPublisher() {
-        return publisher;
-    }
-
-    public Formatter getFormatter() {
-        return formatter;
-    }
-
-    public TemplateModule getTemplateModule() {
-        return templateModule;
-    }
-
 }

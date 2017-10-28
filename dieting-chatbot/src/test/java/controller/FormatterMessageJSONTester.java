@@ -13,8 +13,14 @@ import static reactor.bus.selector.Selectors.$;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = { FormatterMessageJSON.class })
+@SpringBootTest(classes = { FormatterMessageJSON.class, ControllerFactory.class })
 public class FormatterMessageJSONTester {
+    @Autowired
+    private DebugReceiver dbg;
+
+    @Autowired
+    private Publisher publisher;
+
     @Test
     public void testSetValidField() {
         FormatterMessageJSON fmt = new FormatterMessageJSON();
@@ -61,5 +67,31 @@ public class FormatterMessageJSONTester {
         assert messages.getJSONObject(0).get("textContent").equals("Hello world");
         assert messages.getJSONObject(1).get("textContent").equals("Java");
         log.info(fmt.toString());
+    }
+
+    @Test
+    public void testPublish() {
+        dbg.init();
+        FormatterMessageJSON fmt = new FormatterMessageJSON();
+        fmt.set("userId", "szhouan")
+           .set("type", "reply")
+           .appendTextMessage("Hello world")
+           .appendTextMessage("Java");
+        assert publisher != null;
+        publisher.publish(fmt);
+        FormatterMessageJSON fmt_rcv = dbg.json;
+        assert fmt_rcv != null;
+        assert fmt_rcv.toString().equals(fmt.toString());
+        log.info(fmt_rcv.toString());
+    }
+
+    @Test
+    public void testContruct() {
+        try {
+            FormatterMessageJSON fmt = new FormatterMessageJSON();
+        } catch (Exception e) {
+            e.printStackTrace();
+            assert false;
+        }
     }
 }

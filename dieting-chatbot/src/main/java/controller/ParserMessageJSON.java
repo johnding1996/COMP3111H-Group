@@ -1,16 +1,16 @@
 package controller;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.annotation.Nullable;
 import org.json.JSONObject;
-import org.mockito.internal.stubbing.answers.ThrowsException;
-import org.springframework.stereotype.Component;
 
-@Component
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import controller.StateMachine;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Service
 public class ParserMessageJSON {
     static private HashSet<String> keySet;
     {
@@ -20,71 +20,65 @@ public class ParserMessageJSON {
         keySet.add("replyToken");
         keySet.add("message");
     }
-    /*
-    String userId;
-    String state;
-    String replyToken;
-    JsonObject message; 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-    public void setState(String state) {
-        this.state = state;
-    }
-    public void setReplyToken(String replyToken) {
-        this.replyToken = replyToken;
-    }
 
-    public void addTextMessage(@Nullable String id, String textContent) {
-        message = Json.createObjectBuilder().add("type", "text")
-          .add("id", id==null?"NULL":id).add("textContent", textContent).build();
-    }
-    
-    public void addParserImageMessage(String id) {
-        message = Json.createObjectBuilder().add("type", "image").add("id", id).build();
-    }
-    
+    private JSONObject jo = new JSONObject();
 
-    public String getUserId() {
-        return userId;
-    }
-    public String getState() {
-        return state;
-    }
-    public String getReplyToken() {
-        return replyToken;
-    }
-    public JsonObject getMessage() {
-        return message;
-    }
-
-    */
-
-    private JSONObject jo;
-    {
-        jo.put("type", "push");
-        jo.put("id", "NULL");
-    }
-
-    private boolean isKey(String key) {
+    private static boolean isKey(String key) {
         return keySet.contains(key);
     }
 
-    public Object get(String key) throws Exception {
-        if (!isKey(key)){
-            throw new Exception("Invalid key");
+    private static boolean validateKeyValue(String key, Object value) {
+        switch (key) {
+            case "userId": case "state": case "replyToken":
+                if (!(value instanceof String)) return false;
+                String str = (String)value;
+                if (key.equals("state")) {
+                    if (!StateMachine.isValidState(str)) return false;
+                }
+                break;
+
+            default:
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * get a field of ParserMessageJSON
+     * @param key String of key
+     * @return The corresponding value of key in Object
+     *         Return null if no such key
+     */
+    public Object get(String key) {
+        if (!isKey(key)) {
+            log.info(String.format("%s is not a valid key", key));
+            return null;
         } else {
-            return jo.get(key); 
+            return jo.get(key);
         }
     }
 
-    public ParserMessageJSON set(String key, Object value) throws Exception {
+    /**
+     * set a field of ParserMessageJSON
+     * @param key String of key, only some values are allowed
+     * @param value Object to be set
+     * @return This object
+     */
+    public ParserMessageJSON set(String key, Object value) {
         if (!isKey(key)) {
-            throw new Exception("Invalid key"); 
+            log.info(String.format("%s is not a valid key", key));
         } else {
-            jo.put(key, value); 
+            if (validateKeyValue(key, value))
+                jo.put(key, value);
         }
         return this;
     }
 
+    /**
+     * Return a pretty formatted JSON
+     */
+    @Override
+    public String toString() {
+        return "\n"+jo.toString(4);
+    }
 }

@@ -69,10 +69,14 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
 
+/**
+ * TODO: copy other handler
+ */
 @Slf4j
 @LineMessageHandler
 public class Controller {
 	
+	HashMap<String, StateMachine> foo;
 
 	@Autowired
 	private ModuleController moduleController;
@@ -87,39 +91,12 @@ public class Controller {
 		handleTextContent(event.getReplyToken(), event, (TextMessageContent) event.getMessage(), event.getMessage().getId());
 	}
 
-
 	@EventMapping
 	public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) throws IOException {
 		final MessageContentResponse response;
-		String replyToken = event.getReplyToken();
-		String messageId = event.getMessage().getId();
-		try {
-			response = lineMessagingClient.getMessageContent(messageId).get();
-		} catch (InterruptedException | ExecutionException e) {
-			reply(replyToken, new TextMessage("Cannot get image: " + e.getMessage()));
-			throw new RuntimeException(e);
-		}
 		DownloadedContent jpg = saveContent("jpg", response);
-		handleImageContent();	
+		handleImageContent(event.getReplyToken(),event, event.getMessage().getId());	
 
-	}
-
-	@EventMapping
-	public void handleUnfollowEvent(UnfollowEvent event) {
-		log.info("unfollowed this bot: {}", event);
-	}
-
-	@EventMapping
-	public void handleFollowEvent(FollowEvent event) {
-		String replyToken = event.getReplyToken();
-	}
-
-
-	/**
-	 * Event Handler for Sticker
-	 */
-	private void handleSticker(String replyToken, StickerMessageContent content) {
-		reply(replyToken, new StickerMessage(content.getPackageId(), content.getStickerId()));
 	}
 
 	/**
@@ -130,7 +107,7 @@ public class Controller {
 		ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
 		parserMessageJSON.set("userId", event.getSource().getUserId())
 		.set("state", "").set("replyToken", replyToken)
-		.set("message", (new JSONObject()).put("type", "text").put("id", id)
+		.set("message", (new JSONObject()).put("type", "text").put("id", id))
 		.put("textContent", content.getText());
 		this.moduleController.getEventBus().notify("ParserMessageJSON", Event.wrap(parserMessageJSON));
     }
@@ -191,33 +168,4 @@ public class Controller {
 		Path path;
 		String uri;
 	}
-
-
-	//an inner class that gets the user profile and status message
-	class ProfileGetter implements BiConsumer<UserProfileResponse, Throwable> {
-		private KitchenSinkController ksc;
-		private String replyToken;
-		
-		public ProfileGetter(KitchenSinkController ksc, String replyToken) {
-			this.ksc = ksc;
-			this.replyToken = replyToken;
-		}
-		@Override
-    	public void accept(UserProfileResponse profile, Throwable throwable) {
-    		if (throwable != null) {
-            	ksc.replyText(replyToken, throwable.getMessage());
-            	return;
-        	}
-        	ksc.reply(
-                	replyToken,
-                	Arrays.asList(new TextMessage(
-                		"Display name: " + profile.getDisplayName()),
-                              	new TextMessage("Status message: "
-                            		  + profile.getStatusMessage()))
-        	);
-    	}
-    }
-	
-	
-
 }

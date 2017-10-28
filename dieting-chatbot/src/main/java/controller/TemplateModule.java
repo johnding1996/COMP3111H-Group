@@ -10,31 +10,30 @@ import java.util.concurrent.CountDownLatch;
 import javax.json.JsonObject;
 
 @Service
-class TemplateModule implements Consumer<Event<ParserMessageJSON> > {
+class TemplateModule implements Consumer<Event<FormatterMessageJSON> > {
 
-    @Autowired
-    ParserMessageJSON parserMessageJSON;
+    FormatterMessageJSON formatterMessageJSON;
 
     @Autowired
     Publisher publisher;
     
-	public void accept(Event<ParserMessageJSON> ev) {
-        this.parserMessageJSON = ev.getData();
+	public void accept(Event<FormatterMessageJSON> ev) {
+        this.formatterMessageJSON = ev.getData();
 	}
 	
-	public String getUserId() {
-        return parserMessageJSON.getUserId();
-    }
-    public String getState() {
-        return parserMessageJSON.getState();
-    }
-    public String getReplyToken() {
-        return parserMessageJSON.getReplyToken();
-    }
-    public JsonObject getMessage() {
-        return parserMessageJSON.getMessage();
-    }
-    public Publisher getPublisher() {
-        return publisher;
-    }
+	// public String getUserId() {
+    //     return parserMessageJSON.getUserId();
+    // }
+    // public String getState() {
+    //     return parserMessageJSON.getState();
+    // }
+    // public String getReplyToken() {
+    //     return parserMessageJSON.getReplyToken();
+    // }
+    // public JsonObject getMessage() {
+    //     return parserMessageJSON.getMessage();
+    // }
+    // public Publisher getPublisher() {
+    //     return publisher;
+    // }
 }
