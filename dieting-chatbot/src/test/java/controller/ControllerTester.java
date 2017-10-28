@@ -16,12 +16,14 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = { ControllerTester.class, ParserMessageJSON.class, FormatterMessageJSON.class})
+@SpringBootTest(classes = { ControllerTester.class, ControllerFactory.class })
 public class ControllerTester {
+    @Autowired
+    private Controller controller;
 
     @Test
-    public void test() {
-
+    public void testConstruct() {
+        assert controller != null;
     }
     /*
     @Autowired

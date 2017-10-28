@@ -20,6 +20,7 @@ import com.linecorp.bot.model.profile.UserProfileResponse;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.google.common.io.ByteStreams;
@@ -82,6 +83,7 @@ import java.net.URI;
  */
 @Slf4j
 @LineMessageHandler
+@Component
 public class Controller {
     private HashMap<String, StateMachine> stateMachines;
 
@@ -94,16 +96,16 @@ public class Controller {
     @Autowired
     private EventBus eventBus;
 
-    @Bean
-    Environment env() {
-        return Environment.initializeIfEmpty()
-                          .assignErrorJournal();
-    }
+    // @Bean
+    // Environment env() {
+    //     return Environment.initializeIfEmpty()
+    //                       .assignErrorJournal();
+    // }
     
-    @Bean
-    EventBus createEventBus(Environment env) {
-        return EventBus.create(env, Environment.THREAD_POOL);
-    }
+    // @Bean
+    // EventBus createEventBus(Environment env) {
+    //     return EventBus.create(env, Environment.THREAD_POOL);
+    // }
 
     @EventMapping
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event)
@@ -195,23 +197,23 @@ public class Controller {
         String uri;
     }
 
-    @Bean
-    public Publisher createPublisher() {
-        return new Publisher();
-    }
+    // @Bean
+    // public Publisher createPublisher() {
+    //     return new Publisher();
+    // }
 
-    @Bean 
-    public Formatter createFormatter() {
-        return new Formatter();
-    }
+    // @Bean 
+    // public Formatter createFormatter() {
+    //     return new Formatter();
+    // }
 
-    @Bean
-    public TemplateModule createTemplateModule() {
-        return new TemplateModule();
-    }
+    // @Bean
+    // public TemplateModule createTemplateModule() {
+    //     return new TemplateModule();
+    // }
 
-    @Bean
-    public DebugReceiver createDebugReceiver() {
-        return new DebugReceiver();
-    }
+    // @Bean
+    // public DebugReceiver createDebugReceiver() {
+    //     return new DebugReceiver();
+    // }
 }
