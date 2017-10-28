@@ -52,12 +52,12 @@ public class ParserMessageJSON extends MessageJSON {
      * @return The corresponding value of key in Object
      *         Return null if no such key
      */
-    public Object get(String key) {
-        if (!isKey(key)) {
+    public String get(String key) {
+        if (!isKey(key) || key.equals("message")) {
             log.info(String.format("%s is not a valid key", key));
             return null;
         } else {
-            return jo.get(key);
+            return (String)jo.get(key);
         }
     }
 
@@ -112,8 +112,6 @@ public class ParserMessageJSON extends MessageJSON {
     public String getMessageType() {
         try {
             JSONObject msg = (JSONObject)jo.get("message");
-            for (int i=0; i<10; ++i)
-                log.info(msg.toString());
             String ret = (String)msg.get("type");
             return ret;
         } catch (Exception e) {

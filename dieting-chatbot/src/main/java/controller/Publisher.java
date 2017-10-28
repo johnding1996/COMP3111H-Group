@@ -1,5 +1,7 @@
 package controller;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
@@ -21,5 +23,10 @@ public class Publisher {
 
     public void publish(ParserMessageJSON parserMessageJSON) {
         eventBus.notify("ParserMessageJSON", Event.wrap(parserMessageJSON));
+    }
+
+    @PostConstruct
+    public void registration() {
+
     }
 }
