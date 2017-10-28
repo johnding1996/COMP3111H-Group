@@ -22,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
  * Register modules to channels
  */
 @Slf4j
-@Component
 @Configuration
 public class ControllerFactory {
     @Bean

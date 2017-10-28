@@ -87,7 +87,7 @@ import java.net.URI;
 public class Controller {
     private HashMap<String, StateMachine> stateMachines;
 
-    @Autowired(required=false)
+    @Autowired
     private LineMessagingClient lineMessagingClient;
 
     @Autowired
