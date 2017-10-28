@@ -15,7 +15,7 @@ import static reactor.bus.selector.Selectors.$;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = { FormatterMessageJSON.class, ControllerFactory.class })
+@SpringBootTest(classes = { FormatterMessageJSON.class, Controller.class })
 public class FormatterMessageJSONTester {
     @Autowired
     private DebugReceiver dbg;

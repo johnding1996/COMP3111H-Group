@@ -86,13 +86,13 @@ public class Controller {
     private HashMap<String, StateMachine> stateMachines;
 
     @Autowired
-    private LineMessagingClient lineMessagingClient;
-
-    @Autowired
     private Publisher publisher;
 
     @Autowired
     private DebugReceiver dbg;
+
+    @Autowired
+    private EventBus eventBus;
 
     @Bean
     Environment env() {
