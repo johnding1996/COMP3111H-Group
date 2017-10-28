@@ -3,6 +3,7 @@ package controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import reactor.Environment;
 import reactor.bus.EventBus;
@@ -43,7 +44,7 @@ public class ControllerFactory {
         return new Formatter();
     }
 
-    @Bean
+    @Bean @Primary
     public DebugReceiver createDebugReceiver() {
         return new DebugReceiver();
     }
