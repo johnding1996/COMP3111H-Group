@@ -6,9 +6,11 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -85,7 +87,8 @@ import java.net.URI;
 @Slf4j
 @LineMessageHandler
 public class Controller {
-    private HashMap<String, StateMachine> stateMachines;
+    private HashMap<String, StateMachine> stateMachines = new
+        HashMap<String, StateMachine>();
 
     @Autowired(required = false)
     private LineMessagingClient lineMessagingClient;
@@ -97,8 +100,33 @@ public class Controller {
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event)
         throws Exception {
 
-        handleTextContent(event.getReplyToken(), event,
-            event.getMessage(), event.getMessage().getId());
+        String userId = event.getSource().getUserId();
+        String replyToken = event.getReplyToken();
+        String textContent = event.getMessage().getText();
+        String messageId = event.getMessage().getId();
+
+        StateMachine stateMachine = getStateMachine(userId);
+        String state = stateMachine.getState();
+
+        /* update state */
+        if (state.equals("Idle")) {
+            if (isRecommendationRequest(textContent)) {
+                stateMachine.toNextState("recommendationRequest");
+            } else if (isInitialInputRequest(textContent)) {
+                stateMachine.toNextState("initialInputRequest");
+            } else if (isFeedbackRequest(textContent)) {
+                stateMachine.toNextState("feedbackRequest");
+            }
+            state = stateMachine.getState();
+            log.info("State transition handled by Controller");
+            log.info("userId={}, newState={}", userId, state);
+        }
+        ParserMessageJSON psr = new ParserMessageJSON();
+        psr.set("userId", userId)
+           .set("state", state)
+           .set("replyToken", replyToken)
+           .setTextMessage(messageId, textContent);
+        publisher.publish(psr);
     }
 
     @EventMapping
@@ -119,21 +147,6 @@ public class Controller {
     }
 
     /**
-     * Event Handler for Text
-     */
-    private void handleTextContent(String replyToken, Event event,
-        TextMessageContent content, String msgId) throws Exception {
-
-        log.info("Handling text info from {}", msgId);
-
-        ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
-        parserMessageJSON.set("userId", event.getSource().getUserId())
-            .set("state", "Idle").set("replyToken", replyToken)
-            .setTextMessage(msgId, content.getText());
-        publisher.publish(parserMessageJSON);
-    }
-
-    /**
      * Event Handler for Image
      */
     private void handleImageContent(String replyToken, Event event, String id) {
@@ -144,6 +157,102 @@ public class Controller {
         publisher.publish(parserMessageJSON);
     }
 
+    /* ------------------------ LOGIC START ------------------------ */
+    /**
+     * Clear all state machines
+     */
+    public void clearStateMachines() {
+        stateMachines.clear();
+        log.info("Clear all state machines");
+    }
+
+    /**
+     * Get state machine corresponding to the user
+     * @param userId String of user id
+     * @return StateMachine
+     *         If there is no record before, initialize to Idle
+     */
+    public StateMachine getStateMachine(String userId) {
+        if (!stateMachines.containsKey(userId)) {
+            stateMachines.put(userId, new StateMachine(userId));
+        }
+        return stateMachines.get(userId);
+    }
+
+    /**
+     * Get a list of words from a sentence
+     * @param sentence A sentence in String
+     * @return A list of lowercase word in String,
+     *         ordered accordingly
+     *         Punctuation marks are discarded
+     */
+    static public List<String> sentenceToWords(String sentence) {
+        String[] words = sentence.split("\\s+");
+        for (int i = 0; i < words.length; ++i) {
+            words[i] = words[i].replaceAll("[^\\w]", "").toLowerCase();
+        }
+        return new ArrayList<String>(Arrays.asList(words));
+    }
+
+    /**
+     * Check whether a text is a recommendation request
+     * @param msg String from user
+     */
+    static public boolean isRecommendationRequest(String msg) {
+        for (String word : sentenceToWords(msg)) {
+            if (recommendKeywords.contains(word)) return true;
+        }
+        return false;
+    }
+    static private HashSet<String> recommendKeywords;
+    static {
+        recommendKeywords = new HashSet<String>();
+        recommendKeywords.add("recommendation");
+        recommendKeywords.add("recommendations");
+        recommendKeywords.add("recommend");
+        recommendKeywords.add("menu");
+        recommendKeywords.add("suggestion");
+        recommendKeywords.add("suggest");
+    }
+
+    /**
+     * Check whether a text is an initial input request
+     * @param msg String from user
+     */
+    static public boolean isInitialInputRequest(String msg) {
+        for (String word : sentenceToWords(msg)) {
+            if (initialInputKeywords.contains(word)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    static private HashSet<String> initialInputKeywords;
+    static {
+        initialInputKeywords = new HashSet<String>();
+        initialInputKeywords.add("setting");
+        initialInputKeywords.add("settings");
+        initialInputKeywords.add("personal");
+    }
+
+    /**
+     * Check whether a text is a feedback request
+     * @param msg String from user
+     */
+    static public boolean isFeedbackRequest(String msg) {
+        for (String word : sentenceToWords(msg)) {
+            if (feedbackKeywords.contains(word)) return true;
+        }
+        return false;
+    }
+    static private HashSet<String> feedbackKeywords;
+    static {
+        feedbackKeywords = new HashSet<String>();
+        feedbackKeywords.add("feedback");
+        feedbackKeywords.add("report");
+        feedbackKeywords.add("digest");
+    }
+    /* ------------------------ LOGIC END ------------------------ */
 
     static String createUri(String path) {
         return ServletUriComponentsBuilder.fromCurrentContextPath().path(path).build().toUriString();

@@ -95,9 +95,11 @@ public class StateMachine {
 
     /**
      * Construct state machine for a user
+     * @param userId String of user id
      */
     public StateMachine(String userId) {
         this.userId = userId;
+        initialize();
     }
 
     /**
