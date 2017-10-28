@@ -133,7 +133,8 @@ public class Controller {
         parserMessageJSON.set("userId", event.getSource().getUserId())
             .set("state", "Idle").set("replyToken", replyToken)
             .setTextMessage(id, content.getText());
-        publisher.publish(parserMessageJSON);
+        log.info("Handling text info from {}", id);
+        // publisher.publish(parserMessageJSON);
     }
 
     /**
