@@ -97,9 +97,6 @@ import java.net.URI;
 @Slf4j
 @Service
 @LineMessageHandler
-@Configuration
-@EnableScheduling
-@EnableAsync
 public class ChatbotController
     implements reactor.fn.Consumer<reactor.bus.Event<
         FormatterMessageJSON>> {
@@ -118,9 +115,6 @@ public class ChatbotController
 
     @Autowired(required=false)
     private EventBus eventBus;
-
-    // for testing delayTimeOut()
-    public String foo = "Thomas";
 
     private final ScheduledExecutorService execService = Executors.newSingleThreadScheduledExecutor();
  
@@ -141,31 +135,28 @@ public class ChatbotController
     // heroku server is using UTC time initially, we are GMT+8, so 11 stands for 19:00
     // But we can change the time zone heroku server is using by tying heroku config:add TZ="Asia/Hong_Kong"
     // Then it will send push message according to hk time, already tested
-    @Scheduled(cron = "* * 11 * * ?")
+    @Scheduled(cron = "*/30 * * * * *")
     public void askForWeight() {
         FormatterMessageJSON fmt = new FormatterMessageJSON();
         fmt.set("type", "push")
             .appendTextMessage("May I ask you to input your weight?")
             .appendTextMessage("You can also get recommendation from me by typing 'Recommendation' to me");
         //TODO: get all the userId from Database and iterate through them to send push message
-        fmt.set("userId", "U60ee860ae5e086599f9e2baff5efcf15");
+        // fmt.set("userId", "U60ee860ae5e086599f9e2baff5efcf15");
         publisher.publish(fmt);
         log.info("AskForWeight: **************************");
-        log.info(fmt.toString());
     }
 
     // delay execution, unit in millisecond
-    //@Async
-    @Scheduled(initialDelay=10000, fixedDelay=10000)
-    public void delayTimeOut() {
-        //TODO: change statemachine to idle
-        this.execService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                foo = "Lucis";
-            }
-        }, 2, TimeUnit.SECONDS);
-    }
+    // @Scheduled(initialDelay=10000, fixedDelay=10000)
+    // public void delayTimeOut() {
+    //     //TODO: change statemachine to idle
+    //     this.execService.schedule(new Runnable() {
+    //         @Override
+    //         public void run() {
+    //         }
+    //     }, 2, TimeUnit.SECONDS);
+    // }
 
     /**
      * EventBus FormatterMessageJSON event handle
