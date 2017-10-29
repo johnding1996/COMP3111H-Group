@@ -8,8 +8,25 @@ import java.lang.Integer;
 import org.json.JSONObject;
 import jdk.nashorn.internal.runtime.ParserException;
 
-public class UserInitialInputRecord {
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import static reactor.bus.selector.Selectors.$;
+import reactor.fn.Consumer;
+import reactor.bus.Event;
+import reactor.bus.EventBus;
+
+public class UserInitialInputRecord implements Consumer<Event<ParserMessageJSON>> {
 	
+    @Autowired(required=false)
+    private EventBus eventBus;
+
+    @PostConstruct
+    public void init() {
+        if (eventBus != null)
+            eventBus.on($("ParserMessageJSON"), this);
+    }
+	
+    //This list stores users' state initially
 	private static ArrayList<UserInitialState> userList = new ArrayList<UserInitialState>();
 	
 	//check whether string is convertable to int
@@ -93,7 +110,8 @@ public class UserInitialInputRecord {
 	}
 	
 	//This method deals with the situation when user add this chatbot as friend
-	public void initialInput(ParserMessageJSON PMJ) {
+	public void accept(Event<ParserMessageJSON> ev) {
+		ParserMessageJSON PMJ = ev.getData();
 		//if the input is not text
 		if(PMJ.getTextContent() == null) {
 			FormatterMessageJSON response = new FormatterMessageJSON();
