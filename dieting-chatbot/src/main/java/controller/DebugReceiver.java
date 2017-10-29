@@ -70,7 +70,6 @@ public class DebugReceiver implements Consumer<Event<MessageJSON>> {
                 fmt.set("stateTransition", "confirmMeal");
                 break;
             default:
-                ;
         }
         log.info("DEBUGGER: state transition");
         publisher.publish(fmt);
