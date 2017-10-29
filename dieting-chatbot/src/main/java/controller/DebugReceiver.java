@@ -34,10 +34,12 @@ public class DebugReceiver implements Consumer<Event<MessageJSON>> {
         }
         if (json instanceof ParserMessageJSON) {
             parserMessageJSON = (ParserMessageJSON)json;
+            /*
             if (parserMessageJSON.getMessageType().equals("text")) {
                 echoTextMessage(parserMessageJSON);
                 signalStateTransition(parserMessageJSON);
             }
+            */
         }
         log.info("\nDEBUGGER:\n" + ev.getData().toString());
     }
