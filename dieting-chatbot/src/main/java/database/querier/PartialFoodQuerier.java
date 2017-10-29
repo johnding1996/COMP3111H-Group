@@ -2,22 +2,36 @@ package database.querier;
 
 import org.json.JSONArray;
 
-import java.net.URISyntaxException;
+import java.sql.ResultSet;
 
-public class PartialFoodQuerier extends Querier {
+import lombok.extern.slf4j.Slf4j;
 
-    private PartialFoodQuerier() throws URISyntaxException {
-        super();
+/**
+ * {@link PartialFoodQuerier}
+ * Food querier which implements partial match search.
+ */
+@Slf4j
+public class PartialFoodQuerier extends FoodQuerier {
+    /**
+     * constructor
+     * Set the query limit and levenshtein algorithm parameters.
+     * @param queryLimit number of rows to return when searching
+     */
+    PartialFoodQuerier(int queryLimit) {
+        super(queryLimit);
     }
 
+    /**
+     * get
+     * Partial search for a food.
+     * @param key string to search
+     * @return JSONArray an array of FoodJSON
+     */
     @Override
     public JSONArray get(String key) {
-        return new JSONArray();
+        String query = String.format("SELECT * FROM %s WHERE shrt_desc ILIKE '%%%s%%' LIMIT %d;",
+                table, key, queryLimit);
+        ResultSet rs = executeQuery(query);
+        return parseResult(rs, fields);
     }
-
-    @Override
-    public void set(String key, JSONArray a) {
-
-    }
-
 }
