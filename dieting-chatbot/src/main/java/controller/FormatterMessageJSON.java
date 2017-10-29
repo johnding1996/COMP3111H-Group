@@ -48,7 +48,8 @@ public class FormatterMessageJSON extends MessageJSON {
                 if (!(value instanceof String)) return false;
                 String str = (String)value;
                 if (key.equals("type")) {
-                    if (!str.equals("reply") && !str.equals("push"))
+                    if (!str.equals("reply") && !str.equals("push")
+                        && !str.equals("transition"))
                         return false;
                 }
                 break;

@@ -11,7 +11,7 @@ import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-
+import reactor.bus.Event;
 import com.linecorp.bot.client.LineMessagingClient;
 import com.linecorp.bot.client.LineMessagingClientImpl;
 import com.linecorp.bot.client.LineMessagingService;
@@ -162,5 +162,63 @@ public class ChatbotControllerTester {
         assert !ChatbotController.isFeedbackRequest(sentence);
         sentence = "What is your suggestion on this?";
         assert !ChatbotController.isFeedbackRequest(sentence);
+    }
+
+    @Test
+    public void testStateTransition1() {
+        FormatterMessageJSON fmt = new FormatterMessageJSON();
+        fmt.set("userId", "szhouan")
+           .set("type", "transition")
+           .set("stateTransition", "recommendationRequest");
+        Event<FormatterMessageJSON> ev =
+            new Event<FormatterMessageJSON>(null, fmt);
+        controller.accept(ev);
+        StateMachine sm = controller.getStateMachine("szhouan");
+        assert sm.getState().equals("ParseMenu");
+        
+        fmt.set("stateTransition", "menuMessage");
+        controller.accept(ev);
+        assert sm.getState().equals("AskMeal");
+
+        fmt.set("stateTransition", "confirmMeal");
+        controller.accept(ev);
+        assert sm.getState().equals("Recommend");
+
+        sm.setState("RecordMeal");
+        controller.accept(ev);
+        assert sm.getState().equals("Idle");
+
+        fmt.set("stateTransition", "initialInputRequest");
+        controller.accept(ev);
+        assert sm.getState().equals("InitialInput");
+
+        fmt.set("stateTransition", "userInitialInput");
+        controller.accept(ev);
+        assert sm.getState().equals("Idle");
+
+        fmt.set("stateTransition", "feedbackRequest");
+        controller.accept(ev);
+        assert sm.getState().equals("Feedback");
+
+        fmt.set("stateTransition", "sendFeedback");
+        controller.accept(ev);
+        assert sm.getState().equals("Idle");
+    }
+
+    @Test
+    public void testStateTransition2() {
+        FormatterMessageJSON fmt = new FormatterMessageJSON();
+        fmt.set("userId", "agong")
+           .set("type", "transition")
+           .set("stateTransition", "invalidTransition");
+        Event<FormatterMessageJSON> ev =
+            new Event<FormatterMessageJSON>(null, fmt);
+        controller.accept(ev);
+        StateMachine sm = controller.getStateMachine("agong");
+        assert sm.getState().equals("Idle");
+
+        fmt.set("stateTransition", "confirmMeal");
+        controller.accept(ev);
+        assert sm.getState().equals("Idle");
     }
 }

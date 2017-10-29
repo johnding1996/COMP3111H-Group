@@ -66,6 +66,12 @@ public class FormatterMessageJSONTester {
         assert fmt.get("type").equals("push");
         fmt.set("type", "reply");
         assert fmt.get("type").equals("reply");
+        fmt.set("type", "foo");
+        assert fmt.get("type").equals("reply");
+        fmt.set("type", "transition");
+        assert fmt.get("type").equals("transition");
+        fmt.set("type", "bar");
+        assert fmt.get("type").equals("transition");
         log.info(fmt.toString());
     }
 

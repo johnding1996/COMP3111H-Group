@@ -138,7 +138,8 @@ public class ChatbotController
                 userId, transition);
             stateMachine.toNextState(transition);
         }
-        formatter.sendMessage(formatterMessageJSON);
+        if (!formatterMessageJSON.get("type").equals("transition"))
+            formatter.sendMessage(formatterMessageJSON);
     }
 
     @EventMapping

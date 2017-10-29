@@ -34,8 +34,10 @@ public class DebugReceiver implements Consumer<Event<MessageJSON>> {
         }
         if (json instanceof ParserMessageJSON) {
             parserMessageJSON = (ParserMessageJSON)json;
-            if (parserMessageJSON.getMessageType().equals("text"))
+            if (parserMessageJSON.getMessageType().equals("text")) {
                 echoTextMessage(parserMessageJSON);
+                signalStateTransition(parserMessageJSON);
+            }
         }
         log.info("\nDEBUGGER:\n" + ev.getData().toString());
     }
@@ -54,6 +56,27 @@ public class DebugReceiver implements Consumer<Event<MessageJSON>> {
            .appendTextMessage(psr.getTextContent());
         log.info("DEBUGGER: Echo message");
         log.info(fmt.toString());
+        publisher.publish(fmt);
+    }
+
+    private void signalStateTransition(ParserMessageJSON psr) {
+        FormatterMessageJSON fmt = new FormatterMessageJSON();
+        fmt.set("userId", psr.get("userId"))
+           .set("type", "transition");
+        switch (psr.get("state")) {
+            case "Idle":
+                fmt.set("stateTransition", "recommendationRequest");
+                break;
+            case "ParseMenu":
+                fmt.set("stateTransition", "menuMessage");
+                break;
+            case "AskMeal":
+                fmt.set("stateTransition", "confirmMeal");
+                break;
+            default:
+                ;
+        }
+        log.info("DEBUGGER: state transition");
         publisher.publish(fmt);
     }
 }

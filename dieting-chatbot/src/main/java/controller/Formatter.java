@@ -84,6 +84,7 @@ public class Formatter {
      * @param fmt A Formatter Message JSON
      */
     public void sendMessage(FormatterMessageJSON fmt) {
+        log.info(fmt.toString());
         List<Message> messages = new ArrayList<Message>();
         JSONArray arr = (JSONArray) fmt.get("messages"); 
         for(int i = 0; i < arr.length(); i++) {
