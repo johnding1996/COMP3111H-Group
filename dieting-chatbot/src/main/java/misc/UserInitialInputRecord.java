@@ -113,7 +113,7 @@ public class UserInitialInputRecord {
 		}
 		
 		//deal with different progress
-		//user is already registerred if searchResult returns true
+		//user is already registered if searchResult returns true
 		if(searchResult) {
 			if(checkValid(user.getState(), PMJ.getTextContent()) != 0) {
 				FormatterMessageJSON response = new FormatterMessageJSON();
@@ -156,7 +156,8 @@ public class UserInitialInputRecord {
 						break;
 					default:
 						FormatterMessageJSON done = new FormatterMessageJSON();
-						done.appendTextMessage("OMG, something bad happens");
+						done.appendTextMessage("OMG, something bad happens, you may need to re-add me");
+						assert false;
 				}
 				
 				user.moveState();
@@ -168,6 +169,7 @@ public class UserInitialInputRecord {
 			user = new UserInitialState(PMJ.get("userID"));
 			FormatterMessageJSON askAge = new FormatterMessageJSON();
 			askAge.appendTextMessage("Hello ~ would you mind tell me your age? Give me an integer please ~");
+			userList.add(user);
 			user.moveState();
 		}
 	}
