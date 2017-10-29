@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {ChatbotController.class})
+@SpringBootTest(classes = {ChatbotController.class, Formatter.class})
 public class ChatbotControllerTester {
     @Autowired
     private ChatbotController controller;

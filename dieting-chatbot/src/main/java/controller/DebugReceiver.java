@@ -34,6 +34,8 @@ public class DebugReceiver implements Consumer<Event<MessageJSON>> {
         }
         if (json instanceof ParserMessageJSON) {
             parserMessageJSON = (ParserMessageJSON)json;
+            if (parserMessageJSON.getMessageType().equals("text"))
+                echoTextMessage(parserMessageJSON);
         }
         log.info("\nDEBUGGER:\n" + ev.getData().toString());
     }
@@ -42,5 +44,16 @@ public class DebugReceiver implements Consumer<Event<MessageJSON>> {
     public void init() {
         eventBus.on($("FormatterMessageJSON"), this);
         eventBus.on($("ParserMessageJSON"), this);
+    }
+
+    private void echoTextMessage(ParserMessageJSON psr) {
+        FormatterMessageJSON fmt = new FormatterMessageJSON();
+        fmt.set("userId", psr.get("userId"))
+           .set("type", "reply")
+           .set("replyToken", psr.get("replyToken"))
+           .appendTextMessage(psr.getTextContent());
+        log.info("DEBUGGER: Echo message");
+        log.info(fmt.toString());
+        publisher.publish(fmt);
     }
 }

@@ -38,7 +38,7 @@ import java.nio.file.Files;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import reactor.bus.Event;
@@ -50,43 +50,52 @@ import java.util.concurrent.CountDownLatch;
 import static reactor.bus.selector.Selectors.$;
 
 @Slf4j
-@Service
-public class Formatter implements Consumer<Event<FormatterMessageJSON>> {
+@Component
+// public class Formatter implements Consumer<Event<FormatterMessageJSON>> {
+public class Formatter {
 
     @Autowired(required=false)
     private LineMessagingClient lineMessagingClient;
 
-    @Autowired
-    private EventBus eventBus;
-
-	public void accept(Event<FormatterMessageJSON> ev) {
-        FormatterMessageJSON formatterMessageJSON = ev.getData();
-        log.info("\nFormatter:\n" + formatterMessageJSON.toString());
-        sendMessage(formatterMessageJSON);
-    }
+	// public void accept(Event<FormatterMessageJSON> ev) {
+    //     FormatterMessageJSON formatterMessageJSON = ev.getData();
+    //     log.info("\nFormatter:\n" + formatterMessageJSON.toString());
+    //     sendMessage(formatterMessageJSON);
+    // }
     
-    @PostConstruct
-    public void init() {
-        log.info("Register Formatter");
-        eventBus.on($("FormatterMessageJSON"), this);
-    }
+    // @PostConstruct
+    // public void init() {
+    //     log.info("Register Formatter");
+    //     eventBus.on($("FormatterMessageJSON"), this);
+    // }
 
-    private void reply(@NonNull String replyToken, @NonNull List<Message> messages) {
-       try {
-           log.info("FORMATTER: send reply message");
-           BotApiResponse apiResonse = lineMessagingClient.replyMessage(
-               new ReplyMessage(replyToken, messages)).get();
-       } catch (InterruptedException | ExecutionException e) {
-           throw new RuntimeException(e);
-       }
+    private void reply(@NonNull String replyToken,
+        @NonNull List<Message> messages) {
+
+        try {
+            log.info("FORMATTER: send reply message");
+            if (lineMessagingClient != null) {
+                BotApiResponse apiResonse = lineMessagingClient.replyMessage(
+                    new ReplyMessage(replyToken, messages)).get();
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            log.info("FORMATTER: error in send reply message: "
+                + e.toString());
+            throw new RuntimeException(e);
+        }
     }
     
     private void push(@NonNull String userId, @NonNull List<Message> messages) {
         log.info("FORMATTER: send push message");
         PushMessage pushMessage = new PushMessage(userId, messages);
-        lineMessagingClient.pushMessage(pushMessage);
+        if (lineMessagingClient != null)
+            lineMessagingClient.pushMessage(pushMessage);
     }
     
+    /**
+     * Send a LINE message according to the formatter message JSON
+     * @param fmt A Formatter Message JSON
+     */
     public void sendMessage(FormatterMessageJSON fmt) {
         List<Message> messages = new ArrayList<Message>();
         JSONArray arr = (JSONArray) fmt.get("messages"); 

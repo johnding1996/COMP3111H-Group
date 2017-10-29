@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.google.common.io.ByteStreams;
@@ -85,8 +86,12 @@ import java.net.URI;
  * TODO: copy other handler
  */
 @Slf4j
+@Service
 @LineMessageHandler
-public class ChatbotController {
+public class ChatbotController
+    implements reactor.fn.Consumer<reactor.bus.Event<
+        FormatterMessageJSON>> {
+
     private HashMap<String, StateMachine> stateMachines = new
         HashMap<String, StateMachine>();
 
@@ -95,6 +100,36 @@ public class ChatbotController {
 
     @Autowired(required = false)
     private Publisher publisher;
+
+    @Autowired
+    private Formatter formatter;
+
+    @Autowired(required=false)
+    private EventBus eventBus;
+
+    /**
+     * Register on eventBus
+     */
+    @PostConstruct
+    public void init() {
+        log.info("Register for FormatterMessageJSON");
+        try {
+            eventBus.on($("FormatterMessageJSON"), this);
+        } catch (Exception e) {
+            log.info("Failed to register on eventBus: " +
+                e.toString());
+        }
+    }
+
+    /**
+     * EventBus FormatterMessageJSON event handle
+     * @param ev FormatterMessageJSON event
+     */
+    public void accept(reactor.bus.Event<FormatterMessageJSON> ev) {
+        FormatterMessageJSON formatterMessageJSON = ev.getData();
+        log.info("\nChatbotController:\n" + formatterMessageJSON.toString());
+        formatter.sendMessage(formatterMessageJSON);
+    }
 
     @EventMapping
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event)
