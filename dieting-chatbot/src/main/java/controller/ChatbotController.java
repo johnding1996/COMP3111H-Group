@@ -82,9 +82,6 @@ import static reactor.bus.selector.Selectors.$;
 import javax.annotation.PostConstruct;
 import java.net.URI;
 
-/**
- * TODO: copy other handler
- */
 @Slf4j
 @Service
 @LineMessageHandler
