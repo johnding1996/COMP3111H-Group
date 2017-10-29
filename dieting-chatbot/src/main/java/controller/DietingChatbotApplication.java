@@ -22,14 +22,29 @@ import java.nio.file.Path;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+
+import reactor.Environment;
+import reactor.bus.Event;
+import reactor.bus.EventBus;
 
 @SpringBootApplication
-public class KitchenSinkApplication {
+public class DietingChatbotApplication {
+    @Bean
+    Environment env() {
+        return Environment.initializeIfEmpty()
+                          .assignErrorJournal();
+    }
+    
+    @Bean
+    EventBus createEventBus(Environment env) {
+	    return EventBus.create(env, Environment.THREAD_POOL);
+    }
+
     static Path downloadedContentDir;
 
     public static void main(String[] args) throws IOException {
         downloadedContentDir = Files.createTempDirectory("line-bot");
-        SpringApplication.run(KitchenSinkApplication.class, args);
+        SpringApplication.run(DietingChatbotApplication.class, args);
     }
-
 }

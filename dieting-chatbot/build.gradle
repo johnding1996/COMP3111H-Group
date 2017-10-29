@@ -16,11 +16,24 @@
 
 apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'idea'
 apply plugin: 'jacoco'
 
 dependencies {
     compile project(':line-bot-spring-boot')
     compile group: 'postgresql', name: 'postgresql', version: '9.0-801.jdbc4'
+}
+
+dependencies {
+  compile "org.springframework.boot:spring-boot-starter"
+  compile "org.springframework:spring-web"
+  compile "com.fasterxml.jackson.core:jackson-databind"
+  compile "io.projectreactor:reactor-bus"
+  compile "javax.json:javax.json-api:1.0"
+  compile "org.json:json"
+  compile group: 'org.glassfish', name: 'javax.json', version: '1.0.4'
+  compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
+  testCompile("junit:junit")
 }
 
 test {
@@ -31,5 +44,11 @@ jacocoTestReport {
     reports {
         xml.enabled true
         html.enabled false
+    }
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'controller.DietingChatbotApplication'
     }
 }

@@ -20,6 +20,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
+import org.springframework.context.annotation.Bean;
+import reactor.Environment;
+import reactor.bus.Event;
+import reactor.bus.EventBus;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Configuration
@@ -28,7 +33,7 @@ public class KitchenSinkWebMvcConfigurer extends WebMvcConfigurerAdapter {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
 
-        String downloadedContentUri = KitchenSinkApplication.downloadedContentDir
+        String downloadedContentUri = DietingChatbotApplication.downloadedContentDir
                 .toUri().toASCIIString();
         log.info("downloaded dir: {}", downloadedContentUri);
         registry.addResourceHandler("/downloaded/**")
