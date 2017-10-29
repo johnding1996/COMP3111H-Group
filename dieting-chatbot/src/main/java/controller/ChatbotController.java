@@ -17,6 +17,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -119,6 +122,7 @@ public class ChatbotController
     // for testing delayTimeOut()
     public String foo = "Thomas";
 
+    private final ScheduledExecutorService execService = Executors.newSingleThreadScheduledExecutor();
  
     /**
      * Register on eventBus
@@ -134,7 +138,10 @@ public class ChatbotController
         }
     }
 
-    @Scheduled(cron = "0 * 11 * * ?")
+    // heroku server is using UTC time initially, we are GMT+8, so 11 stands for 19:00
+    // But we can change the time zone heroku server is using by tying heroku config:add TZ="Asia/Hong_Kong"
+    // Then it will send push message according to hk time, already tested
+    @Scheduled(cron = "* * 11 * * ?")
     public void askForWeight() {
         FormatterMessageJSON fmt = new FormatterMessageJSON();
         fmt.set("type", "push")
@@ -152,17 +159,12 @@ public class ChatbotController
     @Scheduled(initialDelay=10000, fixedDelay=10000)
     public void delayTimeOut() {
         //TODO: change statemachine to idle
-        //return Thread.currentThread().getName();
-        
-        // try {
-		// 	Thread.sleep(1000);
-		// } catch (InterruptedException e) {
-		// 	// TODO Auto-generated catch block
-		// 	e.printStackTrace();
-		// }
-        foo = "Lucis";
-        
-
+        this.execService.schedule(new Runnable() {
+            @Override
+            public void run() {
+                foo = "Lucis";
+            }
+        }, 2, TimeUnit.SECONDS);
     }
 
     /**

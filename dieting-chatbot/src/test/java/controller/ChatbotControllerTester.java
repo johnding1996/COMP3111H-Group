@@ -3,7 +3,9 @@ package controller;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -222,27 +224,41 @@ public class ChatbotControllerTester {
         assert sm.getState().equals("Idle");
     }
 
-    // @Test
-    // public void testTimeOutState() {
-    //     //assert Thread.currentThread().getName().equals(controller.delayTimeOut());
+    @Test
+    public void testTimeOutState() {
+        //assert Thread.currentThread().getName().equals(controller.delayTimeOut());
         
-    //     controller.foo = "Thomas";
-    //     controller.delayTimeOut();
-    //     //assert controller.foo.equals("Thomas");
-    //     try {
-	// 		Thread.sleep(500);
-	// 	} catch (InterruptedException e) {
-	// 		// TODO Auto-generated catch block
-	// 		e.printStackTrace();
-    //     }
-    //     assertThat(controller.foo).isEqualTo("Thomas"); 
-    //     try {
-	// 		Thread.sleep(2000);
-	// 	} catch (InterruptedException e) {
-	// 		// TODO Auto-generated catch block
-	// 		e.printStackTrace();
-    //     }
-    //     assertThat(controller.foo).isEqualTo("Lucis");
+        controller.foo = "Thomas";
+        controller.delayTimeOut();
+        assert controller.foo.equals("Thomas");
+
+        ScheduledExecutorService execService = Executors.newSingleThreadScheduledExecutor();
+        execService.schedule(new Runnable() {
+            @Override
+            public void run() {
+                assertThat(controller.foo).isEqualTo("Thomas");
+            }
+        }, 1, TimeUnit.SECONDS);
+        execService.schedule(new Runnable() {
+            @Override
+            public void run() {
+                assertThat(controller.foo).isEqualTo("Lucis");
+            }
+        }, 2, TimeUnit.SECONDS);
+        // try {
+		// 	Thread.sleep(500);
+		// } catch (InterruptedException e) {
+		// 	// TODO Auto-generated catch block
+		// 	e.printStackTrace();
+        // }
+        // //assertThat(controller.foo).isEqualTo("Thomas"); 
+        // try {
+		// 	Thread.sleep(2000);
+		// } catch (InterruptedException e) {
+		// 	// TODO Auto-generated catch block
+		// 	e.printStackTrace();
+        // }
+        //assertThat(controller.foo).isEqualTo("Lucis");
         
-    // }
+    }
 }
