@@ -22,14 +22,25 @@ public class DebugReceiver implements Consumer<Event<MessageJSON>> {
     @Autowired
     private EventBus eventBus;
 
+    @Autowired(required=false)
+    private Publisher publisher;
+
     public FormatterMessageJSON formatterMessageJSON = null;
     public ParserMessageJSON parserMessageJSON = null;
     public void accept(Event<MessageJSON> ev) {
         MessageJSON json = ev.getData();
         if (json instanceof FormatterMessageJSON)
             formatterMessageJSON = (FormatterMessageJSON)json;
-        if (json instanceof ParserMessageJSON)
+        if (json instanceof ParserMessageJSON) {
             parserMessageJSON = (ParserMessageJSON)json;
+            FormatterMessageJSON FMJ = new FormatterMessageJSON();
+            FMJ.set("type", "reply").set("userId", parserMessageJSON.get("userId"))
+            .set("replyToken", parserMessageJSON.get("replyToken"))
+            .appendTextMessage("How do you feel today? Do you want get recommendation?");
+            publisher.publish(FMJ);
+            FMJ.set("type", "push");
+            publisher.publish(FMJ);
+        }
         log.info("\nDEBUGGER:\n" + ev.getData().toString());
     }
 
