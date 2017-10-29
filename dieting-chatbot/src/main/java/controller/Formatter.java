@@ -51,23 +51,10 @@ import static reactor.bus.selector.Selectors.$;
 
 @Slf4j
 @Component
-// public class Formatter implements Consumer<Event<FormatterMessageJSON>> {
 public class Formatter {
 
     @Autowired(required=false)
     private LineMessagingClient lineMessagingClient;
-
-	// public void accept(Event<FormatterMessageJSON> ev) {
-    //     FormatterMessageJSON formatterMessageJSON = ev.getData();
-    //     log.info("\nFormatter:\n" + formatterMessageJSON.toString());
-    //     sendMessage(formatterMessageJSON);
-    // }
-    
-    // @PostConstruct
-    // public void init() {
-    //     log.info("Register Formatter");
-    //     eventBus.on($("FormatterMessageJSON"), this);
-    // }
 
     private void reply(@NonNull String replyToken,
         @NonNull List<Message> messages) {

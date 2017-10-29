@@ -46,6 +46,18 @@ public class FormatterMessageJSONTester {
     }
 
     @Test
+    public void testValidNonexistingField() {
+        FormatterMessageJSON fmt = new FormatterMessageJSON();
+        fmt.set("type", "push")
+           .set("userId", "agong")
+           .set("replyToken", "1234");
+        assert fmt.get("type").equals("push");
+        assert fmt.get("userId").equals("agong");
+        assert fmt.get("replyToken").equals("1234");
+        assert fmt.get("stateTransition") == null;
+    }
+
+    @Test
     public void testInvalidValue() {
         FormatterMessageJSON fmt = new FormatterMessageJSON();
         fmt.set("type", "push");

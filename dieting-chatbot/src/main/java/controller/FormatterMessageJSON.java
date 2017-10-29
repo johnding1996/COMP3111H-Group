@@ -1,6 +1,7 @@
 package controller;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -69,7 +70,13 @@ public class FormatterMessageJSON extends MessageJSON {
             log.info(String.format("%s is not a valid key", key));
             return null;
         } else {
-            return jo.get(key);
+            Object ret = null;
+            try {
+                ret = jo.get(key);
+            } catch (JSONException e) {
+                log.info("Valid but nonexisting key {}", key);
+            }
+            return ret;
         }
     }
 

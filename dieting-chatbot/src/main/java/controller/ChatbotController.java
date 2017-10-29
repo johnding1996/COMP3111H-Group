@@ -128,6 +128,16 @@ public class ChatbotController
     public void accept(reactor.bus.Event<FormatterMessageJSON> ev) {
         FormatterMessageJSON formatterMessageJSON = ev.getData();
         log.info("\nChatbotController:\n" + formatterMessageJSON.toString());
+        
+        /* Handle state transition if any */
+        if (formatterMessageJSON.get("stateTransition") != null) {
+            String userId = (String)formatterMessageJSON.get("userId");
+            String transition = (String)formatterMessageJSON.get("stateTransition");
+            StateMachine stateMachine = getStateMachine(userId);
+            log.info("User {} triggers state transition {}",
+                userId, transition);
+            stateMachine.toNextState(transition);
+        }
         formatter.sendMessage(formatterMessageJSON);
     }
 
