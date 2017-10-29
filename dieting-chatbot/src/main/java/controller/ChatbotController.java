@@ -135,7 +135,7 @@ public class ChatbotController
     // heroku server is using UTC time initially, we are GMT+8, so 11 stands for 19:00
     // But we can change the time zone heroku server is using by tying heroku config:add TZ="Asia/Hong_Kong"
     // Then it will send push message according to hk time, already tested
-    @Scheduled(cron = "*/30 * * * * *")
+    @Scheduled(cron = "*/30 * 2 * * *", zone = "GMT+08")
     public void askForWeight() {
         FormatterMessageJSON fmt = new FormatterMessageJSON();
         fmt.set("type", "push")
