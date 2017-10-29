@@ -82,8 +82,6 @@ public class Formatter implements Consumer<Event<FormatterMessageJSON>> {
     }
     
     private void push(@NonNull String userId, @NonNull List<Message> messages) {
-        // TODO: multiple messages
-        // PushMessage pushMessage = new PushMessage(userId, messages.get(0));
         log.info("FORMATTER: send push message");
         PushMessage pushMessage = new PushMessage(userId, messages);
         lineMessagingClient.pushMessage(pushMessage);

@@ -24,10 +24,10 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {Controller.class})
-public class ControllerTester {
+@SpringBootTest(classes = {ChatbotController.class})
+public class ChatbotControllerTester {
     @Autowired
-    private Controller controller;
+    private ChatbotController controller;
 
     @Test
     public void testConstruct() {
@@ -61,7 +61,7 @@ public class ControllerTester {
     @Test
     public void testSentenceToWord1() {
         String sentence = "Hello! World!";
-        List<String> words = controller.sentenceToWords(sentence);
+        List<String> words = ChatbotController.sentenceToWords(sentence);
         for (String word : words) {
             log.info(word);
         }
@@ -73,7 +73,7 @@ public class ControllerTester {
     @Test
     public void testSentenceToWord2() {
         String sentence = "Hello!Wo?&rld!";
-        List<String> words = controller.sentenceToWords(sentence);
+        List<String> words = ChatbotController.sentenceToWords(sentence);
         for (String word : words) {
             log.info(word);
         }
@@ -84,7 +84,7 @@ public class ControllerTester {
     @Test
     public void testSentenceToWord3() {
         String sentence = "\'This is a very, very long, sentence~'";
-        List<String> words = controller.sentenceToWords(sentence);
+        List<String> words = ChatbotController.sentenceToWords(sentence);
         for (String word : words) {
             log.info(word);
         }
@@ -102,65 +102,65 @@ public class ControllerTester {
     public void testRecommendationRequestJudge1() {
         String sentence;
         sentence = "I want some recommendations.";
-        assert Controller.isRecommendationRequest(sentence);
+        assert ChatbotController.isRecommendationRequest(sentence);
         sentence = "Can you help me look at this menu?";
-        assert Controller.isRecommendationRequest(sentence);
+        assert ChatbotController.isRecommendationRequest(sentence);
         sentence = "What is your suggestion on this?";
-        assert Controller.isRecommendationRequest(sentence);
+        assert ChatbotController.isRecommendationRequest(sentence);
     }
 
     @Test
     public void testRecommendationRequestJudge2() {
         String sentence;
         sentence = "Hello";
-        assert !Controller.isRecommendationRequest(sentence);
+        assert !ChatbotController.isRecommendationRequest(sentence);
         sentence = "Input personal information";
-        assert !Controller.isRecommendationRequest(sentence);
+        assert !ChatbotController.isRecommendationRequest(sentence);
         sentence = "*(#Ujflkd#())";
-        assert !Controller.isRecommendationRequest(sentence);
+        assert !ChatbotController.isRecommendationRequest(sentence);
     }
 
     @Test
     public void testInitialInputRequestJudge1() {
         String sentence;
         sentence = "I want to revise personal setting.";
-        assert Controller.isInitialInputRequest(sentence);
+        assert ChatbotController.isInitialInputRequest(sentence);
         sentence = "1093, can you check my settings?";
-        assert Controller.isInitialInputRequest(sentence);
+        assert ChatbotController.isInitialInputRequest(sentence);
         sentence = "Personal! info* please;";
-        assert Controller.isInitialInputRequest(sentence);
+        assert ChatbotController.isInitialInputRequest(sentence);
     }
 
     @Test
     public void testInitialInputRequestJudge2() {
         String sentence;
         sentence = "I want some recommendations.";
-        assert !Controller.isInitialInputRequest(sentence);
+        assert !ChatbotController.isInitialInputRequest(sentence);
         sentence = "Can you help me look at this menu?";
-        assert !Controller.isInitialInputRequest(sentence);
+        assert !ChatbotController.isInitialInputRequest(sentence);
         sentence = "What is your suggestion on this?";
-        assert !Controller.isInitialInputRequest(sentence);
+        assert !ChatbotController.isInitialInputRequest(sentence);
     }
 
     @Test
     public void testFeedbackRequestJudge1() {
         String sentence;
         sentence = "Feedback please";
-        assert Controller.isFeedbackRequest(sentence);
+        assert ChatbotController.isFeedbackRequest(sentence);
         sentence = "I want my weekly/monthly digest";
-        assert Controller.isFeedbackRequest(sentence);
+        assert ChatbotController.isFeedbackRequest(sentence);
         sentence = "Can you generate!a report for me";
-        assert Controller.isFeedbackRequest(sentence);
+        assert ChatbotController.isFeedbackRequest(sentence);
     }
 
     @Test
     public void testFeedbackRequestJudge2() {
         String sentence;
         sentence = "I want some recommendations.";
-        assert !Controller.isFeedbackRequest(sentence);
+        assert !ChatbotController.isFeedbackRequest(sentence);
         sentence = "Can you help me look at this menu?";
-        assert !Controller.isFeedbackRequest(sentence);
+        assert !ChatbotController.isFeedbackRequest(sentence);
         sentence = "What is your suggestion on this?";
-        assert !Controller.isFeedbackRequest(sentence);
+        assert !ChatbotController.isFeedbackRequest(sentence);
     }
 }

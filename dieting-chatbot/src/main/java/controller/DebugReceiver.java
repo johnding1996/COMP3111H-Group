@@ -29,17 +29,11 @@ public class DebugReceiver implements Consumer<Event<MessageJSON>> {
     public ParserMessageJSON parserMessageJSON = null;
     public void accept(Event<MessageJSON> ev) {
         MessageJSON json = ev.getData();
-        if (json instanceof FormatterMessageJSON)
+        if (json instanceof FormatterMessageJSON) {
             formatterMessageJSON = (FormatterMessageJSON)json;
+        }
         if (json instanceof ParserMessageJSON) {
             parserMessageJSON = (ParserMessageJSON)json;
-            FormatterMessageJSON FMJ = new FormatterMessageJSON();
-            FMJ.set("type", "reply").set("userId", parserMessageJSON.get("userId"))
-            .set("replyToken", parserMessageJSON.get("replyToken"))
-            .appendTextMessage("How do you feel today? Do you want get recommendation?");
-            publisher.publish(FMJ);
-            FMJ.set("type", "push");
-            publisher.publish(FMJ);
         }
         log.info("\nDEBUGGER:\n" + ev.getData().toString());
     }

@@ -86,7 +86,7 @@ import java.net.URI;
  */
 @Slf4j
 @LineMessageHandler
-public class Controller {
+public class ChatbotController {
     private HashMap<String, StateMachine> stateMachines = new
         HashMap<String, StateMachine>();
 
@@ -255,7 +255,8 @@ public class Controller {
     /* ------------------------ LOGIC END ------------------------ */
 
     static String createUri(String path) {
-        return ServletUriComponentsBuilder.fromCurrentContextPath().path(path).build().toUriString();
+        return ServletUriComponentsBuilder.fromCurrentContextPath()
+            .path(path).build().toUriString();
     }
 
     private void system(String... args) {
@@ -272,7 +273,9 @@ public class Controller {
         }
     }
 
-    private static DownloadedContent saveContent(String ext, MessageContentResponse responseBody) {
+    private static DownloadedContent saveContent(String ext,
+        MessageContentResponse responseBody) {
+
         log.info("Got content-type: {}", responseBody);
 
         DownloadedContent tempFile = createTempFile(ext);
@@ -291,7 +294,8 @@ public class Controller {
         Path tempFile = DietingChatbotApplication.downloadedContentDir
             .resolve(fileName);
         tempFile.toFile().deleteOnExit();
-        return new DownloadedContent(tempFile, createUri("/downloaded/" + tempFile.getFileName()));
+        return new DownloadedContent(tempFile, createUri("/downloaded/"
+            + tempFile.getFileName()));
     }
 
     @Value
