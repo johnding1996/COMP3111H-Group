@@ -6,9 +6,12 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,6 +26,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -105,9 +109,6 @@ public class ChatbotController
     @Autowired(required=false)
     private EventBus eventBus;
 
-    @Autowired(required=false)
-    private ThreadPoolTaskScheduler taskScheduler;
-
     /**
      * Register on eventBus
      */
@@ -120,22 +121,19 @@ public class ChatbotController
             log.info("Failed to register on eventBus: " +
                 e.toString());
         }
-        taskScheduler.scheduleAtFixedRate(new AskforWeight(), new Date(System.currentTimeMillis + 60000), 10000);
-        //TODO: change the rate to 86,400,000, that is miliseconds of one day
     }
 
-    class AskForWeight implements Runnable {
-        public void run() {
-            FormatterMessageJSON fmt = new FormatterMessageJSON();
-            fmt.set("type", "push")
-               .appendTextMessage("May I ask you to input your weight?")
-               .appendTextMessage("You can also get recommendation from me by typing 'Recommendation' to me");
-            //TODO: get all the userId from Database and iterate through them to send push message
-            fmt.set("userId", "U60ee860ae5e086599f9e2baff5efcf15");
-            publisher.publish(fmt);
-            log.info("AskForWeight: **************************");
-            log.info(fmt.toString());
-        }
+    @Scheduled(cron="0 30 18 * * ?")
+    public void askForWeight() {
+        FormatterMessageJSON fmt = new FormatterMessageJSON();
+        fmt.set("type", "push")
+            .appendTextMessage("May I ask you to input your weight?")
+            .appendTextMessage("You can also get recommendation from me by typing 'Recommendation' to me");
+        //TODO: get all the userId from Database and iterate through them to send push message
+        fmt.set("userId", "U60ee860ae5e086599f9e2baff5efcf15");
+        publisher.publish(fmt);
+        log.info("AskForWeight: **************************");
+        log.info(fmt.toString());
     }
 
     /**
