@@ -41,8 +41,8 @@ public class PushMessage {
      */
     private final List<Message> messages;
 
-    public PushMessage(String to, List<Message> messages) {
+    public PushMessage(String to, Message message) {
         this.to = to;
-        this.messages = messages;
+        this.messages = Collections.singletonList(message);
     }
 }
