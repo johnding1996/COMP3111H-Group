@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import reactor.Environment;
 import reactor.bus.Event;
@@ -30,6 +31,7 @@ import reactor.bus.EventBus;
 
 @SpringBootApplication
 @EnableScheduling
+@EnableAsync
 public class DietingChatbotApplication {
     @Bean
     Environment env() {

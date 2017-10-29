@@ -26,6 +26,10 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Component;
@@ -90,6 +94,9 @@ import java.net.URI;
 @Slf4j
 @Service
 @LineMessageHandler
+@Configuration
+@EnableScheduling
+@EnableAsync
 public class ChatbotController
     implements reactor.fn.Consumer<reactor.bus.Event<
         FormatterMessageJSON>> {
@@ -109,6 +116,10 @@ public class ChatbotController
     @Autowired(required=false)
     private EventBus eventBus;
 
+    // for testing delayTimeOut()
+    public String foo = "Thomas";
+
+ 
     /**
      * Register on eventBus
      */
@@ -123,7 +134,7 @@ public class ChatbotController
         }
     }
 
-    @Scheduled(cron="0 30 18 * * ?")
+    @Scheduled(cron = "0 * 11 * * ?")
     public void askForWeight() {
         FormatterMessageJSON fmt = new FormatterMessageJSON();
         fmt.set("type", "push")
@@ -134,6 +145,24 @@ public class ChatbotController
         publisher.publish(fmt);
         log.info("AskForWeight: **************************");
         log.info(fmt.toString());
+    }
+
+    // delay execution, unit in millisecond
+    //@Async
+    @Scheduled(initialDelay=10000, fixedDelay=10000)
+    public void delayTimeOut() {
+        //TODO: change statemachine to idle
+        //return Thread.currentThread().getName();
+        
+        // try {
+		// 	Thread.sleep(1000);
+		// } catch (InterruptedException e) {
+		// 	// TODO Auto-generated catch block
+		// 	e.printStackTrace();
+		// }
+        foo = "Lucis";
+        
+
     }
 
     /**

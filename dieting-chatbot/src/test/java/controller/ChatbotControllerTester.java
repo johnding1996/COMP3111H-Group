@@ -221,4 +221,28 @@ public class ChatbotControllerTester {
         controller.accept(ev);
         assert sm.getState().equals("Idle");
     }
+
+    // @Test
+    // public void testTimeOutState() {
+    //     //assert Thread.currentThread().getName().equals(controller.delayTimeOut());
+        
+    //     controller.foo = "Thomas";
+    //     controller.delayTimeOut();
+    //     //assert controller.foo.equals("Thomas");
+    //     try {
+	// 		Thread.sleep(500);
+	// 	} catch (InterruptedException e) {
+	// 		// TODO Auto-generated catch block
+	// 		e.printStackTrace();
+    //     }
+    //     assertThat(controller.foo).isEqualTo("Thomas"); 
+    //     try {
+	// 		Thread.sleep(2000);
+	// 	} catch (InterruptedException e) {
+	// 		// TODO Auto-generated catch block
+	// 		e.printStackTrace();
+    //     }
+    //     assertThat(controller.foo).isEqualTo("Lucis");
+        
+    // }
 }
