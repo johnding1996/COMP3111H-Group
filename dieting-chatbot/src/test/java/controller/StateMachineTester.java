@@ -58,7 +58,7 @@ public class StateMachineTester {
     @Test
     public void testSetUserId() throws Exception {
         stateMachine.setUserId("newId");
-        assert stateMachine.getUserId().equals("newId") : "Id not changed after set";
+        assert stateMachine.getUserId().equals("newId") : "Id not changed after add";
     }
 
     @Test

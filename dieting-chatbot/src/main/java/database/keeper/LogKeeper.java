@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
+import redis.clients.jedis.Jedis;
 
 /**
  * {@link LogKeeper}
@@ -26,15 +27,36 @@ public class LogKeeper extends SerializeKeeper {
     );
 
     /**
+     * constructor
+     * Default constructor.
+     */
+    LogKeeper() {
+        super();
+    }
+
+    /**
+     * constructor
+     * Constructor which uses external redis connection.
+     * @param jedids external redis connection
+     */
+    LogKeeper(Jedis jedids) {
+        this.jedis = jedis;
+    }
+
+    /**
      * get
      * Get the latest rows of user logs.
-     * @param key key
+     * @param user_id user id
      * @param number number of latest result to return
      * @return JSONArray array of recent JSONObjects
      */
     @Override
-    public JSONArray get(String key, int number) {
-        JSONArray jsonArray = rangeList(prefix, key, number);
+    public JSONArray get(String user_id, int number) {
+        JSONArray jsonArray = rangeList(prefix, user_id, number);
+        if (jsonArray.length() == 0) {
+            log.error("Attempting to get user log that does not exist.");
+            return null;
+        }
         if (!checkValidity(jsonArray, fields)) {
             log.error("Failed to load user meal history due to wrongly formatted LogJSON.");
             return null;
@@ -43,17 +65,17 @@ public class LogKeeper extends SerializeKeeper {
     }
 
     /**
-     * set
+     * add
      * Add new user log to cache.
-     * @param key key
-     * @param jsonObject new row to add to the redis cache
+     * @param user_id user id
+     * @param logJson new row to add to the redis cache
      * @return whether appending operation is successful or not
      */
-    public boolean set(String key, JSONObject jsonObject) {
-        if (!checkValitidy(jsonObject, fields)) {
+    public boolean set(String user_id, JSONObject logJson) {
+        if (!checkValitidy(logJson, fields)) {
             log.error("Invalid formatted LogJSON.");
             return false;
         }
-        return appendList(prefix, key, jsonObject);
+        return appendList(prefix, user_id, logJson);
     }
 }

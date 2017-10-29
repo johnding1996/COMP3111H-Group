@@ -1,9 +1,12 @@
 package database.querier;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -21,7 +24,7 @@ public abstract class FoodQuerier extends Querier {
      * table
      * Table name for all FoodQueriers.
      */
-    protected static final String table = "foodnutrition";
+    protected static String table = "foodnutrition";
 
     /**
      * queryLimit
@@ -46,6 +49,23 @@ public abstract class FoodQuerier extends Querier {
     );
 
     /**
+     * critical_fields
+     * Set of all critical fields that cannot be missing in the input FoodJSON JSONObject.
+     */
+    protected static final Set<String> critical_fields = new HashSet<>(Arrays.asList(
+            "ndb_no", "shrt_desc", "water", "energ_kcal", "protein",
+            "lipid_tot", "gmwt_1", "gmwt_desc1", "gmwt_2", "gmwt_desc2"
+    ));
+
+    /**
+     * constructor
+     * Default constructor.
+     */
+    FoodQuerier() {
+        super();
+    }
+
+    /**
      * constructor
      * Set the query limit.
      * @param queryLimit number of rows to return when searching
@@ -56,14 +76,14 @@ public abstract class FoodQuerier extends Querier {
     }
 
     /**
-     * set
+     * add
      * Add a new food to database.
      * @param foodJsons JSONArray containing JSONObjects following the FoodJSON format
      * @return boolean whether add food successfully or not
      */
     @Override
-    public boolean set(JSONArray foodJsons) {
-        return insertData(table, fields, foodJsons);
+    public boolean add(JSONArray foodJsons) {
+        return insertData(table, fields, critical_fields, foodJsons);
     }
 
     /**
@@ -77,5 +97,18 @@ public abstract class FoodQuerier extends Querier {
         String query = String.format("SELECT * FROM %s WHERE shrt_desc = '%s' LIMIT %d;", table, key, queryLimit);
         ResultSet rs = executeQuery(query);
         return parseResult(rs, fields);
+    }
+
+    public boolean set(JSONArray foodJsons) {
+
+    }
+
+    /**
+     * setQueryLimit
+     * Change the query limit.
+     * @param queryLimit number of rows to return when searching
+     */
+    public void setQueryLimit(int queryLimit) {
+        this.queryLimit = queryLimit;
     }
 }

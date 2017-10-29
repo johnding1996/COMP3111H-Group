@@ -23,9 +23,9 @@ public class SQLPool {
     static {
         try {
             URI dbUri = new URI(System.getenv("DATABASE_URL"));
-            String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + dbUri.getPath();
+            String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + ':' + dbUri.getPort()
+                    + dbUri.getPath() + "?ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory";
             connectionPool = new BasicDataSource();
-
             if (dbUri.getUserInfo() != null) {
                 connectionPool.setUsername(dbUri.getUserInfo().split(":")[0]);
                 connectionPool.setPassword(dbUri.getUserInfo().split(":")[1]);

@@ -2,6 +2,7 @@ package database.querier;
 
 import org.json.JSONArray;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 
 import lombok.extern.slf4j.Slf4j;
@@ -13,20 +14,38 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FuzzyFoodQuerier extends FoodQuerier {
     /**
-     * levenshteinParams
+     * levenshteinCosts
      * levenshtein algorithm parameters, {insert cost, delete cost, replace cost}
      */
-    private int[] levenshteinParams = {1, 10, 10};
+    private int[] levenshteinCosts = {1, 10, 10};
+
+    /**
+     * constructor
+     * Default constructor.
+     */
+    FuzzyFoodQuerier() {
+        super();
+    }
+
+    /**
+     * constructor
+     * Constructor which uses external sql connection.
+     * @param sql external sql connection
+     */
+    FuzzyFoodQuerier(Connection sql) {
+        super();
+        this.sql = sql;
+    }
 
     /**
      * constructor
      * Set the query limit and levenshtein algorithm parameters.
      * @param queryLimit number of rows to return when searching
-     * @param levenshteinParams levenshtein algorithm parameters, {insert cost, delete cost, replace cost}
+     * @param levenshteinCosts levenshtein algorithm parameters, {insert cost, delete cost, replace cost}
      */
-    FuzzyFoodQuerier(int queryLimit, int[] levenshteinParams) {
+    FuzzyFoodQuerier(int queryLimit, int[] levenshteinCosts) {
         super(queryLimit);
-        System.arraycopy(levenshteinParams, 0, this.levenshteinParams, 0, 3);
+        System.arraycopy(levenshteinCosts, 0, this.levenshteinCosts, 0, 3);
     }
 
     /**
@@ -38,8 +57,12 @@ public class FuzzyFoodQuerier extends FoodQuerier {
     @Override
     public JSONArray get(String key) {
         String query = String.format("SELECT *, levenshtein(shrt_desc, '%s', %d, %d, %d) as dist FROM %s ORDER BY dist LIMIT %d;",
-                key, levenshteinParams[0], levenshteinParams[1], levenshteinParams[2], table, queryLimit);
+                key, levenshteinCosts[0], levenshteinCosts[1], levenshteinCosts[2], table, queryLimit);
         ResultSet rs = executeQuery(query);
         return parseResult(rs, fields);
+    }
+
+    public void setLevenshteinCosts(int[] levenshteinCosts) {
+        System.arraycopy(levenshteinCosts, 0, this.levenshteinCosts, 0, 3);
     }
 }

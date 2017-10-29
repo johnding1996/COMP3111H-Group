@@ -2,6 +2,7 @@ package database.querier;
 
 import org.json.JSONArray;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,24 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class PartialFoodQuerier extends FoodQuerier {
+    /**
+     * constructor
+     * Default constructor.
+     */
+    PartialFoodQuerier() {
+        super();
+    }
+
+    /**
+     * constructor
+     * Constructor which uses external sql connection.
+     * @param sql external sql connection
+     */
+    PartialFoodQuerier(Connection sql) {
+        super();
+        this.sql = sql;
+    }
+
     /**
      * constructor
      * Set the query limit and levenshtein algorithm parameters.

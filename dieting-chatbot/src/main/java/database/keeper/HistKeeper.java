@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
+import redis.clients.jedis.Jedis;
 
 /**
  * {@link HistKeeper}
@@ -31,6 +32,24 @@ public class HistKeeper extends SerializeKeeper {
     );
 
     /**
+     * constructor
+     * Default constructor.
+     */
+    HistKeeper() {
+        super();
+    }
+
+    /**
+     * constructor
+     * Constructor which uses external redis connection.
+     * @param jedids external redis connection
+     */
+    HistKeeper(Jedis jedids) {
+        this.jedis = jedis;
+    }
+
+
+    /**
      * get
      * Get the latest rows of user hist.
      * @param key user id
@@ -40,6 +59,10 @@ public class HistKeeper extends SerializeKeeper {
     @Override
     public JSONArray get(String key, int number) {
         JSONArray jsonArray = rangeList(prefix, key, number);
+        if (jsonArray.length() == 0) {
+            log.error("Attempting to get user meal hist that does not exist.");
+            return null;
+        }
         if (!checkValidity(jsonArray, fields)) {
             log.error("Failed to load user meal history due to wrongly formatted MealJSON.");
             return null;
@@ -48,7 +71,7 @@ public class HistKeeper extends SerializeKeeper {
     }
 
     /**
-     * set
+     * add
      * Add new user hist to cache.
      * @param key user id
      * @param jsonObject new row to add to the redis cache

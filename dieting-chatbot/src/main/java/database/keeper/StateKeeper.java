@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import lombok.extern.slf4j.Slf4j;
+import redis.clients.jedis.Jedis;
 
 /**
  * {@link StateKeeper}
@@ -25,7 +26,7 @@ public class StateKeeper extends Keeper {
 
     /**
      * STATE_STRINGS
-     * The set of valid state strings.
+     * The add of valid state strings.
      */
     private static final Set<String> STATE_STRINGS = new HashSet<>(
             Arrays.asList("Idle", "ParseMenu", "AskMeal", "Recommend", "RecordMeal", "InitialInput", "Feedback"));
@@ -34,10 +35,19 @@ public class StateKeeper extends Keeper {
      * lifeTime
      * This expire time of redis key.
      */
-    private static int lifeTime = 3*60*60;
+    private int lifeTime = 3*60*60;
 
+    /**
+     * constructor
+     * Default constructor.
+     */
     StateKeeper() {
         super();
+    }
+
+    StateKeeper(Jedis jedids, int lifeTime) {
+        this.jedis = jedis;
+        this.lifeTime = lifeTime;
     }
 
     /**
@@ -59,7 +69,7 @@ public class StateKeeper extends Keeper {
      */
     public String get(int uid) {
         String state = jedis.get(KEY_PREFIX + ":" + Integer.toString(uid));
-        // If no state value get, set it to Idle state
+        // If no state value get, add it to Idle state
         if (state == null) {
             this.set(uid, "Idle");
             return "Idle";
@@ -77,12 +87,12 @@ public class StateKeeper extends Keeper {
     }
 
     /**
-     * set
+     * add
      * Set the user's state string according to user id.
      * Will check state string's validity.
      * @param uid user id
      * @param state state string
-     * @return whether set successfully or not
+     * @return whether add successfully or not
      */
     public boolean set(int uid, String state) {
         // Check validity
@@ -94,5 +104,4 @@ public class StateKeeper extends Keeper {
         // If status code is "OK" then redis ensure that the value is stored
         return statusCodeReply.equals("OK");
     }
-
 }

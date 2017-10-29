@@ -32,10 +32,13 @@ public abstract class Keeper {
         RedisPool.closeConnection(jedis);
     }
 
+    /*
     /**
      * finalize
      * Override the original finalizer to check whether the connection is closed.
+     * Deprecated according to CodeFactor style suggestion.
      */
+    /*
     @Override
     public void finalize() throws java.lang.Throwable {
         if (jedis.isConnected()) {
@@ -43,4 +46,6 @@ public abstract class Keeper {
         }
         super.finalize();
     }
+    */
+
 }

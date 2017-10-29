@@ -19,10 +19,10 @@ public abstract class SerializeKeeper extends Keeper {
     protected List<String> fields;
 
     /**
-     * set
+     * add
      * @param key key
      * @param json JSONObject
-     * @return whether set successfully or not
+     * @return whether add successfully or not
      */
     public abstract boolean set(String key, JSONObject json);
 
