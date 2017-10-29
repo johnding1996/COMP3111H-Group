@@ -51,78 +51,73 @@ import static reactor.bus.selector.Selectors.$;
 
 @Slf4j
 @Service
-public class Formatter implements Consumer<Event<FormatterMessageJSON> > {
+public class Formatter implements Consumer<Event<FormatterMessageJSON>> {
 
     @Autowired(required=false)
     private LineMessagingClient lineMessagingClient;
-
-    private FormatterMessageJSON formatterMessageJSON;
 
     @Autowired
     private EventBus eventBus;
 
 	public void accept(Event<FormatterMessageJSON> ev) {
-        this.formatterMessageJSON = ev.getData();
-        log.info("\nFormatter:\n" + ev.getData().toString());
-        formatting();
+        FormatterMessageJSON formatterMessageJSON = ev.getData();
+        log.info("\nFormatter:\n" + formatterMessageJSON.toString());
+        sendMessage(formatterMessageJSON);
     }
     
     @PostConstruct
     public void init() {
+        log.info("Register Formatter");
         eventBus.on($("FormatterMessageJSON"), this);
     }
 
-    // public void setLineMessagingClient(LineMessagingClient lineMessagingClient) {
-    //     this.lineMessagingClient = lineMessagingClient;
-    // }
-
     private void reply(@NonNull String replyToken, @NonNull List<Message> messages) {
        try {
-           BotApiResponse apiResonse = this.lineMessagingClient.replyMessage(new ReplyMessage(replyToken, messages)).get();
+           log.info("FORMATTER: send reply message");
+           BotApiResponse apiResonse = lineMessagingClient.replyMessage(
+               new ReplyMessage(replyToken, messages)).get();
        } catch (InterruptedException | ExecutionException e) {
            throw new RuntimeException(e);
-        }
-    }
-    private void reply(@NonNull String replyToken, @NonNull Message message) {
-        reply(replyToken, Collections.singletonList(message));
+       }
     }
     
     private void push(@NonNull String userId, @NonNull List<Message> messages) {
         // TODO: multiple messages
-        PushMessage pushMessage = new PushMessage(userId, messages.get(0));
-        this.lineMessagingClient.pushMessage(pushMessage);
+        // PushMessage pushMessage = new PushMessage(userId, messages.get(0));
+        log.info("FORMATTER: send push message");
+        PushMessage pushMessage = new PushMessage(userId, messages);
+        lineMessagingClient.pushMessage(pushMessage);
     }
     
-    
-    public FormatterMessageJSON getFormatterMessageJSON() {
-        return this.formatterMessageJSON;
-    }
-    
-    
-    public void formatting() {
+    public void sendMessage(FormatterMessageJSON fmt) {
         List<Message> messages = new ArrayList<Message>();
-        JSONArray arr = (JSONArray) this.formatterMessageJSON.get("messages"); 
+        JSONArray arr = (JSONArray) fmt.get("messages"); 
         for(int i = 0; i < arr.length(); i++) {
             JSONObject obj = arr.getJSONObject(i);
-            
             switch(obj.getString("type")) {
                 case "text":
-                messages.add(new TextMessage(obj.getString("textContent")));
-                break;
+                    messages.add(new TextMessage(obj.getString("textContent")));
+                    break;
                 case "image":
-                messages.add(new ImageMessage(obj.getString("originalContentUrl"), obj.getString("previewContentUrl")));
-                break;
+                    messages.add(new ImageMessage(obj.getString("originalContentUrl"),
+                        obj.getString("previewContentUrl")));
+                    break;
+                default:
+                    log.info("FORMATTER: Invalid message type {}",
+                        obj.getString("type"));
             }
         }
-        String type = this.formatterMessageJSON.get("type").toString();
+
+        String type = fmt.get("type").toString();
         switch(type) {
             case "reply":
-                reply(this.formatterMessageJSON.get("replyToken").toString(), messages);
+                reply(fmt.get("replyToken").toString(), messages);
                 break;
             case "push":
-                push(this.formatterMessageJSON.get("userId").toString(), messages);
-            break;
+                push(fmt.get("userId").toString(), messages);
+                break;
+            default:
+                log.info("FORMATTER: Invalid message type {}", type);
         }
     }
-    
 }
