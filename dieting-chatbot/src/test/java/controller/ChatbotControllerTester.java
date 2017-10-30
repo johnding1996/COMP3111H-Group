@@ -209,6 +209,7 @@ public class ChatbotControllerTester {
 
     @Test
     public void testStateTransition2() {
+        controller.clearStateMachines();
         FormatterMessageJSON fmt = new FormatterMessageJSON();
         fmt.set("userId", "agong")
            .set("type", "transition")
@@ -226,22 +227,14 @@ public class ChatbotControllerTester {
 
     @Test
     public void testTimeOutState() {
-        // controller.foo = "Thomas";
-        // controller.delayTimeOut();
-        // assert controller.foo.equals("Thomas");
-
-        // ScheduledExecutorService execService = Executors.newSingleThreadScheduledExecutor();
-        // execService.schedule(new Runnable() {
-        //     @Override
-        //     public void run() {
-        //         assertThat(controller.foo).isEqualTo("Thomas");
-        //     }
-        // }, 1, TimeUnit.SECONDS);
-        // execService.schedule(new Runnable() {
-        //     @Override
-        //     public void run() {
-        //         assertThat(controller.foo).isEqualTo("Lucis");
-        //     }
-        // }, 2, TimeUnit.SECONDS);
+        StateMachine sm = controller.getStateMachine("agong");
+        sm.getStateObject().setTimeout(1);
+        controller.toNextState("agong", "recommendationRequest");
+        try {
+            Thread.sleep(2);
+            assert sm.getState().equals("ParseMenu");
+        } catch (Exception e) {
+            log.info(e.toString());
+        }
     }
 }

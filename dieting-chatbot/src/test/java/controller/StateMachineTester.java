@@ -115,4 +115,24 @@ public class StateMachineTester {
         stateMachine.toNextState("bar foo");
         assert stateMachine.getState().equals("Recommend");
     }
+
+    @Test
+    public void testStateTransitionReturnValue() throws Exception {
+        stateMachine.initialize();
+        assert stateMachine.toNextState("recommendationRequest");
+        assert stateMachine.toNextState("menuMessage");
+        assert !stateMachine.toNextState("userInitialInput");
+        assert !stateMachine.toNextState("invalidTransition");
+        assert stateMachine.toNextState("confirmMeal");
+    }
+
+    @Test
+    public void testStateObjectGetter() throws Exception {
+        stateMachine.initialize();
+        assert stateMachine.getStateObject().getName()
+                .equals("Idle");
+        stateMachine.toNextState("feedbackRequest");
+        assert stateMachine.getStateObject().getName()
+                .equals("Feedback");
+    }
 }

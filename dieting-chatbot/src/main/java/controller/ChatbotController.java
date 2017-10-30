@@ -116,7 +116,9 @@ public class ChatbotController
     @Autowired(required=false)
     private EventBus eventBus;
 
-    private final ScheduledExecutorService execService = Executors.newSingleThreadScheduledExecutor();
+    private final int NUMBER_OF_SCHEDULED_THREAD = 10;
+    private final ScheduledExecutorService scheduledExecutorService =
+        Executors.newScheduledThreadPool(NUMBER_OF_SCHEDULED_THREAD);
  
     /**
      * Register on eventBus
@@ -132,31 +134,10 @@ public class ChatbotController
         }
     }
 
-    // heroku server is using UTC time initially, we are GMT+8, so 11 stands for 19:00
-    // But we can change the time zone heroku server is using by tying heroku config:add TZ="Asia/Hong_Kong"
-    // Then it will send push message according to hk time, already tested
-    @Scheduled(cron = "*/30 * 2 * * *", zone = "GMT+08")
+    @Scheduled(cron = "*/30 * 20 * * *", zone = "GMT+08")
     public void askForWeight() {
-        FormatterMessageJSON fmt = new FormatterMessageJSON();
-        fmt.set("type", "push")
-            .appendTextMessage("May I ask you to input your weight?")
-            .appendTextMessage("You can also get recommendation from me by typing 'Recommendation' to me");
-        //TODO: get all the userId from Database and iterate through them to send push message
-        // fmt.set("userId", "U60ee860ae5e086599f9e2baff5efcf15");
-        publisher.publish(fmt);
         log.info("AskForWeight: **************************");
     }
-
-    // delay execution, unit in millisecond
-    // @Scheduled(initialDelay=10000, fixedDelay=10000)
-    // public void delayTimeOut() {
-    //     //TODO: change statemachine to idle
-    //     this.execService.schedule(new Runnable() {
-    //         @Override
-    //         public void run() {
-    //         }
-    //     }, 2, TimeUnit.SECONDS);
-    // }
 
     /**
      * EventBus FormatterMessageJSON event handle
@@ -170,10 +151,9 @@ public class ChatbotController
         if (formatterMessageJSON.get("stateTransition") != null) {
             String userId = (String)formatterMessageJSON.get("userId");
             String transition = (String)formatterMessageJSON.get("stateTransition");
-            StateMachine stateMachine = getStateMachine(userId);
             log.info("User {} triggers state transition {}",
                 userId, transition);
-            stateMachine.toNextState(transition);
+            toNextState(userId, transition);
         }
         if (!formatterMessageJSON.get("type").equals("transition"))
             formatter.sendMessage(formatterMessageJSON);
@@ -194,11 +174,11 @@ public class ChatbotController
         /* update state */
         if (state.equals("Idle")) {
             if (isRecommendationRequest(textContent)) {
-                stateMachine.toNextState("recommendationRequest");
+                toNextState(userId, "recommendationRequest");
             } else if (isInitialInputRequest(textContent)) {
-                stateMachine.toNextState("initialInputRequest");
+                toNextState(userId, "intialInputRequest");
             } else if (isFeedbackRequest(textContent)) {
-                stateMachine.toNextState("feedbackRequest");
+                toNextState(userId, "feedbackRequest");
             }
             state = stateMachine.getState();
             log.info("State transition handled by Controller");
@@ -260,6 +240,33 @@ public class ChatbotController
             stateMachines.put(userId, new StateMachine(userId));
         }
         return stateMachines.get(userId);
+    }
+
+    /**
+     * State transition wrapper, to next state and register callback
+     * @param userId String of user id
+     * @param transition String representing the state transition
+     * @return None
+     */
+    public void toNextState(String userId, String transition) {
+        StateMachine stateMachine = getStateMachine(userId);
+        boolean isStateChanged = stateMachine.toNextState(transition);
+        if (!isStateChanged) return;
+        State state = stateMachine.getStateObject();
+        int timeout = state.getTimeout();
+        String timeoutState = state.getTimeoutState();
+        if (timeout > 0) {
+            scheduledExecutorService.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    stateMachine.setState(timeoutState);
+                    ParserMessageJSON psr = new ParserMessageJSON();
+                    psr.set("userId", userId)
+                       .set("state", timeoutState);
+                    publisher.publish(psr);
+                }
+            }, timeout, TimeUnit.SECONDS);
+        }
     }
 
     /**

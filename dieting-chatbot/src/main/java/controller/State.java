@@ -6,9 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 public class State {
     private String stateName;
 
-    private int timeout;
+    private int timeout; // in sec
     private String timeoutState;
-    static final int DEFAULT_TIMEOUT = 3600; // 1 hour
+    static final int DEFAULT_TIMEOUT = 30; // 1 hour
 
     /**
     * Construct a state with default timeoutState and timeout
@@ -59,16 +59,41 @@ public class State {
         }
     }
 
+    /**
+     * Get name of the state
+     * @return String of state name
+     */
     public String getName() {
         return stateName;
     }
 
+    /**
+     * Get timeout of the state
+     * @return An integer, representing timeout in sec
+     */
     public int getTimeout() {
         return timeout;
     }
 
+    /**
+     * Get timeout state name
+     * @return String of timeout state
+     */
     public String getTimeoutState() {
         return timeoutState;
+    }
+
+    /**
+     * Set timeout of the state
+     * @param newTimeout new timeout in sec, must be nonnegative
+     * @return None
+     */
+    public void setTimeout(int newTimeout) {
+        if (newTimeout >= 0) {
+            timeout = newTimeout;
+        } else {
+            log.info("STATE: attempting to set invalid timeout {}", newTimeout);
+        }
     }
 
     @Override

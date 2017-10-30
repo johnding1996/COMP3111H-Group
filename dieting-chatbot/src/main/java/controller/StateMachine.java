@@ -24,9 +24,9 @@ public class StateMachine {
     /**
      * Initialize states and transitionTable
      */
-    {
+    static {
         try {
-            states.put("Idle", new State("Idle"));
+            states.put("Idle", new State("Idle", 0, "Idle"));
             states.put("ParseMenu", new State("ParseMenu"));
             states.put("AskMeal", new State("AskMeal"));
             states.put("Recommend", new State("Recommend",
@@ -104,6 +104,7 @@ public class StateMachine {
 
     /**
      * Initialize the state machine
+     * @return None
      */
     public void initialize() {
         setState("Idle");
@@ -115,6 +116,14 @@ public class StateMachine {
      */
     public String getState() {
         return currentState;
+    }
+
+    /**
+     * Get current State object
+     * @return The current State object
+     */
+    public State getStateObject() {
+        return states.get(currentState);
     }
 
     /**
@@ -158,15 +167,17 @@ public class StateMachine {
     /**
      * Go to next state according to transition String
      * @param transition a String encoding the transition
+     * @return whether state transition is successful
      */
-    public void toNextState(String transition) {
+    public boolean toNextState(String transition) {
         if (!transitionTable.get(currentState).containsKey(transition)) {
             log.info(String.format("Invalid transition %s from state %s",
                 transition, currentState));
-            return;
+            return false;
         }
         currentState = transitionTable.get(currentState).get(transition);
         log.info(String.format("To new state %s by %s", currentState,
             transition));
+        return true;
     }
 }
