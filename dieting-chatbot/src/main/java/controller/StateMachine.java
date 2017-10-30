@@ -54,31 +54,37 @@ public class StateMachine {
             // ParseMenu
             tempTable = new HashMap<String, String>();
             tempTable.put("menuMessage", "AskMeal");
+            tempTable.put("timeout", "Idle");
             transitionTable.put("ParseMenu", tempTable);
 
             // AskMeal
             tempTable = new HashMap<String, String>();
             tempTable.put("confirmMeal", "Recommend");
+            tempTable.put("timeout", "Idle");
             transitionTable.put("AskMeal", tempTable);
 
             // Recommend
             tempTable = new HashMap<String, String>();
             /* only timeout transition */
+            tempTable.put("timeout", "RecordMeal");
             transitionTable.put("Recommend", tempTable);
 
             // RecordMeal
             tempTable = new HashMap<String, String>();
             tempTable.put("confirmMeal", "Idle");
+            tempTable.put("timeout", "Idle");
             transitionTable.put("RecordMeal", tempTable);
 
             // InitialInput
             tempTable = new HashMap<String, String>();
             tempTable.put("userInitialInput", "Idle");
+            tempTable.put("timeout", "Idle");
             transitionTable.put("InitialInput", tempTable);
 
             // Feedback
             tempTable = new HashMap<String, String>();
             tempTable.put("sendFeedback", "Idle");
+            tempTable.put("timeout", "Idle");
             transitionTable.put("Feedback", tempTable);
 
             // check

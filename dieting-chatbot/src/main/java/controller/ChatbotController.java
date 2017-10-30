@@ -264,7 +264,8 @@ public class ChatbotController
             taskScheduler.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    stateMachine.setState(timeoutState);
+                    // stateMachine.setState(timeoutState);
+                    toNextState(userId, "timeout");
                     ParserMessageJSON psr = new ParserMessageJSON();
                     psr.set("userId", userId)
                        .set("state", timeoutState);
