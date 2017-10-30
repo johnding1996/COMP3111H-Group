@@ -17,6 +17,7 @@ import static reactor.bus.selector.Selectors.$;
 import reactor.fn.Consumer;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
+import javax.annotation.PostConstruct;
 
 public class UserInitialInputRecord implements Consumer<Event<ParserMessageJSON>> {
 	
