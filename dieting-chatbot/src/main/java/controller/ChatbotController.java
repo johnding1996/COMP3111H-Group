@@ -117,9 +117,6 @@ public class ChatbotController
     @Autowired(required=false)
     private EventBus eventBus;
 
-    private final int NUMBER_OF_SCHEDULED_THREAD = 10;
-    private final ScheduledExecutorService scheduledExecutorService =
-        Executors.newScheduledThreadPool(NUMBER_OF_SCHEDULED_THREAD);
     @Autowired
     public TaskScheduler taskScheduler;
  
@@ -264,7 +261,6 @@ public class ChatbotController
             taskScheduler.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    // stateMachine.setState(timeoutState);
                     toNextState(userId, "timeout");
                     ParserMessageJSON psr = new ParserMessageJSON();
                     psr.set("userId", userId)

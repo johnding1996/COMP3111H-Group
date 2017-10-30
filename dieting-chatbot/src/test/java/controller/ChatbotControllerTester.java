@@ -243,19 +243,6 @@ public class ChatbotControllerTester {
 
     @Test
     public void testTimeOutState() throws Exception {
-        // assert controller.taskScheduler != null;
-        // Mockito.when(controller.taskScheduler.schedule(
-        //     Mockito.any(Runnable.class), Mockito.any(Date.class)
-        // )).thenAnswer(new Answer<Runnable>() {
-        //     @Override
-        //     public Runnable answer(InvocationOnMock invocation) throws Throwable {
-        //         Object[] args = invocation.getArguments();
-        //         args[1] = new Date(500 + (new Date()).getTime());
-        //         return (Runnable) args[0];
-        //     }
-        // });
-        // controller.toNextState("agong", "recommendationRequest");
-        // Thread.sleep(750);
-        // assert controller.getStateMachine("agong").getState().equals("Idle");
+        assert controller.taskScheduler != null;
     }
 }
