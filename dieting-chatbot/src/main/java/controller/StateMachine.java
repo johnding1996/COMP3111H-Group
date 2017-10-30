@@ -26,7 +26,7 @@ public class StateMachine {
      */
     static {
         try {
-            states.put("Idle", new State("Idle", 0, "Idle"));
+            states.put("Idle", new State("Idle"));
             states.put("ParseMenu", new State("ParseMenu"));
             states.put("AskMeal", new State("AskMeal"));
             states.put("Recommend", new State("Recommend",

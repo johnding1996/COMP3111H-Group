@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -119,6 +120,8 @@ public class ChatbotController
     private final int NUMBER_OF_SCHEDULED_THREAD = 10;
     private final ScheduledExecutorService scheduledExecutorService =
         Executors.newScheduledThreadPool(NUMBER_OF_SCHEDULED_THREAD);
+    @Autowired
+    public TaskScheduler taskScheduler;
  
     /**
      * Register on eventBus
@@ -176,7 +179,7 @@ public class ChatbotController
             if (isRecommendationRequest(textContent)) {
                 toNextState(userId, "recommendationRequest");
             } else if (isInitialInputRequest(textContent)) {
-                toNextState(userId, "intialInputRequest");
+                toNextState(userId, "initialInputRequest");
             } else if (isFeedbackRequest(textContent)) {
                 toNextState(userId, "feedbackRequest");
             }
@@ -237,6 +240,7 @@ public class ChatbotController
      */
     public StateMachine getStateMachine(String userId) {
         if (!stateMachines.containsKey(userId)) {
+            log.info("Creating state machine for {}", userId);
             stateMachines.put(userId, new StateMachine(userId));
         }
         return stateMachines.get(userId);
@@ -255,8 +259,9 @@ public class ChatbotController
         State state = stateMachine.getStateObject();
         int timeout = state.getTimeout();
         String timeoutState = state.getTimeoutState();
-        if (timeout > 0) {
-            scheduledExecutorService.schedule(new Runnable() {
+        if (!state.getName().equals("Idle")) {
+            log.info("register call back that will run after {} sec", timeout);
+            taskScheduler.schedule(new Runnable() {
                 @Override
                 public void run() {
                     stateMachine.setState(timeoutState);
@@ -265,7 +270,18 @@ public class ChatbotController
                        .set("state", timeoutState);
                     publisher.publish(psr);
                 }
-            }, timeout, TimeUnit.SECONDS);
+            }, new Date(1000*timeout + (new Date()).getTime()));
+        } else {
+            log.info("remove state machine for {} after {} sec",
+                userId, timeout);
+            taskScheduler.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    stateMachines.remove(userId);
+                    log.info("state machine for {} removed", userId);
+                }
+            }, new Date(1000*State.DEFAULT_TIMEOUT
+                + (new Date()).getTime()));
         }
     }
 
@@ -311,9 +327,7 @@ public class ChatbotController
      */
     static public boolean isInitialInputRequest(String msg) {
         for (String word : sentenceToWords(msg)) {
-            if (initialInputKeywords.contains(word)) {
-                return true;
-            }
+            if (initialInputKeywords.contains(word)) return true;
         }
         return false;
     }
