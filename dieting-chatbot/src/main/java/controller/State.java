@@ -92,7 +92,6 @@ public class State {
     /**
      * Set timeout of the state
      * @param newTimeout new timeout in sec, must be nonnegative
-     * @return None
      */
     public void setTimeout(int newTimeout) {
         if (newTimeout >= 0) {
