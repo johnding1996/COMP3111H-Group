@@ -50,6 +50,9 @@ public class ChatbotControllerTester {
     @Autowired
     private Publisher publisher;
 
+    @Autowired
+    private TaskScheduler taskScheduler;
+
     @Test
     public void testConstruct() {
         assert controller != null;
@@ -247,6 +250,31 @@ public class ChatbotControllerTester {
     @Test
     public void testTimeoutState() throws Exception {
         assert controller.taskScheduler != null;
+        String userId = "timeoutTest";
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) {
+                Runnable runnable = invocation.getArgumentAt(0,
+                    Runnable.class);
+                runnable.run();
+                return null;
+            }
+        }).when(taskScheduler).schedule(
+            any(Runnable.class), any(Date.class));
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                throws Throwable {
+                ParserMessageJSON psr = invocation.getArgumentAt(0,
+                    ParserMessageJSON.class);
+                assert psr.get("userId").equals(userId);
+                return null;
+            }
+        }).when(publisher)
+          .publish(Matchers.any(ParserMessageJSON.class));
+        controller.toNextState(userId, "recommendationRequest");
+        Mockito.reset(taskScheduler);
+        Mockito.reset(publisher);
     }
 
     @Test
@@ -261,5 +289,7 @@ public class ChatbotControllerTester {
                 return null;
             }
         }).when(publisher).publish(Matchers.any(ParserMessageJSON.class));
+        controller.askWeight();
+        Mockito.reset(publisher);
     }
 }
