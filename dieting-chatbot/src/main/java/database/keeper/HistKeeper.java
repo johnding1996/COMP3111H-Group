@@ -50,7 +50,7 @@ public class HistKeeper extends SerializeKeeper {
 
 
     /**
-     * get
+     * search
      * Get the latest rows of user hist.
      * @param key user id
      * @param number number of latest result to return
@@ -60,7 +60,7 @@ public class HistKeeper extends SerializeKeeper {
     public JSONArray get(String key, int number) {
         JSONArray jsonArray = rangeList(prefix, key, number);
         if (jsonArray.length() == 0) {
-            log.error("Attempting to get user meal hist that does not exist.");
+            log.error("Attempting to search user meal hist that does not exist.");
             return null;
         }
         if (!checkValidity(jsonArray, fields)) {

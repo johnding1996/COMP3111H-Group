@@ -1,20 +1,17 @@
 package database.keeper;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import database.connection.RedisPool;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import java.util.List;
+import org.skyscreamer.jsonassert.JSONAssert;
+
 import redis.clients.jedis.Jedis;
 
-import java.util.List;
-
-import com.fasterxml.jackson.core.json.*;
-
 import org.junit.Test;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import static org.junit.Assert.*;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -56,7 +53,7 @@ public class LogKeeperTester {
         logKeeper.set("0", goodLogJson);
         List<String> actual = jedis.lrange("log:0", 0, -1);
         jedis.del("log:0");
-        assertTrue(actual.get(0).equals(goodLogJson.toString()));
+        JSONAssert.assertEquals(goodLogJson, new JSONObject(actual.get(0)), false);
     }
 
     @Test
@@ -79,7 +76,7 @@ public class LogKeeperTester {
         expected.put(goodLogJson);
         expected.put(goodLogJson);
         expected.put(goodLogJson);
-        assertTrue(expected.toString().equals(actual.toString()));
+        JSONAssert.assertEquals(expected, actual, false);
     }
 
     @Test

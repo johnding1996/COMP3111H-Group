@@ -33,8 +33,7 @@ public class FuzzyFoodQuerier extends FoodQuerier {
      * @param sql external sql connection
      */
     FuzzyFoodQuerier(Connection sql) {
-        super();
-        this.sql = sql;
+        super(sql);
     }
 
     /**
@@ -49,20 +48,19 @@ public class FuzzyFoodQuerier extends FoodQuerier {
     }
 
     /**
-     * get
+     * search
      * Fuzzy search for a food.
      * @param key string to search
      * @return JSONArray an array of FoodJSON
      */
     @Override
-    public JSONArray get(String key) {
-        String query = String.format("SELECT *, levenshtein(shrt_desc, '%s', %d, %d, %d) as dist FROM %s ORDER BY dist LIMIT %d;",
-                key, levenshteinCosts[0], levenshteinCosts[1], levenshteinCosts[2], table, queryLimit);
+    public JSONArray search(String key) {
+        String query = String.format("SELECT * FROM %s ORDER BY LEAST(LEVENSHTEIN('%s', %s, %d, %d, %d), LEVENSHTEIN('%s', %s, %d, %d, %d)) LIMIT %d;",
+                table,
+                key.toLowerCase(), desc_field, levenshteinCosts[0], levenshteinCosts[1], levenshteinCosts[2],
+                key.toUpperCase(), desc_field, levenshteinCosts[0], levenshteinCosts[1], levenshteinCosts[2],
+                queryLimit);
         ResultSet rs = executeQuery(query);
-        return parseResult(rs, fields);
-    }
-
-    public void setLevenshteinCosts(int[] levenshteinCosts) {
-        System.arraycopy(levenshteinCosts, 0, this.levenshteinCosts, 0, 3);
+        return parseResult(rs, fields, critical_fields);
     }
 }

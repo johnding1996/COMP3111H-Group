@@ -61,7 +61,7 @@ public class StateKeeper extends Keeper {
     }
 
     /**
-     * get
+     * search
      * Get the state string according to user id.
      * Return "Idle" if no user state stored.
      * @param uid user id
@@ -69,7 +69,7 @@ public class StateKeeper extends Keeper {
      */
     public String get(int uid) {
         String state = jedis.get(KEY_PREFIX + ":" + Integer.toString(uid));
-        // If no state value get, add it to Idle state
+        // If no state value search, add it to Idle state
         if (state == null) {
             this.set(uid, "Idle");
             return "Idle";

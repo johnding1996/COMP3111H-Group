@@ -44,7 +44,7 @@ public class LogKeeper extends SerializeKeeper {
     }
 
     /**
-     * get
+     * search
      * Get the latest rows of user logs.
      * @param user_id user id
      * @param number number of latest result to return
@@ -54,7 +54,7 @@ public class LogKeeper extends SerializeKeeper {
     public JSONArray get(String user_id, int number) {
         JSONArray jsonArray = rangeList(prefix, user_id, number);
         if (jsonArray.length() == 0) {
-            log.error("Attempting to get user log that does not exist.");
+            log.error("Attempting to search user log that does not exist.");
             return null;
         }
         if (!checkValidity(jsonArray, fields)) {

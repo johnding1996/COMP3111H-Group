@@ -27,8 +27,7 @@ public class PartialFoodQuerier extends FoodQuerier {
      * @param sql external sql connection
      */
     PartialFoodQuerier(Connection sql) {
-        super();
-        this.sql = sql;
+        super(sql);
     }
 
     /**
@@ -41,16 +40,16 @@ public class PartialFoodQuerier extends FoodQuerier {
     }
 
     /**
-     * get
+     * search
      * Partial search for a food.
      * @param key string to search
      * @return JSONArray an array of FoodJSON
      */
     @Override
-    public JSONArray get(String key) {
-        String query = String.format("SELECT * FROM %s WHERE shrt_desc ILIKE '%%%s%%' LIMIT %d;",
-                table, key, queryLimit);
+    public JSONArray search(String key) {
+        String query = String.format("SELECT * FROM %s WHERE %s ILIKE '%%%s%%' LIMIT %d;",
+                table, desc_field, key, queryLimit);
         ResultSet rs = executeQuery(query);
-        return parseResult(rs, fields);
+        return parseResult(rs, fields, critical_fields);
     }
 }

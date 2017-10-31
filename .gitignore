@@ -25,6 +25,7 @@ hs_err_pid*
 *.ipr
 *.ids
 *.orig
+out/
 
 # Eclipse
 *.pydevproject

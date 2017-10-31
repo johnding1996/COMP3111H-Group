@@ -5,6 +5,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.skyscreamer.jsonassert.JSONAssert;
 import redis.clients.jedis.Jedis;
 
 import java.util.List;
@@ -54,7 +55,7 @@ public class HistKeeperTester {
         histKeeper.set("0", goodHistJson);
         List<String> actual = jedis.lrange("hist:0", 0, -1);
         jedis.del("hist:0");
-        assertTrue(actual.get(0).equals(goodHistJson.toString()));
+        JSONAssert.assertEquals(goodHistJson, new JSONObject(actual.get(0)), false);
     }
 
     @Test
@@ -77,7 +78,7 @@ public class HistKeeperTester {
         expected.put(goodHistJson);
         expected.put(goodHistJson);
         expected.put(goodHistJson);
-        assertTrue(expected.toString().equals(actual.toString()));
+        JSONAssert.assertEquals(expected, actual, false);
     }
 
     @Test

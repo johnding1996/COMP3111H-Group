@@ -21,21 +21,21 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-public class PartialFoodQuerierTester {
+public class FuzzyFoodQuerierTester {
     private static Connection sql;
-    private static Querier partialFoodQuerier;
+    private static Querier fuzzyFoodQuerier;
     private static JSONObject goodFoodJson;
     private static JSONObject badFoodJson;
 
     @BeforeClass
     public static void setUpClass() {
         sql = SQLPool.getConnection();
-        partialFoodQuerier = new PartialFoodQuerier(sql);
+        fuzzyFoodQuerier = new FuzzyFoodQuerier(sql);
     }
 
     @AfterClass
     public static void tearDownClass() {
-        partialFoodQuerier.close();
+        fuzzyFoodQuerier.close();
     }
 
     public Set<Integer> retriveIndices(JSONArray jsonArray) {
@@ -45,7 +45,7 @@ public class PartialFoodQuerierTester {
             try {
                 jsonObject = jsonArray.getJSONObject(i);
             } catch (JSONException e) {
-                log.error("Parsing JSONArray failed when get JSONObject in PartialFoodQuerierTester.", e);
+                log.error("Parsing JSONArray failed when get JSONObject in FuzzyFoodQuerierTester.", e);
                 return null;
             }
             indices.add(jsonObject.getInt("ndb_no"));
@@ -58,43 +58,24 @@ public class PartialFoodQuerierTester {
 
     @Test
     public void testSearchSuccess() {
-        JSONArray jsonArray = partialFoodQuerier.search("BUTTER");
+        JSONArray jsonArray = fuzzyFoodQuerier.search("BEEF STEAK GRILLED");
         Set<Integer> indicesExpect = new HashSet<>(Arrays.asList(
-                1001, 1002, 1003, 1058, 1094, 1145, 3114, 4501, 4572, 4573
+                13946, 23076, 23268, 23516, 13469, 23536, 23075, 13493, 23267, 13232
         ));
         Set<Integer> indicesActual = retriveIndices(jsonArray);
-        assertTrue(indicesExpect.equals(indicesActual));
-    }
-
-    @Test
-    public void testSearchChangeQueryLimitSuccess() {
-        partialFoodQuerier.setQueryLimit(5);
-        JSONArray jsonArray = partialFoodQuerier.search("butter");
-        Set<Integer> indicesExpect = new HashSet<>(Arrays.asList(
-                1001, 1002, 1003, 1058, 1094
-        ));
-        Set<Integer> indicesActual = retriveIndices(jsonArray);
-        partialFoodQuerier.setQueryLimit(10);
+        log.info("length: " + jsonArray.length());
+        log.info("actual: " + indicesActual);
+        log.info("expect: " + indicesExpect);
         assertTrue(indicesExpect.equals(indicesActual));
     }
 
     @Test
     public void testSearchCaseInsensitiveSuccess() {
-        JSONArray jsonArray = partialFoodQuerier.search("butter");
+        JSONArray jsonArray = fuzzyFoodQuerier.search("Beef Steak Grilled");
         Set<Integer> indicesExpect = new HashSet<>(Arrays.asList(
-                1001, 1002, 1003, 1058, 1094, 1145, 3114, 4501, 4572, 4573
+                13946, 23076, 23268, 23516, 13469, 23536, 23075, 13493, 23267, 13232
         ));
         Set<Integer> indicesActual = retriveIndices(jsonArray);
         assertTrue(indicesExpect.equals(indicesActual));
     }
-
-    @Test
-    public void testSearchNotFoundFailure() {
-        JSONArray jsonArray = partialFoodQuerier.search("whatever");
-        Set<Integer> indicesExpect = new HashSet<>(Arrays.asList());
-        Set<Integer> indicesActual = retriveIndices(jsonArray);
-        assertTrue(indicesExpect.equals(indicesActual));
-    }
-
-
 }

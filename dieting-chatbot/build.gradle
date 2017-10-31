@@ -21,9 +21,10 @@ apply plugin: 'idea'
 
 dependencies {
     compile project(':line-bot-spring-boot')
-    compile "org.postgresql:postgresql:9.3-1102-jdbc41"
-    compile "org.apache.commons:commons-dbcp2:2.0.1"
+    compile "org.postgresql:postgresql:42.1.4"
+    compile "org.apache.commons:commons-dbcp2:2.1.1"
     compile 'redis.clients:jedis:2.9.0'
+    testCompile "org.skyscreamer:jsonassert:1.2.3"
 }
 
 test {
