@@ -82,6 +82,8 @@ import static reactor.bus.selector.Selectors.$;
 import javax.annotation.PostConstruct;
 import java.net.URI;
 
+import utility.Validator;
+
 @Slf4j
 @Service
 @LineMessageHandler
@@ -223,26 +225,11 @@ public class ChatbotController
     }
 
     /**
-     * Get a list of words from a sentence
-     * @param sentence A sentence in String
-     * @return A list of lowercase word in String,
-     *         ordered accordingly
-     *         Punctuation marks are discarded
-     */
-    static public List<String> sentenceToWords(String sentence) {
-        String[] words = sentence.split("\\s+");
-        for (int i = 0; i < words.length; ++i) {
-            words[i] = words[i].replaceAll("[^\\w]", "").toLowerCase();
-        }
-        return new ArrayList<String>(Arrays.asList(words));
-    }
-
-    /**
      * Check whether a text is a recommendation request
      * @param msg String from user
      */
     static public boolean isRecommendationRequest(String msg) {
-        for (String word : sentenceToWords(msg)) {
+        for (String word : Validator.sentenceToWords(msg)) {
             if (recommendKeywords.contains(word)) return true;
         }
         return false;
@@ -263,7 +250,7 @@ public class ChatbotController
      * @param msg String from user
      */
     static public boolean isInitialInputRequest(String msg) {
-        for (String word : sentenceToWords(msg)) {
+        for (String word : Validator.sentenceToWords(msg)) {
             if (initialInputKeywords.contains(word)) {
                 return true;
             }
@@ -283,7 +270,7 @@ public class ChatbotController
      * @param msg String from user
      */
     static public boolean isFeedbackRequest(String msg) {
-        for (String word : sentenceToWords(msg)) {
+        for (String word : Validator.sentenceToWords(msg)) {
             if (feedbackKeywords.contains(word)) return true;
         }
         return false;
