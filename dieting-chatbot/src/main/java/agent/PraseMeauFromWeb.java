@@ -18,12 +18,14 @@ public class PraseMeauFromWeb {
     @Autowired(required = false)
     private Publisher publisher;
 
+    //this method is for error msg if url is not valid
     private void sendErrorMessage() {
         FormatterMessageJSON fmt = new FormatterMessageJSON();
         fmt.appendTextMessage("Ops! Your url does not seem to be valid.");
         publisher.publish(fmt);
     }
  
+    //returns a json array to PraseMeauInputText, corresponding to "meau" on QueryJSON
 	public JSONArray webGet(String webLink) {
 		JSONParser parser = new JSONParser();
 		JSONArray output = new JSONArray();
@@ -55,7 +57,8 @@ public class PraseMeauFromWeb {
 				}
 			}
 			in.close();
-         
+        
+		//if exists error in reading
 		} catch (Exception e) {
 			sendErrorMessage();
 			return null;
