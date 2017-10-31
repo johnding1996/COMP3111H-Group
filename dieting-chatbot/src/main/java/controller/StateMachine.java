@@ -34,6 +34,7 @@ public class StateMachine {
             states.put("RecordMeal", new State("RecordMeal"));
             states.put("InitialInput", new State("InitialInput"));
             states.put("Feedback", new State("Feedback"));
+            states.put("AskWeight", new State("AskWeight"));
 
             // check
             for (Map.Entry<String, State> entry : states.entrySet())
@@ -49,6 +50,7 @@ public class StateMachine {
             tempTable.put("recommendationRequest", "ParseMenu");
             tempTable.put("initialInputRequest", "InitialInput");
             tempTable.put("feedbackRequest", "Feedback");
+            tempTable.put("askWeightTrigger", "AskWeight");
             transitionTable.put("Idle", tempTable);
 
             // ParseMenu
@@ -86,6 +88,12 @@ public class StateMachine {
             tempTable.put("sendFeedback", "Idle");
             tempTable.put("timeout", "Idle");
             transitionTable.put("Feedback", tempTable);
+
+            // AskWeight
+            tempTable = new HashMap<String, String>();
+            tempTable.put("userWeightInput", "Idle");
+            tempTable.put("timeout", "Idle");
+            transitionTable.put("AskWeight", tempTable);
 
             // check
             for (Map.Entry<String, Map<String, String>> entry : transitionTable.entrySet()) {

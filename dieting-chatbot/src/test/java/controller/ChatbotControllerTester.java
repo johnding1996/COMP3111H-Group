@@ -47,6 +47,9 @@ public class ChatbotControllerTester {
     @Autowired
     private ChatbotController controller;
 
+    @Autowired
+    private Publisher publisher;
+
     @Test
     public void testConstruct() {
         assert controller != null;
@@ -242,7 +245,21 @@ public class ChatbotControllerTester {
     }
 
     @Test
-    public void testTimeOutState() throws Exception {
+    public void testTimeoutState() throws Exception {
         assert controller.taskScheduler != null;
+    }
+
+    @Test
+    public void testAskWeight() {
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                throws Throwable {
+                ParserMessageJSON psr = invocation.getArgumentAt(0,
+                    ParserMessageJSON.class);
+                assert psr.get("state").equals("AskWeight");
+                return null;
+            }
+        }).when(publisher).publish(Matchers.any(ParserMessageJSON.class));
     }
 }

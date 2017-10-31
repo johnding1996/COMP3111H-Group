@@ -1,5 +1,6 @@
 package controller;
 
+import java.util.HashSet;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -8,7 +9,19 @@ public class State {
 
     private int timeout; // in sec
     private String timeoutState;
-    static final int DEFAULT_TIMEOUT = 30; // 1 hour
+    public static final int DEFAULT_TIMEOUT = 3600; // 1 hour
+    private static HashSet<String> stateNameSet;
+    static {
+        stateNameSet = new HashSet<String>();
+        stateNameSet.add("Idle");
+        stateNameSet.add("ParseMenu");
+        stateNameSet.add("AskMeal");
+        stateNameSet.add("Recommend");
+        stateNameSet.add("RecordMeal");
+        stateNameSet.add("InitialInput");
+        stateNameSet.add("Feedback");
+        stateNameSet.add("AskWeight");
+    }
 
     /**
     * Construct a state with default timeoutState and timeout
@@ -49,14 +62,7 @@ public class State {
     }
 
     static public boolean validateStateName(String name) {
-        switch (name) {
-            case "Idle": case "ParseMenu": case "AskMeal":
-            case "Recommend": case "RecordMeal":
-            case "InitialInput": case "Feedback":
-                return true;
-            default:
-                return false;
-        }
+        return stateNameSet.contains(name);
     }
 
     /**

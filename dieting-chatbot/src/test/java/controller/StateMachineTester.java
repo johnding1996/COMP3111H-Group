@@ -99,6 +99,10 @@ public class StateMachineTester {
         assert stateMachine.getState().equals("Feedback");
         stateMachine.toNextState("sendFeedback");
         assert stateMachine.getState().equals("Idle");
+        stateMachine.toNextState("askWeightTrigger");
+        assert stateMachine.getState().equals("AskWeight");
+        stateMachine.toNextState("userWeightInput");
+        assert stateMachine.getState().equals("Idle");
     }
 
     @Test

@@ -108,13 +108,13 @@ public class ChatbotController
     @Autowired(required = false)
     private LineMessagingClient lineMessagingClient;
 
-    @Autowired(required = false)
+    @Autowired
     private Publisher publisher;
 
     @Autowired
     private Formatter formatter;
 
-    @Autowired(required=false)
+    @Autowired
     private EventBus eventBus;
 
     @Autowired
@@ -135,8 +135,17 @@ public class ChatbotController
     }
 
     @Scheduled(cron = "*/30 * 20 * * *", zone = "GMT+08")
-    public void askForWeight() {
+    public void askWeight() {
         log.info("AskForWeight: **************************");
+        List<String> userIdList = getUserIdList();
+        for (String userId : userIdList) {
+            toNextState(userId, "askWeightTrigger");
+            String state = getStateMachine(userId).getState();
+            ParserMessageJSON psr = new ParserMessageJSON();
+            psr.set("userId", userId)
+               .set("state", state);
+            publisher.publish(psr);
+        }
     }
 
     /**
@@ -241,6 +250,17 @@ public class ChatbotController
             stateMachines.put(userId, new StateMachine(userId));
         }
         return stateMachines.get(userId);
+    }
+
+
+    /**
+     * Get user Id list
+     * @return List of user Id in String
+     */
+    public List<String> getUserIdList() {
+        ArrayList<String> ret = new ArrayList<>();
+        ret.add("U60ee860ae5e086599f9e2baff5efcf15");
+        return ret;
     }
 
     /**
