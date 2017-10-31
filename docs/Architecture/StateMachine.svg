@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg height="375" version="1.1" width="707" xmlns="http://www.w3.org/2000/svg">
+<svg height="482" version="1.1" width="707" xmlns="http://www.w3.org/2000/svg">
 <rect fill="#00ff" height="46" rx="16" ry="16" stroke="#00ff" stroke-width="1" width="114" x="102" y="14"/>
 <rect fill="#ffffff" height="46" rx="16" ry="16" stroke="#000000" stroke-width="1" width="114" x="102" y="14"/>
 <rect fill="#ffffff" height="44" rx="16" ry="16" stroke="#ffffff" stroke-width="1" width="112" x="103" y="15"/>
@@ -116,4 +116,20 @@ Idle</text>
 <line fill="#000000" stroke="#000000" stroke-width="1" x1="176" x2="174" y1="240" y2="227"/>
 <text font-family="Lucida Grande" font-size="13" x="224" y="257">
 InitialInputRequest</text>
+<rect fill="#00ff" height="46" rx="16" ry="16" stroke="#00ff" stroke-width="1" width="114" x="406" y="422"/>
+<rect fill="#ffffff" height="46" rx="16" ry="16" stroke="#000000" stroke-width="1" width="114" x="406" y="422"/>
+<rect fill="#ffffff" height="44" rx="16" ry="16" stroke="#ffffff" stroke-width="1" width="112" x="407" y="423"/>
+<text font-family="Lucida Grande" font-size="13" x="429" y="436">
+AskWeight</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="406" x2="519" y1="446" y2="446"/>
+<polyline fill="none" points="438,283 438,422" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="431" x2="438" y1="410" y2="422"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="445" x2="438" y1="410" y2="422"/>
+<text font-family="Lucida Grande" font-size="13" x="324" y="400">
+askWeightTrigger</text>
+<polyline fill="none" points="462,422 462,283" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="469" x2="462" y1="295" y2="283"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="455" x2="462" y1="295" y2="283"/>
+<text font-family="Lucida Grande" font-size="13" x="465" y="361">
+userWeightInput</text>
 </svg>

@@ -23,12 +23,15 @@ import java.nio.file.Path;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import reactor.Environment;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 
 @SpringBootApplication
+@EnableScheduling
 public class DietingChatbotApplication {
     @Bean
     Environment env() {
@@ -39,6 +42,11 @@ public class DietingChatbotApplication {
     @Bean
     EventBus createEventBus(Environment env) {
 	    return EventBus.create(env, Environment.THREAD_POOL);
+    }
+
+    @Bean
+    TaskScheduler createTaskScheduler() {
+        return new ThreadPoolTaskScheduler();
     }
 
     static Path downloadedContentDir;
