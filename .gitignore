@@ -2,6 +2,7 @@
 target/
 build/
 */bin
+bin/
 
 # gradle
 /.gradle/
@@ -25,6 +26,7 @@ hs_err_pid*
 *.ipr
 *.ids
 *.orig
+out/
 
 # Eclipse
 *.pydevproject
