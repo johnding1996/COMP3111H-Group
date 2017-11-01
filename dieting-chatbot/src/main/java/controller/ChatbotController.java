@@ -6,14 +6,20 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -23,6 +29,13 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -99,15 +112,18 @@ public class ChatbotController
     @Autowired(required = false)
     private LineMessagingClient lineMessagingClient;
 
-    @Autowired(required = false)
+    @Autowired
     private Publisher publisher;
 
     @Autowired
     private Formatter formatter;
 
-    @Autowired(required=false)
+    @Autowired
     private EventBus eventBus;
 
+    @Autowired
+    public TaskScheduler taskScheduler;
+ 
     /**
      * Register on eventBus
      */
@@ -119,6 +135,20 @@ public class ChatbotController
         } catch (Exception e) {
             log.info("Failed to register on eventBus: " +
                 e.toString());
+        }
+    }
+
+    @Scheduled(cron = "*/30 * 20 * * *", zone = "GMT+08")
+    public void askWeight() {
+        log.info("AskForWeight: **************************");
+        List<String> userIdList = getUserIdList();
+        for (String userId : userIdList) {
+            toNextState(userId, "askWeightTrigger");
+            String state = getStateMachine(userId).getState();
+            ParserMessageJSON psr = new ParserMessageJSON();
+            psr.set("userId", userId)
+               .set("state", state);
+            publisher.publish(psr);
         }
     }
 
@@ -134,10 +164,9 @@ public class ChatbotController
         if (formatterMessageJSON.get("stateTransition") != null) {
             String userId = (String)formatterMessageJSON.get("userId");
             String transition = (String)formatterMessageJSON.get("stateTransition");
-            StateMachine stateMachine = getStateMachine(userId);
             log.info("User {} triggers state transition {}",
                 userId, transition);
-            stateMachine.toNextState(transition);
+            toNextState(userId, transition);
         }
         if (!formatterMessageJSON.get("type").equals("transition"))
             formatter.sendMessage(formatterMessageJSON);
@@ -158,11 +187,11 @@ public class ChatbotController
         /* update state */
         if (state.equals("Idle")) {
             if (isRecommendationRequest(textContent)) {
-                stateMachine.toNextState("recommendationRequest");
+                toNextState(userId, "recommendationRequest");
             } else if (isInitialInputRequest(textContent)) {
-                stateMachine.toNextState("initialInputRequest");
+                toNextState(userId, "initialInputRequest");
             } else if (isFeedbackRequest(textContent)) {
-                stateMachine.toNextState("feedbackRequest");
+                toNextState(userId, "feedbackRequest");
             }
             state = stateMachine.getState();
             log.info("State transition handled by Controller");
@@ -221,9 +250,59 @@ public class ChatbotController
      */
     public StateMachine getStateMachine(String userId) {
         if (!stateMachines.containsKey(userId)) {
+            log.info("Creating state machine for {}", userId);
             stateMachines.put(userId, new StateMachine(userId));
         }
         return stateMachines.get(userId);
+    }
+
+
+    /**
+     * Get user Id list
+     * @return List of user Id in String
+     */
+    public List<String> getUserIdList() {
+        ArrayList<String> ret = new ArrayList<>();
+        ret.add("U60ee860ae5e086599f9e2baff5efcf15");
+        return ret;
+    }
+
+    /**
+     * State transition wrapper, to next state and register callback
+     * @param userId String of user id
+     * @param transition String representing the state transition
+     */
+    public void toNextState(String userId, String transition) {
+        StateMachine stateMachine = getStateMachine(userId);
+        boolean isStateChanged = stateMachine.toNextState(transition);
+        if (!isStateChanged) return;
+        State state = stateMachine.getStateObject();
+        int timeout = state.getTimeout();
+        String timeoutState = state.getTimeoutState();
+        if (!state.getName().equals("Idle")) {
+            log.info("register call back that will run after {} sec", timeout);
+            taskScheduler.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    toNextState(userId, "timeout");
+                    ParserMessageJSON psr = new ParserMessageJSON();
+                    psr.set("userId", userId)
+                       .set("state", timeoutState);
+                    publisher.publish(psr);
+                }
+            }, new Date(1000*timeout + (new Date()).getTime()));
+        } else {
+            log.info("remove state machine for {} after {} sec",
+                userId, timeout);
+            taskScheduler.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    stateMachines.remove(userId);
+                    log.info("state machine for {} removed", userId);
+                }
+            }, new Date(1000*State.DEFAULT_TIMEOUT
+                + (new Date()).getTime()));
+        }
     }
 
     /**

@@ -99,6 +99,10 @@ public class StateMachineTester {
         assert stateMachine.getState().equals("Feedback");
         stateMachine.toNextState("sendFeedback");
         assert stateMachine.getState().equals("Idle");
+        stateMachine.toNextState("askWeightTrigger");
+        assert stateMachine.getState().equals("AskWeight");
+        stateMachine.toNextState("userWeightInput");
+        assert stateMachine.getState().equals("Idle");
     }
 
     @Test
@@ -114,5 +118,25 @@ public class StateMachineTester {
         stateMachine.setState("Recommend");
         stateMachine.toNextState("bar foo");
         assert stateMachine.getState().equals("Recommend");
+    }
+
+    @Test
+    public void testStateTransitionReturnValue() throws Exception {
+        stateMachine.initialize();
+        assert stateMachine.toNextState("recommendationRequest");
+        assert stateMachine.toNextState("menuMessage");
+        assert !stateMachine.toNextState("userInitialInput");
+        assert !stateMachine.toNextState("invalidTransition");
+        assert stateMachine.toNextState("confirmMeal");
+    }
+
+    @Test
+    public void testStateObjectGetter() throws Exception {
+        stateMachine.initialize();
+        assert stateMachine.getStateObject().getName()
+                .equals("Idle");
+        stateMachine.toNextState("feedbackRequest");
+        assert stateMachine.getStateObject().getName()
+                .equals("Feedback");
     }
 }
