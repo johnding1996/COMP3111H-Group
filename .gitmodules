@@ -1,0 +1,3 @@
+[submodule "wikis"]
+	path = wikis
+	url = git@github.com:johnding1996/COMP3111H-Group.wiki.git
