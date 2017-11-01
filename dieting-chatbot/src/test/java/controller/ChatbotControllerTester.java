@@ -33,6 +33,8 @@ import com.linecorp.bot.client.LineMessagingClient;
 import com.linecorp.bot.client.LineMessagingClientImpl;
 import com.linecorp.bot.client.LineMessagingService;
 import com.linecorp.bot.client.LineMessagingServiceBuilder;
+import com.linecorp.bot.model.event.MessageEvent;
+import com.linecorp.bot.model.event.message.ImageMessageContent;
 import lombok.extern.slf4j.Slf4j;
 
 import static reactor.bus.selector.Selectors.$;
@@ -270,5 +272,24 @@ public class ChatbotControllerTester {
         assert controller.getStateMachine("commandTester").getState()
             .equals("RecordMeal");
         Mockito.reset(publisher);
+    }
+
+    @Test
+    public void testCreateURI() {
+        String uri = "foo-bar";
+        String[] tokens = ChatbotController.createUri(uri).split("/");
+        assert tokens[tokens.length-1].equals(uri);
+    }
+
+    @Test
+    public void testSaveContent() {
+        ImageMessageContent content = new ImageMessageContent("id");
+        MessageEvent<ImageMessageContent> event =
+            new MessageEvent<>("token", null, content, null);
+        try {
+            controller.handleImageMessageEvent(event);
+        } catch (Exception e) {
+            log.info(e.toString());
+        }
     }
 }

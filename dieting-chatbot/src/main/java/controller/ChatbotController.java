@@ -410,20 +410,6 @@ public class ChatbotController
             .path(path).build().toUriString();
     }
 
-    private void system(String... args) {
-        ProcessBuilder processBuilder = new ProcessBuilder(args);
-        try {
-            Process start = processBuilder.start();
-            int i = start.waitFor();
-            log.info("result: {} => {}", Arrays.toString(args), i);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (InterruptedException e) {
-            log.info("Interrupted", e);
-            Thread.currentThread().interrupt();
-        }
-    }
-
     private static DownloadedContent saveContent(String ext,
         MessageContentResponse responseBody) {
 
