@@ -1,22 +1,33 @@
-package agent;
+package agent.InputDishInteract;
 import java.util.ArrayList;
-import java.util.List;
-import javax.json.Json;
-import javax.json.stream.JsonParser;
 
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
+ * Super class for {@link getFoodCandidatePartial} and {@link getFoodCandidateFuzzy}
  * @author wguoaa
  * @version 1.2
  */
 @Slf4j
 public class getFoodCandidate {
 
+    private JSONObject foodQueryData;
 
-    private JSONObject foodQueryData  = new JSONObject();
+    /**
+     * constructor
+     * Default constructor.
+     */
+    getFoodCandidate () {
+        super();
+        foodQueryData = new JSONObject();
+    }
+
+    /**
+     *
+     * @return
+     */
 
     public  ArrayList<String> getFoodName() {
         ArrayList<String> foodNameList = new ArrayList<>();

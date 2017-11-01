@@ -1,13 +1,10 @@
-package agent;
+package agent.InputDishInteract;
 import java.util.ArrayList;
-import java.util.List;
-import javax.json.Json;
-import javax.json.stream.JsonParser;
 
+import agent.InputDishInteract.getFoodCandidate;
 import database.querier.PartialFoodQuerier;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 
@@ -16,7 +13,7 @@ import org.json.JSONObject;
  * @version 1.2
  */
 @Slf4j
-public class getFoodCandidatePartial extends getFoodCandidate  {
+public class getFoodCandidatePartial extends getFoodCandidate {
 
 
     public JSONObject getFoodCandidate(ArrayList<String> foodNameList ){

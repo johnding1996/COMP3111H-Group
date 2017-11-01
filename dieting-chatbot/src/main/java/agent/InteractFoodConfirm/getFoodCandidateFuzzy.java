@@ -1,13 +1,10 @@
-package agent;
+package agent.InputDishInteract;
 import java.util.ArrayList;
-import java.util.List;
-import javax.json.Json;
-import javax.json.stream.JsonParser;
 
+import agent.InputDishInteract.getFoodCandidate;
 import database.querier.FuzzyFoodQuerier;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -16,7 +13,7 @@ import org.json.JSONObject;
  */
 
 @Slf4j
-public class getFoodCandidateFuzzy extends getFoodCandidate  {
+public class getFoodCandidateFuzzy extends getFoodCandidate {
 
 
     public JSONObject getFoodCandidate(ArrayList<String> foodNameList ){
