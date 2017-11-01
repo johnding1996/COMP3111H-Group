@@ -2,14 +2,31 @@ package controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Date;
 import java.util.List;
-
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Matchers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
+import static org.mockito.Matchers.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import reactor.bus.Event;
 import com.linecorp.bot.client.LineMessagingClient;
@@ -25,9 +42,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {ChatbotController.class, Formatter.class})
+@ContextConfiguration(classes = TestConfiguration.class)
 public class ChatbotControllerTester {
     @Autowired
     private ChatbotController controller;
+
+    @Autowired
+    private Publisher publisher;
+
+    @Autowired
+    private TaskScheduler taskScheduler;
 
     @Test
     public void testConstruct() {
@@ -56,46 +80,6 @@ public class ChatbotControllerTester {
         assert sm.getState().equals("Idle");
         sm = controller.getStateMachine("Hartshorne");
         assert sm.getState().equals("Idle");
-    }
-
-    @Test
-    public void testSentenceToWord1() {
-        String sentence = "Hello! World!";
-        List<String> words = ChatbotController.sentenceToWords(sentence);
-        for (String word : words) {
-            log.info(word);
-        }
-        assert words.size() == 2;
-        assert words.get(0).equals("hello");
-        assert words.get(1).equals("world");
-    }
-
-    @Test
-    public void testSentenceToWord2() {
-        String sentence = "Hello!Wo?&rld!";
-        List<String> words = ChatbotController.sentenceToWords(sentence);
-        for (String word : words) {
-            log.info(word);
-        }
-        assert words.size() == 1;
-        assert words.get(0).equals("helloworld");
-    }
-
-    @Test
-    public void testSentenceToWord3() {
-        String sentence = "\'This is a very, very long, sentence~'";
-        List<String> words = ChatbotController.sentenceToWords(sentence);
-        for (String word : words) {
-            log.info(word);
-        }
-        assert words.size() == 7;
-        assert words.get(0).equals("this");
-        assert words.get(1).equals("is");
-        assert words.get(2).equals("a");
-        assert words.get(3).equals("very");
-        assert words.get(4).equals("very");
-        assert words.get(5).equals("long");
-        assert words.get(6).equals("sentence");
     }
 
     @Test
@@ -207,6 +191,7 @@ public class ChatbotControllerTester {
 
     @Test
     public void testStateTransition2() {
+        controller.clearStateMachines();
         FormatterMessageJSON fmt = new FormatterMessageJSON();
         fmt.set("userId", "agong")
            .set("type", "transition")
@@ -220,5 +205,51 @@ public class ChatbotControllerTester {
         fmt.set("stateTransition", "confirmMeal");
         controller.accept(ev);
         assert sm.getState().equals("Idle");
+    }
+
+    @Test
+    public void testTimeoutState() throws Exception {
+        assert controller.taskScheduler != null;
+        String userId = "timeoutTest";
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) {
+                Runnable runnable = invocation.getArgumentAt(0,
+                    Runnable.class);
+                runnable.run();
+                return null;
+            }
+        }).when(taskScheduler).schedule(
+            any(Runnable.class), any(Date.class));
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                throws Throwable {
+                ParserMessageJSON psr = invocation.getArgumentAt(0,
+                    ParserMessageJSON.class);
+                assert psr.get("userId").equals(userId);
+                return null;
+            }
+        }).when(publisher)
+          .publish(Matchers.any(ParserMessageJSON.class));
+        controller.toNextState(userId, "recommendationRequest");
+        Mockito.reset(taskScheduler);
+        Mockito.reset(publisher);
+    }
+
+    @Test
+    public void testAskWeight() {
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                throws Throwable {
+                ParserMessageJSON psr = invocation.getArgumentAt(0,
+                    ParserMessageJSON.class);
+                assert psr.get("state").equals("AskWeight");
+                return null;
+            }
+        }).when(publisher).publish(Matchers.any(ParserMessageJSON.class));
+        controller.askWeight();
+        Mockito.reset(publisher);
     }
 }
