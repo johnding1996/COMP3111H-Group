@@ -80,7 +80,7 @@ public class ParserMessageJSON extends MessageJSON {
     /**
      * set content of text message
      * @param id LINE message id in String
-     * @param textContent String of text message
+     * @param text String of text message
      * @return This object
      */
     public ParserMessageJSON setTextMessage(String id, String text) {
