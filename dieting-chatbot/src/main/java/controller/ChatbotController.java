@@ -123,6 +123,9 @@ public class ChatbotController
 
     @Autowired
     public TaskScheduler taskScheduler;
+
+    private static final boolean debugFlag = true;
+    private static final String DEBUG_COMMAND_PREFIX = "$$$";
  
     /**
      * Register on eventBus
@@ -183,6 +186,13 @@ public class ChatbotController
 
         StateMachine stateMachine = getStateMachine(userId);
         String state = stateMachine.getState();
+
+        if (debugFlag && textContent.startsWith(
+            DEBUG_COMMAND_PREFIX)) {
+                log.info("User initiated state transition using command");
+                changeStateByCommand(userId, textContent);
+                return;
+            }
 
         /* update state */
         if (state.equals("Idle")) {
@@ -276,6 +286,15 @@ public class ChatbotController
         StateMachine stateMachine = getStateMachine(userId);
         boolean isStateChanged = stateMachine.toNextState(transition);
         if (!isStateChanged) return;
+        registerStateTransitionCallback(userId);
+    }
+
+    /**
+     * Register callback after state transition
+     * @param userId String of user Id
+     */
+    private void registerStateTransitionCallback(String userId) {
+        StateMachine stateMachine = getStateMachine(userId);
         State state = stateMachine.getStateObject();
         int timeout = state.getTimeout();
         String timeoutState = state.getTimeoutState();
@@ -363,25 +382,32 @@ public class ChatbotController
         feedbackKeywords.add("report");
         feedbackKeywords.add("digest");
     }
+
+    /**
+     * A debug helper function for changing state
+     * @param userId String of user Id
+     * @param command Command for state transition
+     */
+    public void changeStateByCommand(String userId, String command) {
+        assert command.startsWith(DEBUG_COMMAND_PREFIX);
+        String newState = command.substring(DEBUG_COMMAND_PREFIX.length());
+
+        /* Send push message */
+        FormatterMessageJSON fmt = new FormatterMessageJSON();
+        fmt.set("userId", userId)
+           .set("type", "push")
+           .appendTextMessage("New state: " + newState);
+        publisher.publish(fmt);
+
+        StateMachine stateMachine = getStateMachine(userId);
+        stateMachine.setState(newState);
+        registerStateTransitionCallback(userId);
+    }
     /* ------------------------ LOGIC END ------------------------ */
 
     static String createUri(String path) {
         return ServletUriComponentsBuilder.fromCurrentContextPath()
             .path(path).build().toUriString();
-    }
-
-    private void system(String... args) {
-        ProcessBuilder processBuilder = new ProcessBuilder(args);
-        try {
-            Process start = processBuilder.start();
-            int i = start.waitFor();
-            log.info("result: {} => {}", Arrays.toString(args), i);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (InterruptedException e) {
-            log.info("Interrupted", e);
-            Thread.currentThread().interrupt();
-        }
     }
 
     private static DownloadedContent saveContent(String ext,
