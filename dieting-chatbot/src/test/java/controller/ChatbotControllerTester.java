@@ -252,4 +252,23 @@ public class ChatbotControllerTester {
         controller.askWeight();
         Mockito.reset(publisher);
     }
+
+    @Test
+    public void testChangeStateByCommand() {
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                throws Throwable {
+                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
+                    FormatterMessageJSON.class);
+                assert fmt.get("userId").equals("commandTester");
+                assert fmt.get("type").equals("push");
+                return null;
+            }
+        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
+        controller.changeStateByCommand("commandTester", "$$$RecordMeal");
+        assert controller.getStateMachine("commandTester").getState()
+            .equals("RecordMeal");
+        Mockito.reset(publisher);
+    }
 }
