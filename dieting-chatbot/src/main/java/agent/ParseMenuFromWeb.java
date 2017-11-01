@@ -19,10 +19,13 @@ public class ParseMenuFromWeb {
  
     /**
      * returns a JSON array from given URL, corresponding to "meau" on QueryJSON
-     * @param userId String of user Id
+     * @param user input of url
      * with reference from http://carlofontanos.com/java-parsing-json-data-from-a-url/
      */
-	public JSONArray webGet(String webLink) {
+	public JSONObject webGet(ParserMessageJSON PMJ) {
+		String userID = PMJ.get("userId");
+		String webLink = PMJ.getTextMessage();
+		
 		JSONParser parser = new JSONParser();
 		JSONArray output = new JSONArray();
      
@@ -53,6 +56,10 @@ public class ParseMenuFromWeb {
 				}
 			}
 			in.close();
+			JSONObject thisMeal = new JSONObject();
+			thisMeal.put("userId", userID);
+			thisMeal.put("meau", output);
+			return thisMeal;
         
 		//if exists error in reading
 		} catch (Exception e) {
@@ -66,7 +73,6 @@ public class ParseMenuFromWeb {
 //      } catch (ParseException e) {
 //          e.printStackTrace();
 //      }
-     
-		return output;   
+ 
 	}   
 }
