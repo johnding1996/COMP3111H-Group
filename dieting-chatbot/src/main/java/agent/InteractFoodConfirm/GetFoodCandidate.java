@@ -1,4 +1,4 @@
-package agent.InputDishInteract;
+package agent.InteractFoodConfirm;
 import java.util.ArrayList;
 
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +11,7 @@ import org.json.JSONObject;
  * @version 1.2
  */
 @Slf4j
-public class getFoodCandidate {
+public class GetFoodCandidate {
 
     private JSONObject foodQueryData;
 
@@ -19,14 +19,15 @@ public class getFoodCandidate {
      * constructor
      * Default constructor.
      */
-    getFoodCandidate () {
+    GetFoodCandidate () {
         super();
         foodQueryData = new JSONObject();
     }
 
     /**
-     *
-     * @return
+     * getFoodName
+     * Return a list of input food name for query
+     * @return Arraylist an array of food names
      */
 
     public  ArrayList<String> getFoodName() {

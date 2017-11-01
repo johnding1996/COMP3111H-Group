@@ -1,7 +1,7 @@
-package agent.InputDishInteract;
+package agent.InteractFoodConfirm;
 import java.util.ArrayList;
 
-import agent.InputDishInteract.getFoodCandidate;
+import agent.InteractFoodConfirm.GetFoodCandidate;
 import database.querier.PartialFoodQuerier;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -13,9 +13,24 @@ import org.json.JSONObject;
  * @version 1.2
  */
 @Slf4j
-public class getFoodCandidatePartial extends getFoodCandidate {
+public class GetFoodCandidatePartial extends GetFoodCandidate {
 
+    /**
+     * constructor
+     * Default constructor.
+     */
+    public GetFoodCandidatePartial() {
+        super();
+    }
 
+    /**
+     *getFoodCandidate
+     * Query DB by partial match search and get food candidate
+     * @param foodNameList
+     * @return JSONObject an json file stores candidates for each dish
+     * key: dish name input by user
+     * values: JSONArray stores candidates for this dish
+     */
     public JSONObject getFoodCandidate(ArrayList<String> foodNameList ){
         JSONObject foodCandidate = new JSONObject();
         PartialFoodQuerier PartialQuerier = new PartialFoodQuerier();

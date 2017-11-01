@@ -1,7 +1,7 @@
-package agent.InputDishInteract;
+package agent.InteractFoodConfirm;
 import java.util.ArrayList;
 
-import agent.InputDishInteract.getFoodCandidate;
+import agent.InteractFoodConfirm.GetFoodCandidate;
 import database.querier.FuzzyFoodQuerier;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -13,9 +13,24 @@ import org.json.JSONObject;
  */
 
 @Slf4j
-public class getFoodCandidateFuzzy extends getFoodCandidate {
+public class GetFoodCandidateFuzzy extends GetFoodCandidate {
 
+    /**
+     * constructor
+     * Default constructor.
+     */
+    public GetFoodCandidateFuzzy() {
+        super();
+    }
 
+    /**
+     *getFoodCandidate
+     * Query DB by fuzzy search and get food candidate
+     * @param foodNameList
+     * @return JSONObject an json file stores candidates for each dish
+     * key: dish name input by user
+     * values: JSONArray stores candidates for this dish
+     */
     public JSONObject getFoodCandidate(ArrayList<String> foodNameList ){
 
         JSONObject foodCandidate = new JSONObject();
