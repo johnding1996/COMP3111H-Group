@@ -55,7 +55,7 @@ public class UserInitialInputRecord
      * @param textContent String of user input
      * @return validation result
      */
-    public boolean validateInput(String type, String textContent) {
+    static public boolean validateInput(String type, String textContent) {
         switch(type) {
             case "age":
                 if(!Validator.isInteger(textContent)) return false;
@@ -79,8 +79,13 @@ public class UserInitialInputRecord
                 if (!Validator.validateWeight(height)) return false;
                 break;
 
-            case "due":
+            case "goalDate":
+                for (int i=0; i<5; ++i)
+                    log.info(textContent);
                 return Validator.isFutureDate(textContent, "yyyy-MM-dd");
+            
+            case "id":
+                return true;
                 
             default:
                 return false;
@@ -141,6 +146,7 @@ public class UserInitialInputRecord
         
         // register user if it is new
         if (!userStates.containsKey(userId)) {
+            log.info("register new user {}", userId);
             userStates.put(userId, new UserInitialState(userId));
         }
         UserInitialState user = userStates.get(userId);
@@ -148,6 +154,7 @@ public class UserInitialInputRecord
         response.set("userId", userId)
                 .set("type", "reply")
                 .set("replyToken", replyToken);
+        log.info(psr.toString());
         if (!validateInput(user.getState(), psr.getTextContent())) {
             response.appendTextMessage(
                 "Please input a valid value according to instruction");
@@ -180,7 +187,9 @@ public class UserInitialInputRecord
                     break;
                 case "desiredWeight":
                     user.desiredWeight = Integer.parseInt(psr.getTextContent());
-                    response.appendTextMessage("Alright, now tell when you want to finish this goal? (type in yyyy-mm-dd format)");
+                    response.appendTextMessage(
+                        "Alright, now tell when you want to finish this goal? " +
+                        "(type in yyyy-mm-dd format)");
                     break;
                 case "goalDate":
                     user.goalDate = psr.getTextContent();
@@ -193,6 +202,39 @@ public class UserInitialInputRecord
             user.moveState();
         }
         publisher.publish(response);
+    }
+
+    /**
+     * Set the state of a given user
+     * @param userId String of user Id
+     * @param stateIndex index of the new state
+     */
+    public void setUserState(String userId, int stateIndex) {
+        if (!userStates.containsKey(userId)) {
+            log.info("Set state for nonexisting user {}", userId);
+            return;
+        }
+        UserInitialState u = userStates.get(userId);
+        u.setState(stateIndex);
+        log.info("Overriding state of user {} to {}", userId,
+            u.getState());
+    }
+
+    /**
+     * Get the state of a given user
+     * @param userId String of user Id
+     * @return A String of the current state, null of no such user
+     */
+    public String getUserState(String userId) {
+        if (!userStates.containsKey(userId)) return null;
+        else return userStates.get(userId).getState();
+    }
+
+    /**
+     * Clear all user states
+     */
+    public void clearUserStates() {
+        userStates.clear();
     }
 
     /**
@@ -218,6 +260,13 @@ public class UserInitialInputRecord
 
         public String getState() {
             return this.stateList[stateIndex];
+        }
+
+        public void setState(int stateIndex) {
+            if (stateIndex < 0) stateIndex = 0;
+            if (stateIndex >= stateList.length)
+                stateIndex = stateList.length-1;
+            this.stateIndex = stateIndex;
         }
 
         public void moveState() {

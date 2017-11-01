@@ -10,7 +10,7 @@ import reactor.Environment;
 import reactor.bus.EventBus;
 
 @Configuration
-public class ChatbotControllerTesterConfiguration {
+public class TestConfiguration {
     @Bean
     public TaskScheduler createTaskScheduler() {
         return Mockito.mock(ThreadPoolTaskScheduler.class);
