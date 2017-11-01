@@ -1,6 +1,5 @@
 package controller;
 
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,7 +9,7 @@ import reactor.Environment;
 import reactor.bus.EventBus;
 
 @Configuration
-public class ChatbotControllerTesterConfiguration {
+public class TestConfiguration {
     @Bean
     public TaskScheduler createTaskScheduler() {
         return Mockito.mock(ThreadPoolTaskScheduler.class);
