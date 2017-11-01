@@ -102,7 +102,7 @@ public class ParseMenuFromText {
 			response.set("userId", userID)
             		.set("type", "reply")
             		.set("replyToken", replyToken)
-            		.appendTextMessage("Long time no see! What food did you just enjoy? Enter food names in format: food1;food2;food3");
+            		.appendTextMessage("Enter food names in format: food1;food2;food3");
 			publisher.publish(response);
             log.info("User start to input text");
 			this.userList.add(p);
