@@ -24,7 +24,7 @@ public class StateMachine {
     /**
      * Initialize states and transitionTable
      */
-    {
+    static {
         try {
             states.put("Idle", new State("Idle"));
             states.put("ParseMenu", new State("ParseMenu"));
@@ -34,6 +34,7 @@ public class StateMachine {
             states.put("RecordMeal", new State("RecordMeal"));
             states.put("InitialInput", new State("InitialInput"));
             states.put("Feedback", new State("Feedback"));
+            states.put("AskWeight", new State("AskWeight"));
 
             // check
             for (Map.Entry<String, State> entry : states.entrySet())
@@ -49,37 +50,50 @@ public class StateMachine {
             tempTable.put("recommendationRequest", "ParseMenu");
             tempTable.put("initialInputRequest", "InitialInput");
             tempTable.put("feedbackRequest", "Feedback");
+            tempTable.put("askWeightTrigger", "AskWeight");
             transitionTable.put("Idle", tempTable);
 
             // ParseMenu
             tempTable = new HashMap<String, String>();
             tempTable.put("menuMessage", "AskMeal");
+            tempTable.put("timeout", "Idle");
             transitionTable.put("ParseMenu", tempTable);
 
             // AskMeal
             tempTable = new HashMap<String, String>();
             tempTable.put("confirmMeal", "Recommend");
+            tempTable.put("timeout", "Idle");
             transitionTable.put("AskMeal", tempTable);
 
             // Recommend
             tempTable = new HashMap<String, String>();
             /* only timeout transition */
+            tempTable.put("timeout", "RecordMeal");
             transitionTable.put("Recommend", tempTable);
 
             // RecordMeal
             tempTable = new HashMap<String, String>();
             tempTable.put("confirmMeal", "Idle");
+            tempTable.put("timeout", "Idle");
             transitionTable.put("RecordMeal", tempTable);
 
             // InitialInput
             tempTable = new HashMap<String, String>();
             tempTable.put("userInitialInput", "Idle");
+            tempTable.put("timeout", "Idle");
             transitionTable.put("InitialInput", tempTable);
 
             // Feedback
             tempTable = new HashMap<String, String>();
             tempTable.put("sendFeedback", "Idle");
+            tempTable.put("timeout", "Idle");
             transitionTable.put("Feedback", tempTable);
+
+            // AskWeight
+            tempTable = new HashMap<String, String>();
+            tempTable.put("userWeightInput", "Idle");
+            tempTable.put("timeout", "Idle");
+            transitionTable.put("AskWeight", tempTable);
 
             // check
             for (Map.Entry<String, Map<String, String>> entry : transitionTable.entrySet()) {
@@ -115,6 +129,14 @@ public class StateMachine {
      */
     public String getState() {
         return currentState;
+    }
+
+    /**
+     * Get current State object
+     * @return The current State object
+     */
+    public State getStateObject() {
+        return states.get(currentState);
     }
 
     /**
@@ -158,15 +180,17 @@ public class StateMachine {
     /**
      * Go to next state according to transition String
      * @param transition a String encoding the transition
+     * @return whether state transition is successful
      */
-    public void toNextState(String transition) {
+    public boolean toNextState(String transition) {
         if (!transitionTable.get(currentState).containsKey(transition)) {
             log.info(String.format("Invalid transition %s from state %s",
                 transition, currentState));
-            return;
+            return false;
         }
         currentState = transitionTable.get(currentState).get(transition);
         log.info(String.format("To new state %s by %s", currentState,
             transition));
+        return true;
     }
 }
