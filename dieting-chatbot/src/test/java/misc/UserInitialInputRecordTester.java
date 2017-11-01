@@ -151,6 +151,8 @@ public class UserInitialInputRecordTester {
 
     /**
      * Return an Answer<void> object for assertion
+     * 
+     * Also check transition if presents
      * @param prefix Expected prefix of the message
      * @return An Answer<void> object that check the prefix is correct
      */
@@ -163,6 +165,11 @@ public class UserInitialInputRecordTester {
                 JSONArray messages = (JSONArray) fmt.get("messages");
                 String text = (String) messages.getJSONObject(0)
                     .get("textContent");
+                String transition = (String) fmt.get("stateTransition");
+                if (transition != null) {
+                    log.info("State transition: {}", transition);
+                    assert transition.equals("userInitialInput");
+                }
                 log.info("Reply Message: {}", text);
                 assert text.startsWith(prefix);
                 return null;

@@ -31,16 +31,18 @@ import lombok.extern.slf4j.Slf4j;
 public class UserInitialInputRecord
     implements Consumer<Event<ParserMessageJSON>> {
 
-    @Autowired(required=false)
+    @Autowired
     private EventBus eventBus;
 
-    @Autowired(required=false)
+    @Autowired
     private Publisher publisher;
 
     @PostConstruct
     public void init() {
-        if (eventBus != null)
+        if (eventBus != null) {
             eventBus.on($("ParserMessageJSON"), this);
+            log.info("UserInitialInputRecord register on event bus");
+        }
     }
     
     // User state tracking for interaction
@@ -80,8 +82,6 @@ public class UserInitialInputRecord
                 break;
 
             case "goalDate":
-                for (int i=0; i<5; ++i)
-                    log.info(textContent);
                 return Validator.isFutureDate(textContent, "yyyy-MM-dd");
             
             case "id":
@@ -118,7 +118,6 @@ public class UserInitialInputRecord
     /**
      * Event handler for ParserMessageJSON
      * @param ev Event object
-     * @return None
      */
     public void accept(Event<ParserMessageJSON> ev) {
         ParserMessageJSON psr = ev.getData();
@@ -193,7 +192,8 @@ public class UserInitialInputRecord
                     break;
                 case "goalDate":
                     user.goalDate = psr.getTextContent();
-                    response.appendTextMessage(
+                    response.set("stateTransition", "userInitialInput")
+                            .appendTextMessage(
                         "Great! I now understand what you need!");
                     addDatabase(user);
                     break;
