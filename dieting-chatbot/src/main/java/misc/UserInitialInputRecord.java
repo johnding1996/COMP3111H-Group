@@ -14,6 +14,7 @@ import controller.Publisher;
 import controller.FormatterMessageJSON;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import static reactor.bus.selector.Selectors.$;
 import reactor.fn.Consumer;
@@ -26,6 +27,7 @@ import utility.Validator;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Component
 public class UserInitialInputRecord
     implements Consumer<Event<ParserMessageJSON>> {
 
@@ -58,7 +60,7 @@ public class UserInitialInputRecord
             case "age":
                 if(!Validator.isInteger(textContent)) return false;
                 int age = Integer.parseInt(textContent);
-                if(age < 5 || age > 95) return false;
+                if(!Validator.validateAge(age)) return false;
                 break;
 
             case "gender":
@@ -102,7 +104,8 @@ public class UserInitialInputRecord
         goal.put("due", u.goalDate);
         userJSON.put("goal", goal);
         
-        //add this to database and remove
+        // add user info to database and remove
+        log.info("User Info of {} is ready for database", u.id);
         // setUserInfo(u.id, userJSON);
         userStates.remove(u.id);
     }
@@ -130,72 +133,96 @@ public class UserInitialInputRecord
                     .set("type", "reply")
                     .set("replyToken", replyToken)
                     .appendTextMessage(
-                        "Please input some text at this moment~");
+                        "Please input some text at this moment ~");
             publisher.publish(response);
             log.info("Cannot handle image message");
             return;
         }
         
-        //deal with different progress
-        //user is already registered if searchResult returns true
-        if(userStates.containsKey(userId)) {
-            UserInitialState user = userStates.get(userId);
-            if(!validateInput(user.getState(), psr.getTextContent())) {
-                FormatterMessageJSON response = new FormatterMessageJSON();
-                response.appendTextMessage("plz input a valid value according to instruction");
-            }
-            else {
-                switch(user.getState()) {
-                    case "age":
-                        user.age = Integer.parseInt(psr.getTextContent());
-                        FormatterMessageJSON askGender = new FormatterMessageJSON();
-                        askGender.appendTextMessage("Tell me your gender please, type in 'male' or ' female' ");
-                        break;
-                    case "gender":
-                        user.gender = psr.getTextContent();
-                        FormatterMessageJSON askWeight = new FormatterMessageJSON();
-                        askWeight.appendTextMessage("Hey, what your weight, jsut simply give me an integer (in terms of kg)");
-                        break;
-                    case "weight":
-                        user.weight = Integer.parseInt(psr.getTextContent());
-                        FormatterMessageJSON askHeight = new FormatterMessageJSON();
-                        askHeight.appendTextMessage("How about the height, give me an integer (in terms of CM)");
-                        break;
-                    case "height":
-                        user.height = Integer.parseInt(psr.getTextContent());
-                        FormatterMessageJSON desiredWeight = new FormatterMessageJSON();
-                        desiredWeight.appendTextMessage("Emmm...What is your desired weight? (give an integer in terms of kg)");
-                        break;
-                    case "desiredWeight":
-                        user.desiredWeight = Integer.parseInt(psr.getTextContent());
-                        FormatterMessageJSON dueDate = new FormatterMessageJSON();
-                        dueDate.appendTextMessage("Alright, now tell when you want to finish this goal? (type in yyyy-mm-dd format)");
-                        break;
-                    //Note that after the below case, the user info should be complete and need to be added to database
-                    case "goalDate":
-                        user.goalDate = psr.getTextContent();
-                        FormatterMessageJSON finish = new FormatterMessageJSON();
-                        finish.appendTextMessage("Great! I now understand you need!");
-                        //if goalDate can be successful input, user info is complete
-                        addDatabase(user); return;
-                        break;
-                    default:
-                        FormatterMessageJSON done = new FormatterMessageJSON();
-                        done.appendTextMessage("OMG, something bad happens, you may need to re-add me");
-                        assert false;
-                }
-                
-                user.moveState();
-            }
+        // register user if it is new
+        if (!userStates.containsKey(userId)) {
+            userStates.put(userId, new UserInitialState(userId));
         }
-        
-        //create a new user
-        else {
-            UserInitialState user = new UserInitialState(userId);
-            FormatterMessageJSON askAge = new FormatterMessageJSON();
-            askAge.appendTextMessage("Hello ~ would you mind tell me your age? Give me an integer please ~");
-            userStates.put(userId, user);
+        UserInitialState user = userStates.get(userId);
+        FormatterMessageJSON response = new FormatterMessageJSON();
+        response.set("userId", userId)
+                .set("type", "reply")
+                .set("replyToken", replyToken);
+        if (!validateInput(user.getState(), psr.getTextContent())) {
+            response.appendTextMessage(
+                "Please input a valid value according to instruction");
+        } else {
+            switch(user.getState()) {
+                case "id":
+                    response.appendTextMessage(
+                        "Hello ~ Would you mind tell me your age? " +
+                        "Give me an integer please ~");
+                    break;
+                case "age":
+                    user.age = Integer.parseInt(psr.getTextContent());
+                    response.appendTextMessage(
+                        "Tell me your gender please, type in 'male' or 'female'");
+                    break;
+                case "gender":
+                    user.gender = psr.getTextContent();
+                    response.appendTextMessage("Hey, what is your weight? " +
+                        "Just simply give me an integer (in terms of kg)");
+                    break;
+                case "weight":
+                    user.weight = Integer.parseInt(psr.getTextContent());
+                    response.appendTextMessage("How about the height in cm?");
+                    break;
+                case "height":
+                    user.height = Integer.parseInt(psr.getTextContent());
+                    response.appendTextMessage(
+                        "Emmm... What is your desired weight?" +
+                        "(give an integer in terms of kg)");
+                    break;
+                case "desiredWeight":
+                    user.desiredWeight = Integer.parseInt(psr.getTextContent());
+                    response.appendTextMessage("Alright, now tell when you want to finish this goal? (type in yyyy-mm-dd format)");
+                    break;
+                case "goalDate":
+                    user.goalDate = psr.getTextContent();
+                    response.appendTextMessage(
+                        "Great! I now understand what you need!");
+                    addDatabase(user);
+                    break;
+                default:
+            }
             user.moveState();
+        }
+        publisher.publish(response);
+    }
+
+    /**
+     * Inner class for tracking user interaction
+     */
+    class UserInitialState {
+        private int stateIndex;
+        private String[] stateList = {"id", "age", "gender", 
+            "weight", "height", "desiredWeight", "goalDate"};
+        
+        public String id;
+        public int age;
+        public String gender;
+        public int weight;
+        public int height;
+        public int desiredWeight;
+        public String goalDate;
+        
+        public UserInitialState(String userId) {
+            this.stateIndex = 0;
+            this.id = userId;
+        }
+
+        public String getState() {
+            return this.stateList[stateIndex];
+        }
+
+        public void moveState() {
+            if (this.stateIndex+1 < stateList.length)
+                this.stateIndex++;
         }
     }
 }

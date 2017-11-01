@@ -3,27 +3,13 @@ package utility;
 import java.util.List;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 
-public class Validator {
-    /**
-     * Get a list of words from a sentence
-     * @param sentence A sentence in String
-     * @return A list of lowercase word in String,
-     *         ordered accordingly
-     *         Punctuation marks are discarded
-     */
-    static public List<String> sentenceToWords(String sentence) {
-        String[] words = sentence.split("\\s+");
-        for (int i = 0; i < words.length; ++i) {
-            words[i] = words[i].replaceAll("[^\\w]", "").toLowerCase();
-        }
-        return new ArrayList<String>(Arrays.asList(words));
-    }
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
+public class Validator {
     /**
      * Check whether a String is an interger
      * @param str Input string
@@ -44,7 +30,7 @@ public class Validator {
      * @return whether the string is a gender
      */
     public static boolean isGender(String str) {
-        List<String> words = sentenceToWords(str);
+        List<String> words = TextProcessor.sentenceToWords(str);
         for (String word : words) {
             switch (word) {
                 case "male": case "female":
@@ -55,6 +41,15 @@ public class Validator {
             }
         }
         return false;
+    }
+
+    /**
+     * check whether integer is valid age
+     * @param age An integer representing age
+     * @return whether the age is valid
+     */
+    public static boolean validateAge(int age) {
+        return age >= 5 && age <= 95;
     }
 
     /**
@@ -86,8 +81,10 @@ public class Validator {
         try {
             SimpleDateFormat sdf = new SimpleDateFormat(format);
             Date future = sdf.parse(str);
-            Calendar today = Calendar.getInstance();
-            return !today.after(future);
+            Date today = new Date();
+            log.info(future.toString());
+            log.info(today.toString());
+            return today.compareTo(future) <= 0;
         } catch(ParseException pe) {
             return false;
         }

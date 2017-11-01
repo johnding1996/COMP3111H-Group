@@ -70,6 +70,8 @@ import com.linecorp.bot.model.response.BotApiResponse;
 import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
 
+import utility.TextProcessor;
+
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -229,7 +231,7 @@ public class ChatbotController
      * @param msg String from user
      */
     static public boolean isRecommendationRequest(String msg) {
-        for (String word : Validator.sentenceToWords(msg)) {
+        for (String word : TextProcessor.sentenceToWords(msg)) {
             if (recommendKeywords.contains(word)) return true;
         }
         return false;
@@ -250,7 +252,7 @@ public class ChatbotController
      * @param msg String from user
      */
     static public boolean isInitialInputRequest(String msg) {
-        for (String word : Validator.sentenceToWords(msg)) {
+        for (String word : TextProcessor.sentenceToWords(msg)) {
             if (initialInputKeywords.contains(word)) {
                 return true;
             }
@@ -270,7 +272,7 @@ public class ChatbotController
      * @param msg String from user
      */
     static public boolean isFeedbackRequest(String msg) {
-        for (String word : Validator.sentenceToWords(msg)) {
+        for (String word : TextProcessor.sentenceToWords(msg)) {
             if (feedbackKeywords.contains(word)) return true;
         }
         return false;
