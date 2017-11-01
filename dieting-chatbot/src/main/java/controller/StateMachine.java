@@ -118,7 +118,6 @@ public class StateMachine {
 
     /**
      * Initialize the state machine
-     * @return None
      */
     public void initialize() {
         setState("Idle");

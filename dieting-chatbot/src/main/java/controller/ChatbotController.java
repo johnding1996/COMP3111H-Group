@@ -267,7 +267,6 @@ public class ChatbotController
      * State transition wrapper, to next state and register callback
      * @param userId String of user id
      * @param transition String representing the state transition
-     * @return None
      */
     public void toNextState(String userId, String transition) {
         StateMachine stateMachine = getStateMachine(userId);
