@@ -15,7 +15,7 @@ import controller.ParserMessageJSON;
 import controller.Publisher;
 import controller.FormatterMessageJSON;
 
-public class PraseMeauFromWeb {
+public class ParseMenuFromWeb {
  
     /**
      * returns a JSON array from given URL, corresponding to "meau" on QueryJSON
