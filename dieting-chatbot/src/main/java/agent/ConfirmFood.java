@@ -8,6 +8,8 @@ import java.util.Calendar;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.lang.Integer;
+
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import org.json.JSONArray;
@@ -48,7 +50,7 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
         }
     }
 
-    // User state tracking for interaction; false stands for user did not enter food list yet
+    // User state tracking for interaction; false stands for user did not confirm food list yet
     private static HashMap<String, Boolean> userStates =
             new HashMap<String, Boolean>();
 
@@ -69,7 +71,12 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
     public void printList(String userId, FormatterMessageJSON response){
         JSONObject qJSON = new JSONObject();
         //Get QueryJSON from database
-        qJSON = menuKeeper.get(userId, 1).getJSONObject(0);
+        try{
+            qJSON = menuKeeper.get(userId, 1).getJSONObject(0);
+        } catch (JSONException e){
+            log.info("qJSON returns a null value");
+        }
+
         JSONArray print = qJSON.getJSONArray("menu");
         int i = 1;
         for(int j = 0; j < print.length(); j++){
