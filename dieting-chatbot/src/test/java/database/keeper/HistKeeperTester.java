@@ -3,14 +3,12 @@ package database.keeper;
 import database.connection.RedisPool;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.*;
 import org.skyscreamer.jsonassert.JSONAssert;
 import redis.clients.jedis.Jedis;
 
 import java.util.List;
 
-import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -24,11 +22,13 @@ public class HistKeeperTester {
     private static HistKeeper histKeeper;
     private static JSONObject goodHistJson;
     private static JSONObject badHistJson;
+    private static String user_id = "813f61a35fbb9cc3adc28da525abf1fe";
 
     @BeforeClass
     public static void setUpClass() {
         jedis = RedisPool.getConnection();
         histKeeper = new HistKeeper(jedis);
+
         goodHistJson = new JSONObject();
         goodHistJson.put("date", "2017-10-29");
         goodHistJson.put("number_of_meal", 2);
@@ -49,33 +49,35 @@ public class HistKeeperTester {
         histKeeper.close();
     }
 
+    @Before
+    public void setUp() {
+        jedis.del("hist:" + user_id);
+    }
+
+    @After
+    public void tearDown() {
+        jedis.del("hist:" + user_id);
+    }
+
     @Test
     public void testSetSuccess() {
-        jedis.del("hist:0");
-        histKeeper.set("0", goodHistJson);
-        List<String> actual = jedis.lrange("hist:0", 0, -1);
-        jedis.del("hist:0");
+        histKeeper.set(user_id, goodHistJson);
+        List<String> actual = jedis.lrange("hist:" + user_id, 0, -1);
         JSONAssert.assertEquals(goodHistJson, new JSONObject(actual.get(0)), false);
     }
 
     @Test
     public void testSetFailure() {
-        jedis.del("hist:0");
-        boolean result = histKeeper.set("0", badHistJson);
-        jedis.del("hist:0");
+        boolean result = histKeeper.set(user_id, badHistJson);
         assertTrue(!result);
     }
 
     @Test
     public void testGetSuccess() {
-        jedis.del("hist:0");
-        histKeeper.set("0", goodHistJson);
-        histKeeper.set("0", goodHistJson);
-        histKeeper.set("0", goodHistJson);
-        JSONArray actual = histKeeper.get("0", 5);
-        jedis.del("hist:0");
+        histKeeper.set(user_id, goodHistJson);
+        histKeeper.set(user_id, goodHistJson);
+        JSONArray actual = histKeeper.get(user_id, 5);
         JSONArray expected  = new JSONArray();
-        expected.put(goodHistJson);
         expected.put(goodHistJson);
         expected.put(goodHistJson);
         JSONAssert.assertEquals(expected, actual, false);
@@ -83,9 +85,7 @@ public class HistKeeperTester {
 
     @Test
     public void testGetFailure() {
-        jedis.del("hist:0");
-        JSONArray result = histKeeper.get("0", 5);
-        jedis.del("hist:0");
+        JSONArray result = histKeeper.get(user_id, 5);
         assertNull(result);
     }
 }
