@@ -28,7 +28,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.json.JSONArray;
-
+import org.json.JSONException;
 import controller.Publisher;
 import controller.FormatterMessageJSON;
 import database.querier.FoodQuerier;
@@ -227,10 +227,17 @@ public class FoodRecommender {
      */
     public double getAverageNutrient(JSONArray list, String nutrientName) {
         double sum = 0;
+        int cnt = 0;
         for (int i=0; i<list.length(); ++i) {
-            sum += list.getJSONObject(i).getDouble(nutrientName);
+            try {
+                sum += list.getJSONObject(i).getDouble(nutrientName);
+                ++cnt;
+            } catch (JSONException e) {
+                log.info(e.toString());
+            }
         }
-        return sum / list.length();
+        if (cnt > 0) return sum / cnt;
+        else return 0;
     }
 
     /**
