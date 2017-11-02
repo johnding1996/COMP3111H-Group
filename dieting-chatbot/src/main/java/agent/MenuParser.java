@@ -34,8 +34,7 @@ public class MenuParser
     implements Consumer<Event<ParserMessageJSON>> {
     
     // User state tracking
-    private static HashMap<String, Integer> userStates =
-        new HashMap<String, Integer>();
+    private static HashMap<String, Integer> userStates = new HashMap<String, Integer>();
     
     @Autowired
     private EventBus eventBus;
@@ -51,16 +50,13 @@ public class MenuParser
         }
     }
 
-    private MenuKeeper menuKeeper = new MenuKeeper();
-    
     /**
      * Validate the parsed menu, and interact with user
      * @param userId String of user Id
      * @param response FormatterMessageJSON for replying user
      * @param menuArray Parsed JSONArray as menu
      */
-    public void checkAndReply(String userId,
-        FormatterMessageJSON response, JSONArray menuArray) {
+    public void checkAndReply(String userId, FormatterMessageJSON response, JSONArray menuArray, MenuKeeper menuKeeper) {
         if(menuArray == null) {
             response.appendTextMessage("Looks like the menu is empty, " +
                 "please try again");
@@ -71,7 +67,7 @@ public class MenuParser
             queryJSON.put("userId", userId)
                      .put("menu", menuArray);
             // set queryJSON for meal asker
-            menuKeeper.set(userId,queryJSON);
+            menuKeeper.set(userId, queryJSON);
             // no need to reply, give control to MealAsker
             response.set("stateTransition", "menuMessage")
                     .set("type", "transition");
@@ -83,6 +79,7 @@ public class MenuParser
      * @param ev Event object
      */
     public void accept(Event<ParserMessageJSON> ev) {
+        MenuKeeper menuKeeper = new MenuKeeper();
         ParserMessageJSON psr = ev.getData();
 
         // only handle message if state is `ParseMenu`
@@ -100,7 +97,7 @@ public class MenuParser
                     .set("type", "reply")
                     .set("replyToken", replyToken)
                     .appendTextMessage(
-                        "Sorry but I don't understand this image");
+                        "Sorry but I don't understand this image, give me some text please ~");
             publisher.publish(response);
             log.info("Cannot handle image message");
             return;
@@ -132,8 +129,9 @@ public class MenuParser
             } else {
                 menuArray = TextMenuParser.buildMenu(text);
             }
-            checkAndReply(userId, response, menuArray);
+            checkAndReply(userId, response, menuArray, menuKeeper);
         }
+        menuKeeper.close();
         publisher.publish(response);
     }
 
