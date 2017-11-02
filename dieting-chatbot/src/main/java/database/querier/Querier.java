@@ -17,54 +17,47 @@ import lombok.extern.slf4j.Slf4j;
 
 
 /**
- * {@link Querier}
- * Abstract super-class of all queriers.
+ * Abstract base-class of all Queriers.
  * Handles sql JDBC connections and provide I/O method interfaces.
+ * A set of operations is implemented here, including: get, set, add, update, delete, has, search.
  * @author mcding
- * @version 1.1
+ * @version 1.2.1
  */
 @Slf4j
-public abstract class Querier {
+abstract class Querier {
     protected Connection sql;
     /**
-     * table
      * Table name of a specific Querier.
      */
     protected String table;
 
     /**
-     * idx_field
      * Name of index field of the table.
      */
     protected String idx_field;
 
     /**
-     * desc_field
      * Name of description field of the table.
      */
     protected String desc_field;
 
     /**
-     * fields
      * List of all fields of the table.
      */
     protected List<String> fields;
 
     /**
-     * critical_fields
      * Set of all not-nullable fields of the table.
      * Also the set of minimum fields in the corresponding JSONObject.
      */
     protected Set<String> critical_fields;
 
     /**
-     * queryLimit
      * The maximum number of rows returned when use search method.
      */
     protected int queryLimit;
 
     /**
-     * constructor
      * Connect to redis server and create the instance's jedis instance.
      */
     Querier() {
@@ -79,31 +72,13 @@ public abstract class Querier {
     }
 
     /**
-     * close
      * Close the connection once it is not used anymore.
      */
     public void close() {
         SQLPool.closeConnection(sql);
     }
 
-    /*
     /**
-     * finalize
-     * Override the original finalizer to check whether the connection is closed.
-     * Deprecated according to CodeFactor style suggestion.
-     */
-    /*
-    @Override
-    public void finalize() throws java.lang.Throwable {
-        if (!sql.isClosed()) {
-            log.error("SQL connection is not closed when destroying the Keeper class.");
-        }
-        super.finalize();
-    }
-    */
-
-    /**
-     * get
      * Base get all method.
      * @return JSONArray of all rows in the table
      */
@@ -114,23 +89,32 @@ public abstract class Querier {
     }
 
     /**
-     * get
      * Base get method.
-     * @param key index object
+     * @param key index int
      * @return JSONObject of the corresponding row
      */
-    public JSONObject get(Object key) {
-        String keyString = parseKey(key);
-        if (keyString == null) {
-            return new JSONObject();
-        }
-        String query = String.format("SELECT * FROM %s WHERE %s = '%s' LIMIT %d;", table, idx_field, keyString, 1);
-        ResultSet rs = executeQuery(query);
-        return parseResult(rs, fields, critical_fields).getJSONObject(0);
+    public JSONObject get(int key) {
+        String keyString = Integer.toString(key);
+        return get(keyString);
     }
 
     /**
-     * search
+     * Base get method.
+     * @param key index string
+     * @return JSONObject of the corresponding row
+     */
+    public JSONObject get(String key) {
+        String query = String.format("SELECT * FROM %s WHERE %s = '%s' LIMIT %d;", table, idx_field, key, 1);
+        ResultSet rs = executeQuery(query);
+        try {
+            return parseResult(rs, fields, critical_fields).getJSONObject(0);
+        } catch (JSONException e) {
+            log.warn(String.format("Failed to get row where %s = '%s' in table %s since not found.", idx_field, key, table), e);
+            return null;
+        }
+    }
+
+    /**
      * Base search method, to be override by sub-class methods.
      * @param desc description string
      * @return JSONArray as the search result
@@ -141,9 +125,19 @@ public abstract class Querier {
         return parseResult(rs, fields, critical_fields);
     }
 
+    /**
+     * Base add method, to be override by sub-class methods.
+     * @param jsonObject JSONObject as the information to store
+     * @return whether add successfully or not
+     */
+    public boolean add (JSONObject jsonObject) {
+        JSONArray jsonArray = new JSONArray();
+        jsonArray.put(jsonObject);
+        return add(jsonArray);
+    }
+
 
     /**
-     * add
      * Base add method, to be override by sub-class methods.
      * @param jsonArray JSONArray as the information to store
      * @return whether add successfully or not
@@ -172,23 +166,38 @@ public abstract class Querier {
     }
 
     /**
-     * delete
      * Base delete method.
-     * @param key index object
+     * @param key index int
      * @return whether deleting successfully or not
      */
-    public boolean delete(Object key) {
-        String keyString = parseKey(key);
-        if (keyString == null) {
-            return false;
-        }
-        String query = String.format("DELETE FROM %s WHERE %s = '%s';", table, idx_field, keyString);
+    public boolean delete(int key) {
+        String keyString = Integer.toString(key);
+        return delete(keyString);
+    }
+
+    /**
+     * Base delete method.
+     * @param key index string
+     * @return whether deleting successfully or not
+     */
+    public boolean delete(String key) {
+        String query = String.format("DELETE FROM %s WHERE %s = '%s';", table, idx_field, key);
         return executeUpdate(query);
     }
 
     /**
-     * update
-     * Abstract update method, to be override by sub-class methods.
+     * Base update method, to be override by sub-class methods.
+     * @param jsonObject JSONObject as the information to update
+     * @return whether update successfully or not
+     */
+    public boolean update(JSONObject jsonObject) {
+        JSONArray jsonArray = new JSONArray();
+        jsonArray.put(jsonObject);
+        return update(jsonArray);
+    }
+
+    /**
+     * Base update method, to be override by sub-class methods.
      * @param jsonArray JSONArray as the information to update
      * @return whether update successfully or not
      */
@@ -212,8 +221,8 @@ public abstract class Querier {
                     assignments.add(entry.getKey() + " = " + entry.getValue());
                 }
             }
-
-            String query = String.format("UPDATE %s SET %s WHERE %s='%s';",
+            // Note that id string here should not be enclosed by quotation marks, since they are already enclosed in parseInpute
+            String query = String.format("UPDATE %s SET %s WHERE %s=%s;",
                     table, String.join(", ", assignments), idx_field, map.get(idx_field));
             if (!executeUpdate(query)){
                 log.error(String.format("Failed to update row with index %s of table %s when executing SQL query.",
@@ -224,7 +233,34 @@ public abstract class Querier {
     }
 
     /**
-     * executeQuery
+     * Check whether row with specific key exists in the table or not.
+     * @param key key int
+     * @return whether row with specific key exists or not
+     */
+    public boolean has(int key) {
+        String keyString = Integer.toString(key);
+        return has(keyString);
+    }
+
+    /**
+     * Check whether row with specific key exists in the table or not.
+     * @param key key string
+     * @return whether row with specific key exists or not
+     */
+    public boolean has(String key) {
+        try {
+            String query = String.format("SELECT * FROM %s WHERE %s = '%s';", table, idx_field, key);
+            ResultSet rs = executeQuery(query);
+            boolean has = rs.next();
+            rs.close();
+            return has;
+        } catch (SQLException e) {
+            log.error(String.format("Failed to check whether row where %s = '%s' in %s table exists or not.", idx_field, key, table), e);
+            return false;
+        }
+    }
+
+    /**
      * Utility method to execute arbitrary query which returns result add.
      * @param query statement to execute
      * @return ResultSet containing the result
@@ -242,7 +278,6 @@ public abstract class Querier {
     }
 
     /**
-     * executeUpdate
      * Utility method to execute arbitrary query which does not return result add.
      * @param query statement to execute
      * @return whether the statement is executed successfully or not
@@ -260,7 +295,6 @@ public abstract class Querier {
     }
 
     /**
-     * parseInput
      * Utility method to parse input flat JSONObject to a map of fields to SQL literals.
      * @param jsonObject input JSONObject
      * @param fields list of fields
@@ -297,7 +331,6 @@ public abstract class Querier {
     }
 
     /**
-     * parseResult
      * Utility method to parse ResultSet into a JSONArray of flat JSONObjects.
      * @param rs ResultSet of query
      * @param fields list of fields
@@ -339,25 +372,6 @@ public abstract class Querier {
                     } else {
                         jsonObject.put(field, value);
                     }
-                    // An unsuccessful try-catch parser
-                    /*
-                    try {
-                        int valueInteger = Integer.parseInt(field);
-                        jsonObject.put(field, valueInteger);
-                    } catch (NumberFormatException e) {
-                        try {
-                            long valueLong = Long.parseLong(field);
-                            jsonObject.put(field, valueLong);
-                        } catch (NumberFormatException e0) {
-                            try {
-                                double valueDoble = Double.parseDouble(field);
-                                jsonObject.put(field, valueDoble);
-                            } catch (NumberFormatException e2) {
-                                jsonObject.put(field, value);
-                            }
-                        }
-                    }
-                    */
                 }
                 jsonArray.put(jsonObject);
             }
@@ -376,24 +390,6 @@ public abstract class Querier {
     }
 
     /**
-     * parseKey
-     * Utility method to parse a key object (either String or int) to String
-     * @param key input key object
-     * @return key string
-     */
-    protected String parseKey(Object key) {
-        if (key instanceof String) {
-            return (String)key;
-        } else if (key instanceof Integer) {
-            return Integer.toString((int)key);
-        } else {
-            log.error(String.format("Invalid key %s", key.toString()));
-            return null;
-        }
-    }
-
-    /**
-     * setQueryLimit
      * Change the query limit.
      * @param queryLimit number of rows to return when searching
      */

@@ -1,5 +1,4 @@
 /**
- * package controller
  * Package controller is one of the basic module of the dieting-chatbot project.
  * It servers us the wrapper and I/O interface of LINE API, and tracks the global
  * state of a session of user interaction.
