@@ -6,6 +6,7 @@ import controller.Publisher;
 import controller.TestConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
@@ -32,7 +33,8 @@ public class FoodRecommenderTester {
     }
 
     @Test
-    public void testGetBMR() {
-
+    public void testGetUserJSON() {
+        JSONObject userJSON = recommender.getUserJSON("813f61a35fbb9cc3adc28da525abf1fe");
+        log.info(userJSON.toString(4));
     }
 }
