@@ -1,0 +1,1094 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg height="1630" version="1.1" width="3330" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#ffffff" height="449" stroke="#ffffff" stroke-width="1" width="490" x="507" y="198"/>
+<rect fill="none" height="449" stroke="#000000" stroke-width="1" width="490" x="507" y="198"/>
+<text font-family="Lucida Grande" font-size="13" x="688" y="212">
++ ChatbotController</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="490" x="507" y="222"/>
+<text font-family="Lucida Grande" font-size="13" x="511" y="237">
+-stateMachines : HashMap</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="254">
+-lineMessagingClient : LineMessagingClient</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="271">
+-publisher : Publisher</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="288">
+-formatter : Formatter</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="305">
+-eventBus : EventBus</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="322">
++taskScheduler : TaskScheduler</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="511" x2="773" y1="340" y2="340"/>
+<text font-family="Lucida Grande" font-size="13" x="511" y="339">
+-recommendKeywords : HashSet&lt;String&gt;</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="511" x2="768" y1="357" y2="357"/>
+<text font-family="Lucida Grande" font-size="13" x="511" y="356">
+-initialInputKeywords : HashSet&lt;String&gt;</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="511" x2="756" y1="374" y2="374"/>
+<text font-family="Lucida Grande" font-size="13" x="511" y="373">
+-feedbackKeywords : HashSet&lt;String&gt;</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="490" x="507" y="383"/>
+<text font-family="Lucida Grande" font-size="13" x="511" y="398">
++init()</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="415">
++askWeight()</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="432">
++accept(ev : Event)</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="449">
++handletextMessageEvent(event : MessageEvent&lt;TextMessageContent&gt;)</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="466">
++handleImageMessageEvent(event : MessageEvent&lt;ImageMessageContent&gt;)</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="483">
+-handleImageContent(replyToken : String,event : Event,id : String)</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="500">
++clearStateMachines()</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="517">
++getStateMachine(userId : String) : StateMachine</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="534">
++getUserIdList() : List&lt;String&gt;</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="551">
++toNextState(userId : String,transition : String)</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="511" x2="837" y1="569" y2="569"/>
+<text font-family="Lucida Grande" font-size="13" x="511" y="568">
++sentenceToWords(sentence : String) : List&lt;String&gt;</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="511" x2="836" y1="586" y2="586"/>
+<text font-family="Lucida Grande" font-size="13" x="511" y="585">
++isRecommendationRequest(msg : String) : Boolean</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="511" x2="796" y1="603" y2="603"/>
+<text font-family="Lucida Grande" font-size="13" x="511" y="602">
++isInitialInputRequest(msg : String) : Boolean</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="511" x2="786" y1="620" y2="620"/>
+<text font-family="Lucida Grande" font-size="13" x="511" y="619">
++isFeedbackRequest(msg : String) : Boolean</text>
+<text font-family="Lucida Grande" font-size="13" x="511" y="636">
+~createUri(path : String) : String</text>
+<rect fill="#ffffff" height="109" stroke="#ffffff" stroke-width="1" width="309" x="83" y="238"/>
+<rect fill="none" height="109" stroke="#000000" stroke-width="1" width="309" x="83" y="238"/>
+<text font-family="Lucida Grande" font-size="13" x="201" y="252">
++ Publisher</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="309" x="83" y="262"/>
+<text font-family="Lucida Grande" font-size="13" x="87" y="277">
++eventBus : EventBus</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="309" x="83" y="287"/>
+<text font-family="Lucida Grande" font-size="13" x="87" y="302">
++publish(FormatterMessageJSON)</text>
+<text font-family="Lucida Grande" font-size="13" x="87" y="319">
+&lt;&lt;overloaded&gt;&gt; +publish(ParserMessageJSON)</text>
+<text font-family="Lucida Grande" font-size="13" x="87" y="336">
++registration()</text>
+<rect fill="#ffffff" height="109" stroke="#ffffff" stroke-width="1" width="351" x="35" y="70"/>
+<rect fill="none" height="109" stroke="#000000" stroke-width="1" width="351" x="35" y="70"/>
+<text font-family="Lucida Grande" font-size="13" x="173" y="84">
++ Formatter</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="351" x="35" y="94"/>
+<text font-family="Lucida Grande" font-size="13" x="39" y="109">
++lineMessagingClient : LineMessagingClient</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="351" x="35" y="119"/>
+<text font-family="Lucida Grande" font-size="13" x="39" y="134">
++reply(replyToken : String,messages : List&lt;Message&gt;)</text>
+<text font-family="Lucida Grande" font-size="13" x="39" y="151">
++push(userId : String,messages : List&lt;Message&gt;)</text>
+<text font-family="Lucida Grande" font-size="13" x="39" y="168">
++sendMessage(fmt : FormatterMessageJSON)</text>
+<rect fill="#ffffff" height="50" stroke="#ffffff" stroke-width="1" width="297" x="195" y="382"/>
+<rect fill="none" height="50" stroke="#000000" stroke-width="1" width="297" x="195" y="382"/>
+<text font-family="Lucida Grande" font-size="13" x="308" y="396">
++ EventBus</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="297" x="195" y="406"/>
+<text font-family="Lucida Grande" font-size="13" x="199" y="421">
++on(selector : Selector,consumer : Consumer)</text>
+<rect fill="#ffffff" height="25" stroke="#ffffff" stroke-width="1" width="66" x="339" y="822"/>
+<rect fill="none" height="25" stroke="#000000" stroke-width="1" width="66" x="339" y="822"/>
+<text font-family="Lucida Grande" font-size="13" font-style="italic" x="348" y="836">
++ Event</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="431" y2="436"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="441" y2="446"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="451" y2="456"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="461" y2="466"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="471" y2="476"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="481" y2="486"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="491" y2="496"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="501" y2="506"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="511" y2="516"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="521" y2="526"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="531" y2="536"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="541" y2="546"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="551" y2="556"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="561" y2="566"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="571" y2="576"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="581" y2="586"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="591" y2="596"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="601" y2="606"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="611" y2="616"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="621" y2="626"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="631" y2="636"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="641" y2="646"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="651" y2="656"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="661" y2="666"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="671" y2="676"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="681" y2="686"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="691" y2="696"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="701" y2="706"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="711" y2="716"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="721" y2="726"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="731" y2="736"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="741" y2="746"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="751" y2="756"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="761" y2="766"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="771" y2="776"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="781" y2="786"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="791" y2="796"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="801" y2="806"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="811" y2="816"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="821" y2="822"/>
+<polygon fill="#ffffff" points="364,822 357,810 371,810" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="364,822 357,810 371,810" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="278" y="594">
+&lt;&lt;realize&gt;&gt;</text>
+<rect fill="#ffffff" height="109" stroke="#ffffff" stroke-width="1" width="152" x="739" y="686"/>
+<rect fill="none" height="109" stroke="#000000" stroke-width="1" width="152" x="739" y="686"/>
+<text font-family="Lucida Grande" font-size="13" x="744" y="700">
++ DownloadedContent</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="152" x="739" y="710"/>
+<text font-family="Lucida Grande" font-size="13" x="743" y="725">
++path : Path</text>
+<text font-family="Lucida Grande" font-size="13" x="743" y="742">
++uri : String</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="152" x="739" y="752"/>
+<text font-family="Lucida Grande" font-size="13" x="743" y="767">
+~getPath() : Path</text>
+<text font-family="Lucida Grande" font-size="13" x="743" y="784">
++getUri() : String</text>
+<polyline fill="none" points="803,646 803,686" stroke="#000000" stroke-width="1"/>
+<polygon fill="#000000" points="803,646 808,656 803,666 798,656" stroke="#000000" stroke-width="1"/>
+<polygon fill="none" points="803,646 808,656 803,666 798,656" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="819" y="671">
+ </text>
+<rect fill="#ffffff" height="228" stroke="#ffffff" stroke-width="1" width="271" x="1083" y="174"/>
+<rect fill="none" height="228" stroke="#000000" stroke-width="1" width="271" x="1083" y="174"/>
+<text font-family="Lucida Grande" font-size="13" x="1170" y="188">
++ StateMachine</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="271" x="1083" y="198"/>
+<text font-family="Lucida Grande" font-size="13" x="1087" y="213">
+&lt;&lt;get/set&gt;&gt; -userId : String</text>
+<text font-family="Lucida Grande" font-size="13" x="1087" y="230">
++states : HashMap</text>
+<text font-family="Lucida Grande" font-size="13" x="1087" y="247">
++transitionTable : HashMap</text>
+<text font-family="Lucida Grande" font-size="13" x="1087" y="264">
++currentState : String</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="271" x="1083" y="274"/>
+<text font-family="Lucida Grande" font-size="13" x="1087" y="289">
++StateMachine(userId : String)</text>
+<text font-family="Lucida Grande" font-size="13" x="1087" y="306">
++initialize()</text>
+<text font-family="Lucida Grande" font-size="13" x="1087" y="323">
++getState() : String</text>
+<text font-family="Lucida Grande" font-size="13" x="1087" y="340">
++getStateObjects() : State</text>
+<text font-family="Lucida Grande" font-size="13" x="1087" y="357">
++setState(newState : String)</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1087" x2="1348" y1="375" y2="375"/>
+<text font-family="Lucida Grande" font-size="13" x="1087" y="374">
++isValidState(stateMa,e : String) : Boolean</text>
+<text font-family="Lucida Grande" font-size="13" x="1087" y="391">
++toNextState(transition : String) : Boolean</text>
+<rect fill="#ffffff" height="70" stroke="#ffffff" stroke-width="1" width="103" x="811" y="998"/>
+<rect fill="none" height="70" stroke="#000000" stroke-width="1" width="103" x="811" y="998"/>
+<text font-family="Lucida Grande" font-size="13" x="823" y="1032">
++ Consumer</text>
+<text font-family="Lucida Grande" font-size="13" x="815" y="1013">
+&lt;&lt;interface&gt;&gt;</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="103" x="811" y="1042"/>
+<text font-family="Lucida Grande" font-size="13" font-style="italic" x="815" y="1057">
++accept()</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="404" x2="409" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="414" x2="419" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="424" x2="429" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="434" x2="439" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="444" x2="449" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="454" x2="459" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="464" x2="469" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="474" x2="479" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="484" x2="489" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="494" x2="499" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="504" x2="509" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="514" x2="519" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="524" x2="529" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="534" x2="539" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="544" x2="549" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="554" x2="559" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="564" x2="569" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="574" x2="579" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="584" x2="589" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="594" x2="599" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="604" x2="609" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="614" x2="619" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="624" x2="629" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="634" x2="639" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="644" x2="649" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="654" x2="659" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="664" x2="669" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="674" x2="679" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="684" x2="689" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="694" x2="699" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="704" x2="709" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="714" x2="719" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="724" x2="729" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="734" x2="739" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="744" x2="749" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="754" x2="759" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="764" x2="769" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="774" x2="779" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="784" x2="789" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="794" x2="799" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="804" x2="809" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="814" x2="819" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="824" x2="829" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="834" x2="839" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="844" x2="849" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="854" x2="859" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="864" x2="869" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="874" x2="875" y1="846" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="846" y2="851"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="856" y2="861"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="866" y2="871"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="876" y2="881"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="886" y2="891"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="896" y2="901"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="906" y2="911"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="916" y2="921"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="926" y2="931"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="936" y2="941"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="946" y2="951"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="956" y2="961"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="966" y2="971"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="976" y2="981"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="986" y2="991"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="875" x2="875" y1="996" y2="998"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="868" x2="875" y1="986" y2="998"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="882" x2="875" y1="986" y2="998"/>
+<text font-family="Lucida Grande" font-size="13" x="676" y="888">
+instantiate</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="431" y2="436"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="441" y2="446"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="451" y2="456"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="461" y2="466"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="471" y2="476"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="481" y2="486"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="491" y2="496"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="501" y2="506"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="511" y2="516"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="521" y2="526"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="531" y2="536"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="541" y2="546"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="551" y2="556"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="561" y2="566"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="571" y2="576"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="581" y2="586"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="591" y2="596"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="601" y2="606"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="611" y2="616"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="621" y2="626"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="631" y2="636"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="641" y2="646"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="651" y2="656"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="661" y2="666"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="671" y2="676"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="681" y2="686"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="691" y2="696"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="701" y2="706"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="711" y2="716"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="721" y2="726"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="731" y2="736"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="427" y1="741" y2="746"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="427" x2="432" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="437" x2="442" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="447" x2="452" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="457" x2="462" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="467" x2="472" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="477" x2="482" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="487" x2="492" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="497" x2="502" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="507" x2="512" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="517" x2="522" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="527" x2="532" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="537" x2="542" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="547" x2="552" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="557" x2="562" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="567" x2="572" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="577" x2="582" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="587" x2="592" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="597" x2="602" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="607" x2="612" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="617" x2="622" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="627" x2="632" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="637" x2="642" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="647" x2="652" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="657" x2="662" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="667" x2="672" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="677" x2="682" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="687" x2="692" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="697" x2="702" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="707" x2="712" y1="750" y2="750"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="750" y2="755"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="760" y2="765"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="770" y2="775"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="780" y2="785"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="790" y2="795"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="800" y2="805"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="810" y2="815"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="820" y2="825"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="830" y2="835"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="840" y2="845"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="850" y2="855"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="860" y2="865"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="870" y2="875"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="880" y2="885"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="890" y2="895"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="900" y2="905"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="910" y2="915"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="920" y2="925"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="930" y2="935"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="940" y2="945"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="950" y2="955"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="960" y2="965"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="970" y2="975"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="980" y2="985"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="990" y2="995"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="715" y1="1000" y2="1005"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="715" x2="720" y1="1006" y2="1006"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="725" x2="730" y1="1006" y2="1006"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="735" x2="740" y1="1006" y2="1006"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="745" x2="750" y1="1006" y2="1006"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="755" x2="760" y1="1006" y2="1006"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="765" x2="770" y1="1006" y2="1006"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="775" x2="780" y1="1006" y2="1006"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="785" x2="790" y1="1006" y2="1006"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="795" x2="800" y1="1006" y2="1006"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="805" x2="810" y1="1006" y2="1006"/>
+<polygon fill="#ffffff" points="811,1006 799,1013 799,999" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="811,1006 799,1013 799,999" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="536" y="723">
+&lt;&lt;realize&gt;&gt;</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="646" y2="651"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="656" y2="661"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="666" y2="671"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="676" y2="681"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="686" y2="691"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="696" y2="701"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="706" y2="711"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="716" y2="721"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="726" y2="731"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="736" y2="741"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="746" y2="751"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="756" y2="761"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="766" y2="771"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="776" y2="781"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="786" y2="791"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="796" y2="801"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="806" y2="811"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="816" y2="821"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="826" y2="831"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="836" y2="841"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="846" y2="851"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="856" y2="861"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="866" y2="871"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="876" y2="881"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="886" y2="891"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="896" y2="901"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="906" y2="911"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="916" y2="921"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="926" y2="931"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="936" y2="941"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="946" y2="951"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="956" y2="961"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="966" y2="971"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="976" y2="981"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="986" y2="991"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="811" x2="811" y1="996" y2="998"/>
+<polygon fill="#ffffff" points="811,998 804,986 818,986" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="811,998 804,986 818,986" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="817" y="824">
+&lt;&lt;realize&gt;&gt;</text>
+<rect fill="#ffffff" height="104" stroke="#ffffff" stroke-width="1" width="581" x="435" y="46"/>
+<rect fill="none" height="104" stroke="#000000" stroke-width="1" width="581" x="435" y="46"/>
+<text font-family="Lucida Grande" font-size="13" x="653" y="80">
++ LineMessagingClient</text>
+<text font-family="Lucida Grande" font-size="13" x="678" y="61">
+&lt;&lt;interface&gt;&gt;</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="581" x="435" y="90"/>
+<text font-family="Lucida Grande" font-size="13" x="439" y="105">
++getMessageContent(messageId : String) : CompletableFuture&lt;MessageContentResponse&gt;</text>
+<text font-family="Lucida Grande" font-size="13" x="439" y="122">
++replyMessage(replyMessage : ReplyMessage) : CompletableFuture&lt;BotApiResponse&gt;</text>
+<text font-family="Lucida Grande" font-size="13" x="439" y="139">
++pushMessage(pushMessage : PushMessage) : CompletableFuture&lt;BotApiResponse&gt;</text>
+<rect fill="#ffffff" height="70" stroke="#ffffff" stroke-width="1" width="425" x="1035" y="70"/>
+<rect fill="none" height="70" stroke="#000000" stroke-width="1" width="425" x="1035" y="70"/>
+<text font-family="Lucida Grande" font-size="13" x="1195" y="104">
++ TaskScheduler</text>
+<text font-family="Lucida Grande" font-size="13" x="1200" y="85">
+&lt;&lt;interface&gt;&gt;</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="425" x="1035" y="114"/>
+<text font-family="Lucida Grande" font-size="13" x="1039" y="129">
++schedule(task : Runnable,startTime : Date) : ScheduledFuture&lt;?&gt;</text>
+<rect fill="#ffffff" height="50" stroke="#ffffff" stroke-width="1" width="125" x="371" y="1062"/>
+<rect fill="none" height="50" stroke="#000000" stroke-width="1" width="125" x="371" y="1062"/>
+<text font-family="Lucida Grande" font-size="13" x="384" y="1076">
++ MessageJSON</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="125" x="371" y="1086"/>
+<text font-family="Lucida Grande" font-size="13" x="375" y="1101">
++toString() : String</text>
+<rect fill="#ffffff" height="160" stroke="#ffffff" stroke-width="1" width="656" x="51" y="1294"/>
+<rect fill="none" height="160" stroke="#000000" stroke-width="1" width="656" x="51" y="1294"/>
+<text font-family="Lucida Grande" font-size="13" x="299" y="1308">
++ FormatterMessageJSON</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="656" x="51" y="1318"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="55" x2="224" y1="1334" y2="1334"/>
+<text font-family="Lucida Grande" font-size="13" x="55" y="1333">
+-keySet : HashSet&lt;String&gt;</text>
+<text font-family="Lucida Grande" font-size="13" x="55" y="1350">
+-jo : JSONObject</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="656" x="51" y="1360"/>
+<text font-family="Lucida Grande" font-size="13" x="55" y="1375">
++get(key : String) : Object</text>
+<text font-family="Lucida Grande" font-size="13" x="55" y="1392">
++set(key : String,value : Object) : FormatterMessageJSON</text>
+<text font-family="Lucida Grande" font-size="13" x="55" y="1409">
++appendTextMessage(text : String) : FormatterMessageJSON</text>
+<text font-family="Lucida Grande" font-size="13" x="55" y="1426">
++appendImageMessage(originalContentUrl : String,previewContentUrl : String) : FormatterMessageJSON</text>
+<text font-family="Lucida Grande" font-size="13" x="55" y="1443">
+&lt;&lt;override&gt;&gt; +toString() : String</text>
+<rect fill="#ffffff" height="216" stroke="#ffffff" stroke-width="1" width="401" x="155" y="910"/>
+<rect fill="none" height="216" stroke="#000000" stroke-width="1" width="401" x="155" y="910"/>
+<text font-family="Lucida Grande" font-size="13" x="287" y="924">
++ ParserMessageJSON</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="401" x="155" y="934"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="159" x2="328" y1="950" y2="950"/>
+<text font-family="Lucida Grande" font-size="13" x="159" y="949">
+-keySet : HashSet&lt;String&gt;</text>
+<text font-family="Lucida Grande" font-size="13" x="159" y="966">
+-jo : JSONObject</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="401" x="155" y="978"/>
+<text font-family="Lucida Grande" font-size="13" x="159" y="993">
++get(key : String) : Object</text>
+<text font-family="Lucida Grande" font-size="13" x="159" y="1010">
++set(key : String,value : Object) : ParserMessageJSON</text>
+<text font-family="Lucida Grande" font-size="13" x="159" y="1027">
++setTextMessage(id : String,text : String) : ParserMessageJSON</text>
+<text font-family="Lucida Grande" font-size="13" x="159" y="1044">
++setImageMessage(id : String) : ParserMessageJSON</text>
+<text font-family="Lucida Grande" font-size="13" x="159" y="1061">
++getMessageType() : String</text>
+<text font-family="Lucida Grande" font-size="13" x="159" y="1078">
++getTextContent() : String</text>
+<text font-family="Lucida Grande" font-size="13" x="159" y="1095">
++getImageContent() : String</text>
+<text font-family="Lucida Grande" font-size="13" x="159" y="1112">
+&lt;&lt;override&gt;&gt; +toString() : String</text>
+<polyline fill="none" points="485,1294 485,1111" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="485,1111 492,1123 478,1123" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="485,1111 492,1123 478,1123" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="495,1125 495,1111" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="495,1111 502,1123 488,1123" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="495,1111 502,1123 488,1123" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1294" y2="1289"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1284" y2="1279"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1274" y2="1269"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1264" y2="1259"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1254" y2="1249"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1244" y2="1239"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1234" y2="1229"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1224" y2="1219"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1214" y2="1209"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1204" y2="1199"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1194" y2="1189"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1184" y2="1179"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1174" y2="1169"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1164" y2="1159"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1154" y2="1149"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1144" y2="1139"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1134" y2="1129"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1124" y2="1119"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1114" y2="1109"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1104" y2="1099"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1094" y2="1089"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1084" y2="1079"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1074" y2="1069"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1064" y2="1059"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1054" y2="1049"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1044" y2="1039"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1034" y2="1029"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1024" y2="1019"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1014" y2="1009"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="1004" y2="999"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="994" y2="989"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="984" y2="979"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="974" y2="969"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="964" y2="959"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="954" y2="949"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="944" y2="939"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="934" y2="929"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="924" y2="919"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="914" y2="909"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="904" y2="899"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="894" y2="889"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="884" y2="879"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="874" y2="869"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="864" y2="859"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="854" y2="849"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="683" y1="844" y2="839"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="683" x2="678" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="673" x2="668" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="663" x2="658" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="653" x2="648" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="643" x2="638" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="633" x2="628" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="623" x2="618" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="613" x2="608" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="603" x2="598" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="593" x2="588" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="583" x2="578" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="573" x2="568" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="563" x2="558" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="553" x2="548" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="543" x2="538" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="533" x2="528" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="523" x2="518" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="513" x2="508" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="503" x2="498" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="493" x2="488" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="483" x2="478" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="473" x2="468" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="463" x2="458" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="453" x2="448" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="443" x2="438" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="433" x2="428" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="423" x2="418" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="413" x2="408" y1="838" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="416" x2="404" y1="831" y2="838"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="416" x2="404" y1="845" y2="838"/>
+<text font-family="Lucida Grande" font-size="13" x="685" y="940">
+instantiate</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="910" y2="905"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="900" y2="895"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="890" y2="885"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="880" y2="875"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="870" y2="865"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="860" y2="855"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="364" x2="364" y1="850" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="371" x2="364" y1="858" y2="846"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="357" x2="364" y1="858" y2="846"/>
+<text font-family="Lucida Grande" font-size="13" x="366" y="889">
+instantiate</text>
+<rect fill="#ffffff" height="200" stroke="#ffffff" stroke-width="1" width="465" x="947" y="670"/>
+<rect fill="none" height="200" stroke="#000000" stroke-width="1" width="465" x="947" y="670"/>
+<text font-family="Lucida Grande" font-size="13" x="1157" y="684">
++ State</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="465" x="947" y="694"/>
+<text font-family="Lucida Grande" font-size="13" x="951" y="709">
+&lt;&lt;get&gt;&gt; +stateName : String</text>
+<text font-family="Lucida Grande" font-size="13" x="951" y="726">
+&lt;&lt;get/set&gt;&gt; +timeout : Integer</text>
+<text font-family="Lucida Grande" font-size="13" x="951" y="743">
++timeoutState : String</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="951" x2="1192" y1="761" y2="761"/>
+<text font-family="Lucida Grande" font-size="13" x="951" y="760">
++DEFAULT_TIMEOUT : Integer  = 3600</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="951" x2="1165" y1="778" y2="778"/>
+<text font-family="Lucida Grande" font-size="13" x="951" y="777">
+-stateNameSet : HashSet&lt;String&gt;</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="465" x="947" y="790"/>
+<text font-family="Lucida Grande" font-size="13" x="951" y="805">
++State(String)</text>
+<text font-family="Lucida Grande" font-size="13" x="951" y="822">
+&lt;&lt;overloaded&gt;&gt; -State(stateName : String,Integer,timeoutState : String)</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="951" x2="1229" y1="840" y2="840"/>
+<text font-family="Lucida Grande" font-size="13" x="951" y="839">
++validateStateName(name : String) : Boolean</text>
+<text font-family="Lucida Grande" font-size="13" x="951" y="856">
+&lt;&lt;override&gt;&gt; +toString()</text>
+<polyline fill="none" points="1187,401 1187,670" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="1187,401 1192,411 1187,421 1182,411" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="1187,401 1192,411 1187,421 1182,411" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="1327" y="526">
+ </text>
+<text font-family="Lucida Grande" font-size="13" x="1201" y="429">
+1</text>
+<text font-family="Lucida Grande" font-size="13" x="1198" y="665">
+0..*</text>
+<polyline fill="none" points="531,198 531,166 385,166" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="531,198 526,188 531,178 536,188" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="531,198 526,188 531,178 536,188" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="443" y="146">
+ </text>
+<text font-family="Lucida Grande" font-size="13" x="399" y="181">
++1</text>
+<polyline fill="none" points="507,302 391,302" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="507,302 497,307 487,302 497,297" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="507,302 497,307 487,302 497,297" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="418" y="282">
+ </text>
+<text font-family="Lucida Grande" font-size="13" x="402" y="297">
+1</text>
+<polyline fill="none" points="507,406 491,406" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="507,406 497,411 487,406 497,401" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="507,406 497,411 487,406 497,401" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="468" y="386">
+ </text>
+<polyline fill="none" points="307,346 307,382" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="307,346 312,356 307,366 302,356" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="307,346 312,356 307,366 302,356" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="323" y="369">
+ </text>
+<polyline fill="none" points="996,246 1083,246" stroke="#000000" stroke-width="1"/>
+<polygon fill="#000000" points="996,246 1006,241 1016,246 1006,251" stroke="#000000" stroke-width="1"/>
+<polygon fill="none" points="996,246 1006,241 1016,246 1006,251" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="1008" y="226">
+ </text>
+<text font-family="Lucida Grande" font-size="13" x="1057" y="241">
+0..*</text>
+<polyline fill="none" points="385,101 435,101" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="385,101 395,96 405,101 395,106" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="385,101 395,96 405,101 395,106" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="379" y="81">
+ </text>
+<text font-family="Lucida Grande" font-size="13" x="416" y="96">
+1</text>
+<polyline fill="none" points="59,178 59,1294" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="52" x2="59" y1="1282" y2="1294"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="66" x2="59" y1="1282" y2="1294"/>
+<text font-family="Lucida Grande" font-size="13" x="15" y="688">
+ format</text>
+<text font-family="Lucida Grande" font-size="13" x="72" y="205">
+1</text>
+<text font-family="Lucida Grande" font-size="13" x="65" y="1277">
+0..*</text>
+<polyline fill="none" points="123,346 123,1294" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="116" x2="123" y1="1282" y2="1294"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="130" x2="123" y1="1282" y2="1294"/>
+<text font-family="Lucida Grande" font-size="13" x="73" y="764">
+ publish</text>
+<text font-family="Lucida Grande" font-size="13" x="136" y="373">
+1</text>
+<text font-family="Lucida Grande" font-size="13" x="129" y="1277">
+0..*</text>
+<polyline fill="none" points="179,346 179,910" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="172" x2="179" y1="898" y2="910"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="186" x2="179" y1="898" y2="910"/>
+<text font-family="Lucida Grande" font-size="13" x="182" y="633">
+ publish</text>
+<text font-family="Lucida Grande" font-size="13" x="192" y="373">
+1</text>
+<text font-family="Lucida Grande" font-size="13" x="185" y="893">
+0..*</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="996" x2="998" y1="198" y2="194"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1001" x2="1004" y1="190" y2="186"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1007" x2="1009" y1="182" y2="177"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1012" x2="1015" y1="173" y2="169"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1018" x2="1021" y1="165" y2="161"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1023" x2="1026" y1="156" y2="152"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1029" x2="1032" y1="148" y2="144"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1034" x2="1035" y1="152" y2="139"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1022" x2="1035" y1="145" y2="139"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="723" x2="723" y1="198" y2="193"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="723" x2="723" y1="188" y2="183"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="723" x2="723" y1="178" y2="173"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="723" x2="723" y1="168" y2="163"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="723" x2="723" y1="158" y2="153"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="730" x2="723" y1="161" y2="149"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="716" x2="723" y1="161" y2="149"/>
+<rect fill="#ffffff" height="364" stroke="#ffffff" stroke-width="1" width="794" x="1467" y="14"/>
+<rect fill="none" height="364" stroke="#000000" stroke-width="1" width="794" x="1467" y="14"/>
+<text font-family="Lucida Grande" font-size="13" font-style="italic" x="1834" y="28">
++ Querier</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="794" x="1467" y="38"/>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="53">
+#sql : Connection</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="70">
+#table : String</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="87">
+#idx_field : String</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="104">
+#Desc_fields : String</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="121">
+#fields : List&lt;String&gt;</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="138">
+#critical_fields : Set&lt;String&gt;</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="155">
+#queryLimit : Integer</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="794" x="1467" y="165"/>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="180">
++Querier()</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="197">
++close() : void</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="214">
++get() : JSONArray</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="231">
++get(key : Object) : JSONObject</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="248">
++search(desc : String) : JSONArray</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="265">
++add(jsonArray : JSONArray) : boolean</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="282">
++delete(key : Object) : boolean</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="299">
++update(jsonArray : JSONArray) : boolean</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="316">
+#executeQuery(query : String) : ResultSet</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="333">
+#executeUpdate(query : String) : boolean</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="350">
+#parseInput(jsonObject : JSONObject,fields : List&lt;String&gt;,critical_fields : Set&lt;String&gt;,isStrict : boolean) : Map&lt;StringString&gt;</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="367">
+#parseResult(rs : ResultSet,fields : List&lt;String&gt;,critical_fields : Set&lt;String&gt;) : JSONArray</text>
+<rect fill="#ffffff" height="105" stroke="#ffffff" stroke-width="1" width="208" x="1635" y="566"/>
+<rect fill="none" height="105" stroke="#000000" stroke-width="1" width="208" x="1635" y="566"/>
+<text font-family="Lucida Grande" font-size="13" x="1693" y="580">
++ FoodQuerier</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="208" x="1635" y="590"/>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="208" x="1635" y="611"/>
+<text font-family="Lucida Grande" font-size="13" x="1639" y="626">
++FoodQuerier()</text>
+<text font-family="Lucida Grande" font-size="13" x="1639" y="643">
++FoodQuerier(sql : Connection)</text>
+<text font-family="Lucida Grande" font-size="13" x="1639" y="660">
++FoodQuerier(queryLimit : int)</text>
+<rect fill="#ffffff" height="104" stroke="#ffffff" stroke-width="1" width="208" x="2019" y="566"/>
+<rect fill="none" height="104" stroke="#000000" stroke-width="1" width="208" x="2019" y="566"/>
+<text font-family="Lucida Grande" font-size="13" x="2079" y="580">
++ UserQuerier</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="208" x="2019" y="590"/>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="208" x="2019" y="619"/>
+<text font-family="Lucida Grande" font-size="13" x="2023" y="634">
++UserQuerier()</text>
+<text font-family="Lucida Grande" font-size="13" x="2023" y="651">
++UserQuerier(sql : Connection)</text>
+<polyline fill="none" points="1747,566 1747,377" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="1747,377 1754,389 1740,389" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="1747,377 1754,389 1740,389" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="2123,566 2123,377" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="2123,377 2130,389 2116,389" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="2123,377 2130,389 2116,389" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="2171,566 2171,566" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="2140" y="546">
+ </text>
+<rect fill="#ffffff" height="105" stroke="#ffffff" stroke-width="1" width="314" x="1555" y="806"/>
+<rect fill="none" height="105" stroke="#000000" stroke-width="1" width="314" x="1555" y="806"/>
+<text font-family="Lucida Grande" font-size="13" x="1648" y="820">
++ FuzzyFoodQuerier</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="314" x="1555" y="830"/>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="314" x="1555" y="851"/>
+<text font-family="Lucida Grande" font-size="13" x="1559" y="866">
++FuzzyFoodQuerier()</text>
+<text font-family="Lucida Grande" font-size="13" x="1559" y="883">
++FuzzyFoodQuerier(sql : Connection)</text>
+<text font-family="Lucida Grande" font-size="13" x="1559" y="900">
+&lt;&lt;overload&gt;&gt; +search(key : String) : JSONArray</text>
+<rect fill="#ffffff" height="105" stroke="#ffffff" stroke-width="1" width="314" x="1931" y="806"/>
+<rect fill="none" height="105" stroke="#000000" stroke-width="1" width="314" x="1931" y="806"/>
+<text font-family="Lucida Grande" font-size="13" x="2023" y="820">
++ PartialFoodQuerier</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="314" x="1931" y="830"/>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="314" x="1931" y="851"/>
+<text font-family="Lucida Grande" font-size="13" x="1935" y="866">
++PartialFoodQuerier()</text>
+<text font-family="Lucida Grande" font-size="13" x="1935" y="883">
++PartialFoodQuerier(sql : Connection)</text>
+<text font-family="Lucida Grande" font-size="13" x="1935" y="900">
+&lt;&lt;overload&gt;&gt; +search(key : String) : JSONArray</text>
+<polyline fill="none" points="1715,806 1715,670" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="1715,670 1722,682 1708,682" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="1715,670 1722,682 1708,682" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="1971,806 1971,614 1842,614" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="1842,614 1854,607 1854,621" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="1842,614 1854,607 1854,621" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="160" stroke="#ffffff" stroke-width="1" width="320" x="739" y="1294"/>
+<rect fill="none" height="160" stroke="#000000" stroke-width="1" width="320" x="739" y="1294"/>
+<text font-family="Lucida Grande" font-size="13" x="859" y="1308">
++ MealAsker</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="320" x="739" y="1318"/>
+<text font-family="Lucida Grande" font-size="13" x="743" y="1333">
+-eventBus : EventBus</text>
+<text font-family="Lucida Grande" font-size="13" x="743" y="1350">
+-publisher : Publisher</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="320" x="739" y="1385"/>
+<text font-family="Lucida Grande" font-size="13" x="743" y="1400">
++init() : void</text>
+<text font-family="Lucida Grande" font-size="13" x="743" y="1417">
++accept(ev : Event&lt;ParseMessageJSON&gt;) : void</text>
+<rect fill="#ffffff" height="177" stroke="#ffffff" stroke-width="1" width="512" x="1139" y="1262"/>
+<rect fill="none" height="177" stroke="#000000" stroke-width="1" width="512" x="1139" y="1262"/>
+<text font-family="Lucida Grande" font-size="13" x="1352" y="1276">
++ MenuParser</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="512" x="1139" y="1286"/>
+<text font-family="Lucida Grande" font-size="13" x="1143" y="1301">
+-userStates : HashMap&lt;StringBoolean&gt;</text>
+<text font-family="Lucida Grande" font-size="13" x="1143" y="1318">
+-publisher : Publisher</text>
+<text font-family="Lucida Grande" font-size="13" x="1143" y="1335">
+-eventBus : EventBus</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="512" x="1139" y="1345"/>
+<text font-family="Lucida Grande" font-size="13" x="1143" y="1360">
++init() : void</text>
+<text font-family="Lucida Grande" font-size="13" x="1143" y="1377">
++checkAndReply(userId : String,FormatterMessageJSON,menuArray : JSONArray)</text>
+<text font-family="Lucida Grande" font-size="13" x="1143" y="1394">
++accept(ev : Event&lt;ParseMessageJSON&gt;) : void</text>
+<text font-family="Lucida Grande" font-size="13" x="1143" y="1411">
++getUserState(userId : String) : int</text>
+<text font-family="Lucida Grande" font-size="13" x="1143" y="1428">
++clearuserStates() : void</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1294" y2="1289"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1284" y2="1279"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1274" y2="1269"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1264" y2="1259"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1254" y2="1249"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1244" y2="1239"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1234" y2="1229"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1224" y2="1219"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1214" y2="1209"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1204" y2="1199"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1194" y2="1189"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1184" y2="1179"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1174" y2="1169"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1164" y2="1159"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1154" y2="1149"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1144" y2="1139"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1134" y2="1129"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1124" y2="1119"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1114" y2="1109"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1104" y2="1099"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1094" y2="1089"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1084" y2="1079"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="827" x2="827" y1="1074" y2="1069"/>
+<polygon fill="#ffffff" points="827,1067 834,1079 820,1079" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="827,1067 834,1079 820,1079" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="739" y="1194">
+&lt;&lt;realize&gt;&gt;</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1262" y2="1257"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1252" y2="1247"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1242" y2="1237"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1232" y2="1227"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1222" y2="1217"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1212" y2="1207"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1202" y2="1197"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1192" y2="1187"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1182" y2="1177"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1172" y2="1167"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1162" y2="1157"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1152" y2="1147"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1142" y2="1137"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1132" y2="1127"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1122" y2="1117"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1112" y2="1107"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1102" y2="1097"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1092" y2="1087"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1082" y2="1077"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1072" y2="1067"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1062" y2="1057"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1052" y2="1047"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1042" y2="1037"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1032" y2="1027"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1387" y1="1022" y2="1017"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1387" x2="1382" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1377" x2="1372" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1367" x2="1362" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1357" x2="1352" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1347" x2="1342" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1337" x2="1332" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1327" x2="1322" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1317" x2="1312" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1307" x2="1302" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1297" x2="1292" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1287" x2="1282" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1277" x2="1272" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1267" x2="1262" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1257" x2="1252" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1247" x2="1242" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1237" x2="1232" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1227" x2="1222" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1217" x2="1212" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1207" x2="1202" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1197" x2="1192" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1187" x2="1182" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1177" x2="1172" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1167" x2="1162" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1157" x2="1152" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1147" x2="1142" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1137" x2="1132" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1127" x2="1122" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1117" x2="1112" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1107" x2="1102" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1097" x2="1092" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1087" x2="1082" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1077" x2="1072" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1067" x2="1062" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1057" x2="1052" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1047" x2="1042" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1037" x2="1032" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1027" x2="1022" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1017" x2="1012" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="1007" x2="1002" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="997" x2="992" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="987" x2="982" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="977" x2="972" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="967" x2="962" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="957" x2="952" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="947" x2="942" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="937" x2="932" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="927" x2="922" y1="1014" y2="1014"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="917" x2="913" y1="1014" y2="1014"/>
+<polygon fill="#ffffff" points="913,1014 925,1007 925,1021" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="913,1014 925,1007 925,1021" stroke="#000000" stroke-width="1"/>
+<text font-family="Lucida Grande" font-size="13" x="1233" y="1002">
+&lt;&lt;realize&gt;&gt;</text>
+<rect fill="#ffffff" height="122" stroke="#ffffff" stroke-width="1" width="275" x="1467" y="1494"/>
+<rect fill="none" height="122" stroke="#000000" stroke-width="1" width="275" x="1467" y="1494"/>
+<text font-family="Lucida Grande" font-size="13" x="1552" y="1508">
++ UrlMenuParser</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="275" x="1467" y="1518"/>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="275" x="1467" y="1539"/>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="1554">
+-readAll(rd : Reader) : String</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="1571">
++readJsonFromUrl(url : String) : JSONArray</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="1588">
++buildMenu(arr : JSONArray) : JSONArray</text>
+<text font-family="Lucida Grande" font-size="13" x="1471" y="1605">
++buildMenu(url : String) : JSONArray</text>
+<rect fill="#ffffff" height="120" stroke="#ffffff" stroke-width="1" width="272" x="1147" y="1494"/>
+<rect fill="none" height="120" stroke="#000000" stroke-width="1" width="272" x="1147" y="1494"/>
+<text font-family="Lucida Grande" font-size="13" x="1228" y="1508">
++ TextMenuParse</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="272" x="1147" y="1518"/>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="272" x="1147" y="1563"/>
+<text font-family="Lucida Grande" font-size="13" x="1151" y="1578">
++buildMenu(text : String) : JSONArray</text>
+<rect fill="#ffffff" height="92" stroke="#ffffff" stroke-width="1" width="123" x="2475" y="46"/>
+<rect fill="none" height="92" stroke="#000000" stroke-width="1" width="123" x="2475" y="46"/>
+<text font-family="Lucida Grande" font-size="13" x="2508" y="60">
++ Keeper</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="123" x="2475" y="70"/>
+<text font-family="Lucida Grande" font-size="13" x="2479" y="85">
+#jedis : Jedis</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="123" x="2475" y="95"/>
+<text font-family="Lucida Grande" font-size="13" x="2479" y="110">
++Keeper()</text>
+<text font-family="Lucida Grande" font-size="13" x="2479" y="127">
+#close() : void</text>
+<rect fill="#ffffff" height="160" stroke="#ffffff" stroke-width="1" width="453" x="2363" y="206"/>
+<rect fill="none" height="160" stroke="#000000" stroke-width="1" width="453" x="2363" y="206"/>
+<text font-family="Lucida Grande" font-size="13" x="2535" y="220">
++ SerializeKeeper</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="453" x="2363" y="230"/>
+<text font-family="Lucida Grande" font-size="13" x="2367" y="245">
+#fields : List&lt;String&gt;</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="453" x="2363" y="255"/>
+<text font-family="Lucida Grande" font-size="13" x="2367" y="270">
++set(key : String,json : JSONObject) : boolean</text>
+<text font-family="Lucida Grande" font-size="13" x="2367" y="287">
++set(key : String,json : JSONObject) : boolean</text>
+<text font-family="Lucida Grande" font-size="13" x="2367" y="304">
+#rangeList(prefix : String,key : String,number : int) : JSONArray</text>
+<text font-family="Lucida Grande" font-size="13" x="2367" y="321">
+#checkValitidy(jsonObject : JSONObject,fields : List&lt;String&gt;) : boolean</text>
+<text font-family="Lucida Grande" font-size="13" x="2367" y="338">
+#checkValidity(jsonArray : JSONArray,fields : List&lt;String&gt;) : boolean</text>
+<text font-family="Lucida Grande" font-size="13" x="2367" y="355">
+#appendList(prefix : String,key : String,JSONObject) : boolean</text>
+<rect fill="#ffffff" height="194" stroke="#ffffff" stroke-width="1" width="266" x="2867" y="206"/>
+<rect fill="none" height="194" stroke="#000000" stroke-width="1" width="266" x="2867" y="206"/>
+<text font-family="Lucida Grande" font-size="13" x="2956" y="220">
++ StateKeeper</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="266" x="2867" y="230"/>
+<text font-family="Lucida Grande" font-size="13" x="2871" y="245">
+-KEY_PREFIX : String  = "state"</text>
+<text font-family="Lucida Grande" font-size="13" x="2871" y="262">
+-lifeTime : Integer  = 3*60*60</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="266" x="2867" y="289"/>
+<text font-family="Lucida Grande" font-size="13" x="2871" y="304">
++StateKeeper()</text>
+<text font-family="Lucida Grande" font-size="13" x="2871" y="321">
++StateKeeper(jedids : Jedis,lifeTime : int)</text>
+<text font-family="Lucida Grande" font-size="13" x="2871" y="338">
+-checkValidity(state : String) : boolean</text>
+<text font-family="Lucida Grande" font-size="13" x="2871" y="355">
++get(key : String) : String</text>
+<text font-family="Lucida Grande" font-size="13" x="2871" y="372">
++set(key : String,state : String) : boolean</text>
+<polyline fill="none" points="2403,206 2403,110 2475,110" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="2475,110 2463,117 2463,103" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="2475,110 2463,117 2463,103" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="2931,206 2931,110 2597,110" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="2597,110 2609,103 2609,117" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="2597,110 2609,103 2609,117" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="143" stroke="#ffffff" stroke-width="1" width="434" x="2331" y="534"/>
+<rect fill="none" height="143" stroke="#000000" stroke-width="1" width="434" x="2331" y="534"/>
+<text font-family="Lucida Grande" font-size="13" x="2507" y="548">
++ HistKeeper</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="434" x="2331" y="558"/>
+<text font-family="Lucida Grande" font-size="13" x="2335" y="573">
+-prefix : String</text>
+<text font-family="Lucida Grande" font-size="13" x="2335" y="590">
+-fields : List&lt;String&gt;</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="434" x="2331" y="600"/>
+<text font-family="Lucida Grande" font-size="13" x="2335" y="615">
++HistKeeper()</text>
+<text font-family="Lucida Grande" font-size="13" x="2335" y="632">
++HistKeeper(jedids : Jedis)</text>
+<text font-family="Lucida Grande" font-size="13" x="2335" y="649">
+&lt;&lt;overload&gt;&gt; +get(key : String,number : int) : JSONArray</text>
+<text font-family="Lucida Grande" font-size="13" x="2335" y="666">
+&lt;&lt;overload&gt;&gt; +set(key : String,jsonObject : JSONObject) : boolean</text>
+<rect fill="#ffffff" height="160" stroke="#ffffff" stroke-width="1" width="401" x="2915" y="526"/>
+<rect fill="none" height="160" stroke="#000000" stroke-width="1" width="401" x="2915" y="526"/>
+<text font-family="Lucida Grande" font-size="13" x="3076" y="540">
++ LogKeeper</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="401" x="2915" y="550"/>
+<text font-family="Lucida Grande" font-size="13" x="2919" y="565">
+-prefix : String</text>
+<text font-family="Lucida Grande" font-size="13" x="2919" y="582">
+-fields : List&lt;String&gt;</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="401" x="2915" y="600"/>
+<text font-family="Lucida Grande" font-size="13" x="2919" y="615">
++LogKeeper()</text>
+<text font-family="Lucida Grande" font-size="13" x="2919" y="632">
++LogKeeper(jedids : jedis)</text>
+<text font-family="Lucida Grande" font-size="13" x="2919" y="649">
+&lt;&lt;overload&gt;&gt; +get(user_id : String,number : int) : JSONArray</text>
+<text font-family="Lucida Grande" font-size="13" x="2919" y="666">
+&lt;&lt;overload&gt;&gt; +set(user_id)</text>
+<polyline fill="none" points="2451,534 2451,365" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="2451,365 2458,377 2444,377" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="2451,365 2458,377 2444,377" stroke="#000000" stroke-width="1"/>
+<polyline fill="none" points="3187,526 3187,462 2675,462 2675,365" stroke="#000000" stroke-width="1"/>
+<polygon fill="#ffffff" points="2675,365 2682,377 2668,377" stroke="#ffffff" stroke-width="1"/>
+<polygon fill="none" points="2675,365 2682,377 2668,377" stroke="#000000" stroke-width="1"/>
+<rect fill="#ffffff" height="92" stroke="#ffffff" stroke-width="1" width="282" x="2363" y="814"/>
+<rect fill="none" height="92" stroke="#000000" stroke-width="1" width="282" x="2363" y="814"/>
+<text font-family="Lucida Grande" font-size="13" x="2466" y="828">
++ RedisPool</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="282" x="2363" y="838"/>
+<text font-family="Lucida Grande" font-size="13" x="2367" y="853">
+-pool : JedisPool</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="282" x="2363" y="863"/>
+<text font-family="Lucida Grande" font-size="13" x="2367" y="878">
++getConnection() : Jedis</text>
+<text font-family="Lucida Grande" font-size="13" x="2367" y="895">
++closeConnection(connection : Jedis) : void</text>
+<rect fill="#ffffff" height="92" stroke="#ffffff" stroke-width="1" width="324" x="2723" y="814"/>
+<rect fill="none" height="92" stroke="#000000" stroke-width="1" width="324" x="2723" y="814"/>
+<text font-family="Lucida Grande" font-size="13" x="2852" y="828">
++ SQLPool</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="324" x="2723" y="838"/>
+<text font-family="Lucida Grande" font-size="13" x="2727" y="853">
+-connectionPool : BasicDataSource</text>
+<rect fill="#000000" height="1" stroke="#000000" stroke-width="1" width="324" x="2723" y="863"/>
+<text font-family="Lucida Grande" font-size="13" x="2727" y="878">
++getConnection() : Connection</text>
+<text font-family="Lucida Grande" font-size="13" x="2727" y="895">
++closeConnection(connection : Connection) : void</text>
+</svg>
