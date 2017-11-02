@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
  * Handles sql JDBC connections and provide I/O method interfaces.
  * A set of operations is implemented here, including: get, set, add, update, delete, has, search.
  * @author mcding
- * @version 1.2
+ * @version 1.2.1
  */
 @Slf4j
 abstract class Querier {

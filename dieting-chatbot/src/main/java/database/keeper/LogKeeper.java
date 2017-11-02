@@ -12,7 +12,7 @@ import redis.clients.jedis.Jedis;
  * Log keeper to store and load user interaction logs in the redis cache.
  * The valid JSONObject format is LogJSON defined by database APIs.
  * @author mcding
- * @version 1.2
+ * @version 1.2.1
  */
 @Slf4j
 public class LogKeeper extends SerializeKeeper {

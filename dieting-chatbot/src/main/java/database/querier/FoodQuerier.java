@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
  * Base Querier manipulate FoodNutrition table.
  * Base class for {@link PartialFoodQuerier} and {@link FuzzyFoodQuerier}.
  * @author mcding
- * @version 1.2
+ * @version 1.2.1
  */
 @Slf4j
 public class FoodQuerier extends Querier {

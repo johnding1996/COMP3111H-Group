@@ -12,7 +12,7 @@ import redis.clients.jedis.Jedis;
  * History keeper to store and load user meal history in the redis cache.
  * The valid JSONObject format is MealJSON defined by database APIs.
  * @author mcding
- * @version 1.2
+ * @version 1.2.1
  */
 @Slf4j
 public class HistKeeper extends SerializeKeeper {

@@ -5,6 +5,6 @@
  * Useful classes include: querier.PartialFoodQuerier, querier.PartialFoodQuerier, querier.UserQuerier
  * keeper.StateKeeper, keeper.HistKeeper, keeper.LogKeeper.
  * @author mcding
- * @version 1.2
+ * @version 1.2.1
  */
 package database;
