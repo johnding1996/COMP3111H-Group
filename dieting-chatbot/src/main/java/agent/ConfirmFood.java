@@ -9,6 +9,9 @@ import java.text.SimpleDateFormat;
 import java.lang.Integer;
 import org.json.JSONObject;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import controller.ParserMessageJSON;
 import controller.Publisher;
 import controller.FormatterMessageJSON;
@@ -60,6 +63,18 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
         userStates.remove(userId);
     }
 
+    public void printList(String userId, FormatterMessageJSON response){
+        JSONObject qJSON = new JSONObject();
+        //Get QueryJSON from database
+        //qJSON = getFoodJSON(userId);
+        JSONArray print = qJSON.getJSONArray("menu");
+        int i = 1;
+        for(JSONObject food : print){
+            response.appendTextMessage(i + ". " + food.getString("name"));
+            i++;
+        }
+    }
+
     /**
      * Event handler for ParserMessageJSON
      * @param ev Event object
@@ -67,7 +82,7 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
     public void accept(Event<ParserMessageJSON> ev) {
         ParserMessageJSON psr = ev.getData();
 
-        // only handle message if state is `InitialInput`
+        // only handle message if state is `RecordMeal`
         String currentState = psr.get("state");
         if (!currentState.equals("RecordMeal")) return;
 
