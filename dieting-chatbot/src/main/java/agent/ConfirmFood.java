@@ -52,7 +52,11 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
 
     // User state tracking for interaction; false stands for user did not confirm food list yet
     private static HashMap<String, Boolean> userStates =
-            new HashMap<String, Boolean>();
+            new HashMap<>();
+
+    void changeUserState(String userId, boolean state) {
+        userStates.put(userId, state);
+    }
 
     private MenuKeeper menuKeeper = new MenuKeeper();
 
@@ -69,20 +73,18 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
     }
 
     public void printList(String userId, FormatterMessageJSON response){
-        JSONObject qJSON = new JSONObject();
+        JSONObject jsonObject = new JSONObject();
         //Get QueryJSON from database
         try{
-            qJSON = menuKeeper.get(userId, 1).getJSONObject(0);
+            jsonObject = menuKeeper.get(userId, 1).getJSONObject(0);
         } catch (JSONException e){
-            log.info("qJSON returns a null value");
+            log.warn("MenuKeeper returns a empty JSONArray", e);
         }
 
-        JSONArray print = qJSON.getJSONArray("menu");
-        int i = 1;
+        JSONArray print = jsonObject.getJSONArray("menu");
         for(int j = 0; j < print.length(); j++){
             JSONObject food = print.getJSONObject(j);
-            response.appendTextMessage(i + ". " + food.getString("name"));
-            i++;
+            response.appendTextMessage((j+1)+ ". " + food.getString("name"));
         }
         response.appendTextMessage("Please enter in the index in this format: e.g. 1;3;4, seperated by ';'");
     }
