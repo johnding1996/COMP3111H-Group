@@ -362,7 +362,7 @@ public class ChatbotControllerTester {
 
         TextMessageContent text = new TextMessageContent("1234",
             textContent);
-        UserSource userSource = new UserSource(userId);
+        UserSource userSource = new UserSource("U"+userId);
         return new MessageEvent<TextMessageContent>("token", userSource,
                     text, null);
     }

@@ -184,6 +184,10 @@ public class ChatbotController
         String textContent = event.getMessage().getText();
         String messageId = event.getMessage().getId();
 
+        // remove first letter 'U' from userId
+        int endIndex = userId.length();
+        userId = userId.substring(1, endIndex);
+
         StateMachine stateMachine = getStateMachine(userId);
         String state = stateMachine.getState();
 
