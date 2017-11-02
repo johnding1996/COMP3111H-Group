@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
  * Statically keep the Redis connection pool.
  * Provide wrapper method to generate new connection and close connection.
  * @author mcding
- * @version 1.2
+ * @version 1.2.1
  */
 @Slf4j
 public class RedisPool {

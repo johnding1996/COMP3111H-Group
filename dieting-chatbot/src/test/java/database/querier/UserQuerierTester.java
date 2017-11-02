@@ -23,6 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 @RunWith(SpringRunner.class)
 public class UserQuerierTester {
     private static Connection sql;
+    private static String user_id1 = "4b5f62d023bcfc773908a2d1e80d0a14";
+    private static String user_id2 = "9cc5f0eb3bacb25dc4a5e924c7ca3d74";
     private static Querier userQuerier;
     private static JSONObject goodUserJson;
     private static JSONObject anotherGoodUserJson;
@@ -34,7 +36,7 @@ public class UserQuerierTester {
         sql = SQLPool.getConnection();
         userQuerier = new UserQuerier(sql);
         goodUserJson = new JSONObject();
-        goodUserJson.put("id", 0);
+        goodUserJson.put("id", user_id1);
         goodUserJson.put("name", "john");
         goodUserJson.put("age", 20);
         goodUserJson.put("gender", "male");
@@ -49,20 +51,20 @@ public class UserQuerierTester {
         userQuerier.close();
     }
 
-    private void deleteRow(int index) {
+    private void deleteRow(String index) {
         try {
-            String query = String.format("DELETE FROM userinfo WHERE id = '%d';", index);
+            String query = String.format("DELETE FROM userinfo WHERE id = '%s';", index);
             PreparedStatement stmt = sql.prepareStatement(query);
             stmt.executeUpdate();
             stmt.close();
         } catch (SQLException e) {
-            log.error(String.format("Failed to delete row with index %d of userinfo table when testing.", index), e);
+            log.error(String.format("Failed to delete row with index %s of userinfo table when testing.", index), e);
         }
     }
 
-    private boolean checkExistRow(int index) {
+    private boolean checkExistRow(String index) {
         try {
-            String query = String.format("SELECT * FROM userinfo WHERE id = '%d';", index);
+            String query = String.format("SELECT * FROM userinfo WHERE id = '%s';", index);
             PreparedStatement stmt = sql.prepareStatement(query);
             ResultSet rs = stmt.executeQuery();
             boolean hasRow = rs.next();
@@ -70,21 +72,21 @@ public class UserQuerierTester {
             stmt.close();
             return hasRow;
         } catch (SQLException e) {
-            log.error(String.format("Failed to check whether row with index %d of userinfo table exists or not when testing.", index), e);
+            log.error(String.format("Failed to check whether row with index %s of userinfo table exists or not when testing.", index), e);
             return false;
         }
     }
 
     @Before
     public void setUp() {
-        deleteRow(0);
-        deleteRow(1);
+        deleteRow(user_id1);
+        deleteRow(user_id2);
     }
 
     @After
     public void tearDown() {
-        deleteRow(0);
-        deleteRow(1);
+        deleteRow(user_id1);
+        deleteRow(user_id2);
     }
 
     @Test
@@ -93,11 +95,11 @@ public class UserQuerierTester {
         jsonArray.put(goodUserJson);
         anotherGoodUserJson = new JSONObject(goodUserJson, JSONObject.getNames(goodUserJson));
         anotherGoodUserJson.remove("id");
-        anotherGoodUserJson.put("id", 1);
+        anotherGoodUserJson.put("id", user_id2);
         jsonArray.put(anotherGoodUserJson);
         boolean result = userQuerier.add(jsonArray);
-        boolean resultAnother0 = checkExistRow(0);
-        boolean resultAnother1 = checkExistRow(1);
+        boolean resultAnother0 = checkExistRow(user_id1);
+        boolean resultAnother1 = checkExistRow(user_id2);
         assertTrue(result && resultAnother0 && resultAnother1);
     }
 
@@ -113,7 +115,7 @@ public class UserQuerierTester {
         JSONArray jsonArray = new JSONArray();
         jsonArray.put("whatever");
         boolean result = userQuerier.add(jsonArray);
-        boolean resultAnother = !checkExistRow(0);
+        boolean resultAnother = !checkExistRow(user_id1);
         assertTrue(!result && resultAnother);
     }
 
@@ -124,7 +126,7 @@ public class UserQuerierTester {
         badUserJson.remove("age");
         jsonArray.put(badUserJson);
         boolean result = userQuerier.add(jsonArray);
-        boolean resultAnother = !checkExistRow(0);
+        boolean resultAnother = !checkExistRow(user_id1);
         assertTrue(!result && resultAnother);
     }
 
@@ -136,7 +138,7 @@ public class UserQuerierTester {
         badUserJson.put("due_date", new Date());
         jsonArray.put(badUserJson);
         boolean result = userQuerier.add(jsonArray);
-        boolean resultAnother = !checkExistRow(0);
+        boolean resultAnother = !checkExistRow(user_id1);
         assertTrue(!result && resultAnother);
     }
 
@@ -148,7 +150,7 @@ public class UserQuerierTester {
         badUserJson.put("age", true);
         jsonArray.put(badUserJson);
         boolean result = userQuerier.add(jsonArray);
-        boolean resultAnother = !checkExistRow(0);
+        boolean resultAnother = !checkExistRow(user_id1);
         assertTrue(!result && resultAnother);
     }
 
@@ -159,8 +161,8 @@ public class UserQuerierTester {
         jsonArray.put(goodUserJson);
         boolean result = userQuerier.add(jsonArray);
         // Non of the rows with duplicated index will be added to the table
-        boolean resultAnother1 = !checkExistRow(0);
-        boolean resultAnother2 = !checkExistRow(1);
+        boolean resultAnother1 = !checkExistRow(user_id1);
+        boolean resultAnother2 = !checkExistRow(user_id2);
         assertTrue(!result && resultAnother1 && resultAnother2);
     }
 
@@ -169,14 +171,14 @@ public class UserQuerierTester {
         JSONArray jsonArray = new JSONArray();
         jsonArray.put(goodUserJson);
         userQuerier.add(jsonArray);
-        boolean result = userQuerier.delete(0);
-        boolean resultAnother = !checkExistRow(0);
+        boolean result = userQuerier.delete(user_id1);
+        boolean resultAnother = !checkExistRow(user_id2);
         assertTrue(result && resultAnother);
     }
 
     @Test
     public void testDeleteNotFoundSuccess() {
-        boolean result = userQuerier.delete(0);
+        boolean result = userQuerier.delete(user_id1);
         assertTrue(result);
     }
 
@@ -185,22 +187,23 @@ public class UserQuerierTester {
         JSONArray jsonArray = new JSONArray();
         jsonArray.put(goodUserJson);
         userQuerier.add(jsonArray);
-        JSONObject jsonObjectActual = userQuerier.get(0);
+        JSONObject jsonObjectActual = userQuerier.get(user_id1);
         JSONAssert.assertEquals(goodUserJson, jsonObjectActual, false);
     }
 
+    /*
     @Test
     public void testGetAllSuccess() { ;
         JSONArray jsonArray = new JSONArray();
         jsonArray.put(goodUserJson);
         anotherGoodUserJson = new JSONObject(goodUserJson, JSONObject.getNames(goodUserJson));
         anotherGoodUserJson.remove("id");
-        anotherGoodUserJson.put("id", 1);
+        anotherGoodUserJson.put("id", user_id2);
         jsonArray.put(anotherGoodUserJson);
         userQuerier.add(jsonArray);
         JSONArray jsonArrayActual = userQuerier.get();
         JSONAssert.assertEquals(jsonArray, jsonArrayActual, false);
-    }
+    }*/
 
     @Test
     public void testUpdateSuccess() {
@@ -213,7 +216,7 @@ public class UserQuerierTester {
         JSONArray anotherJsonArray = new JSONArray();
         anotherJsonArray.put(anotherGoodUserJson);
         boolean result = userQuerier.update(anotherJsonArray);
-        JSONObject jsonObjectActual = userQuerier.get(0);
+        JSONObject jsonObjectActual = userQuerier.get(user_id1);
         JSONAssert.assertEquals(anotherGoodUserJson, jsonObjectActual, false);
     }
 
@@ -222,7 +225,7 @@ public class UserQuerierTester {
         JSONArray jsonArray = new JSONArray();
         jsonArray.put(goodUserJson);
         boolean result = userQuerier.update(jsonArray);
-        boolean resultAnother = !checkExistRow(0);
+        boolean resultAnother = !checkExistRow(user_id1);
         assertTrue(result && resultAnother);
     }
 }

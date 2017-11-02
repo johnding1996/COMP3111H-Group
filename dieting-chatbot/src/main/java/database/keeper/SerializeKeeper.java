@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
  * Abstract base class which flatten a JSONObject to redis key-value, and handle the read/write operations.
  * Super class for {@link HistKeeper} and {@link LogKeeper}.
  * @author mcding
- * @version 1.2
+ * @version 1.2.1
  */
 @Slf4j
 public abstract class SerializeKeeper extends Keeper {
