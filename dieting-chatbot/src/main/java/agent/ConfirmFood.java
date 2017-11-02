@@ -1,9 +1,13 @@
 package agent;
 
+import database.keeper.MenuKeeper;
+
 import java.util.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.lang.Integer;
+
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import org.json.JSONArray;
@@ -44,9 +48,16 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
         }
     }
 
-    // User state tracking for interaction; false stands for user did not enter food list yet
+    // User state tracking for interaction; false stands for user did not confirm food list yet
     private static HashMap<String, Boolean> userStates =
-            new HashMap<String, Boolean>();
+            new HashMap<>();
+
+    void changeUserState(String userId, boolean state) {
+        userStates.put(userId, state);
+    }
+
+    private MenuKeeper menuKeeper = new MenuKeeper();
+
 
     /**
      * add userInfo to history if everything is correct
@@ -60,16 +71,24 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
         userStates.remove(userId);
     }
 
+    /**
+     * print list for user to select
+     * @param userId
+     * @param response
+     */
     public void printList(String userId, FormatterMessageJSON response){
-        JSONObject qJSON = new JSONObject();
+        JSONObject jsonObject = new JSONObject();
         //Get QueryJSON from database
-        //qJSON = getFoodJSON(userId);
-        JSONArray print = qJSON.getJSONArray("menu");
-        int i = 1;
+        try{
+            jsonObject = menuKeeper.get(userId, 1).getJSONObject(0);
+        } catch (JSONException e){
+            log.warn("MenuKeeper returns a empty JSONArray", e);
+        }
+
+        JSONArray print = jsonObject.getJSONArray("menu");
         for(int j = 0; j < print.length(); j++){
             JSONObject food = print.getJSONObject(j);
-            response.appendTextMessage(i + ". " + food.getString("name"));
-            i++;
+            response.appendTextMessage((j + 1) + ". " + food.getString("name"));
         }
         response.appendTextMessage("Please enter in a list of indeces seperated by ';' (e.g. 1;3;4)");
     }
@@ -123,6 +142,7 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
             String[] idxStrings = psr.getTextContent().split(";");
             try {
                 List<Integer> idxs = new ArrayList<>();
+
                 for (String idxString: idxStrings) {
                     idxs.add(Integer.parseInt(idxString));
                 }
