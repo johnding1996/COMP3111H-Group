@@ -9,25 +9,23 @@ import lombok.extern.slf4j.Slf4j;
 import redis.clients.jedis.Jedis;
 
 /**
- * Log keeper to store and load user interaction logs in the redis cache.
- * The valid JSONObject format is LogJSON defined by database APIs.
- * @author mcding
- * @version 1.2.1
+ * Menu Keeper to store and load user latest menu input in the redis cache.
+ * The valid JSONObject format is the QueryJSON defined by agent package.
  */
 @Slf4j
-public class LogKeeper extends SerializeKeeper {
+public class MenuKeeper extends SerializeKeeper {
     /**
      * The identifier of all user logs.
      */
-    private static final String prefix = "log";
+    private static final String prefix = "menu";
     private static final List<String> fields = Arrays.asList(
-            "timestamp", "event", "old_state", "new_state"
+            "userId", "menu"
     );
 
     /**
      * Default constructor.
      */
-    public LogKeeper() {
+    public MenuKeeper() {
         super();
     }
 
@@ -35,7 +33,7 @@ public class LogKeeper extends SerializeKeeper {
      * Constructor which uses external redis connection.
      * @param jedids external redis connection
      */
-    LogKeeper(Jedis jedids) {
+    MenuKeeper(Jedis jedids) {
         this.jedis = jedis;
     }
 
@@ -62,14 +60,14 @@ public class LogKeeper extends SerializeKeeper {
     /**
      * Add new user log to cache.
      * @param key key string
-     * @param logJson new row to add to the redis cache
+     * @param queryJson new row to add to the redis cache
      * @return whether appending operation is successful or not
      */
-    public boolean set(String key, JSONObject logJson) {
-        if (!checkValitidy(logJson, fields)) {
+    public boolean set(String key, JSONObject queryJson) {
+        if (!checkValitidy(queryJson, fields)) {
             log.error("Invalid formatted LogJSON.");
             return false;
         }
-        return appendList(prefix, key, logJson);
+        return appendList(prefix, key, queryJson);
     }
 }

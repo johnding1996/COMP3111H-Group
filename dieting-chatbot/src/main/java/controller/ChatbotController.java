@@ -141,7 +141,7 @@ public class ChatbotController
         }
     }
 
-    @Scheduled(cron = "*/30 * 20 * * *", zone = "GMT+08")
+    @Scheduled(cron = "0 0 20 * * *", zone = "GMT+08")
     public void askWeight() {
         log.info("AskForWeight: **************************");
         List<String> userIdList = getUserIdList();
@@ -397,6 +397,10 @@ public class ChatbotController
         fmt.set("userId", userId)
            .set("type", "push")
            .appendTextMessage("New state: " + newState);
+        if (State.validateStateName(newState))
+            fmt.appendTextMessage("Change state succeed");
+        else fmt.appendTextMessage("Change state failed, invalid state " +
+            newState);
         publisher.publish(fmt);
 
         StateMachine stateMachine = getStateMachine(userId);

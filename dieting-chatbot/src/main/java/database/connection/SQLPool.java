@@ -10,11 +10,10 @@ import java.net.URISyntaxException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link SQLPool}
  * Statically keep the SQL connection pool.
  * Provide wrapper method to generate new connection and close connection.
  * @author mcding
- * @version 1.1
+ * @version 1.2.1
  */
 @Slf4j
 public class SQLPool {
@@ -40,7 +39,6 @@ public class SQLPool {
     }
 
     /**
-     * getConnection
      * Return a new SQL JDBC connection
      * @return connection SQL JDBC connection
      */
@@ -58,7 +56,6 @@ public class SQLPool {
     }
 
     /**
-     * closeConnection
      * Close a SQL connection.
      * @param connection SQL connection
      */

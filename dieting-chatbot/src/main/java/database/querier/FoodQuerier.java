@@ -9,16 +9,15 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link FoodQuerier}
- * Abstract class which manipulate FoodNutrition table.
- * Super class for {@link PartialFoodQuerier} and {@link FuzzyFoodQuerier}.
+ * Base Querier manipulate FoodNutrition table.
+ * Base class for {@link PartialFoodQuerier} and {@link FuzzyFoodQuerier}.
  * @author mcding
- * @version 1.1
+ * @version 1.2.1
  */
 @Slf4j
 public class FoodQuerier extends Querier {
+
     /**
-     * constructor
      * Default constructor.
      */
     FoodQuerier() {
@@ -44,7 +43,6 @@ public class FoodQuerier extends Querier {
     }
 
     /**
-     * constructor
      * Constructor which uses external sql connection.
      * @param sql external sql connection
      */
@@ -54,11 +52,10 @@ public class FoodQuerier extends Querier {
     }
 
     /**
-     * constructor
      * Set the query limit.
      * @param queryLimit number of rows to return when searching
      */
-    FoodQuerier(int queryLimit) {
+    public FoodQuerier(int queryLimit) {
         this();
         this.queryLimit = queryLimit;
     }
