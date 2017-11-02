@@ -5,14 +5,14 @@
  *    "userId": "",
  *    "menu": [
  *        {
- *            "dishId": "0",
+ *            "dishName": "0",
  *            "foodContent": [
  *                {"idx": 1, "portion": 0.8},
  *                {"idx": 2, "portion": 0.2}
  *            ]
  *        },
  *        {
- *            "dishId": 1,
+ *            "dishName": "1",
  *            "foodContent": [
  *                {"idx": 3, "portion": 0.2},
  *                {"idx": 4, "portion": 0.5},
@@ -90,9 +90,9 @@ public class FoodRecommender {
         for (int i=0; i<menu.length(); ++i) {
             JSONObject dish = menu.getJSONObject(i);
             JSONObject dishResult = new JSONObject();
-            int dishId = dish.getInt("dishId");
+            String dishName = dish.getString("dishName");
             JSONArray foodContent = dish.getJSONArray("foodContent");
-            dishResult.put("dishId", dishId);
+            dishResult.put("dishName", dishName);
             dishResult.put("score", calculateScore(userId, foodContent));
             dishResult.put("portionSize", calculatePortionSize(userId, foodContent));
             results.put(dishResult);
@@ -140,21 +140,11 @@ public class FoodRecommender {
      * @return A String of reply text
      */
     public String generateReplyText(JSONObject dishResult) {
-        int dishId = dishResult.getInt("dishId");
-        String dishName = getDishName(dishId);
+        String dishName = dishResult.getString("dishName");
         int portionSize = dishResult.getInt("portionSize");
         return String.format("You should choose this dish: %s; " +
             "and the recommended portion size is %d gram",
             dishName, portionSize);
-    }
-
-    /**
-     * Get dish name given dishId in redis
-     * @param dishId ID of the dish in integer
-     * @return A String of dish name
-     */
-    public String getDishName(int dishId) {
-        return "DishName";
     }
 
     /**

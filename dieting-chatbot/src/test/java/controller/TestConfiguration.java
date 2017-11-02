@@ -1,5 +1,6 @@
 package controller;
 
+import database.querier.UserQuerier;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,5 +29,10 @@ public class TestConfiguration {
     @Bean
     public Publisher createPublisher() {
         return Mockito.mock(Publisher.class);
+    }
+
+    @Bean
+    public UserQuerier createUserQuerier() {
+        return Mockito.mock(UserQuerier.class);
     }
 }
