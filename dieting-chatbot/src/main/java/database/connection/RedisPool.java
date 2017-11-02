@@ -11,11 +11,10 @@ import java.net.URISyntaxException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link RedisPool}
  * Statically keep the Redis connection pool.
  * Provide wrapper method to generate new connection and close connection.
  * @author mcding
- * @version 1.1
+ * @version 1.2
  */
 @Slf4j
 public class RedisPool {
@@ -34,7 +33,6 @@ public class RedisPool {
     }
 
     /**
-     * getConnection
      * Return a new redis connection.
      * @return redis connection
      */
@@ -51,7 +49,6 @@ public class RedisPool {
     }
 
     /**
-     * closeConnection
      * Close a redis connection.
      * @param connection a redis connection
      */
