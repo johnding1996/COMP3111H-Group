@@ -1,6 +1,5 @@
 package src.main.java.agent;
 
-//with reference from http://carlofontanos.com/java-parsing-json-data-from-a-url/
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -12,21 +11,21 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import controller;
+import controller.ParserMessageJSON;
+import controller.Publisher;
+import controller.FormatterMessageJSON;
 
-public class PraseMeauFromWeb {
-    @Autowired(required = false)
-    private Publisher publisher;
-
-    //this method is for error msg if url is not valid
-    private void sendErrorMessage() {
-        FormatterMessageJSON fmt = new FormatterMessageJSON();
-        fmt.appendTextMessage("Ops! Your url does not seem to be valid.");
-        publisher.publish(fmt);
-    }
+public class ParseMenuFromWeb {
  
-    //returns a json array to PraseMeauInputText, corresponding to "meau" on QueryJSON
-	public JSONArray webGet(String webLink) {
+    /**
+     * returns a JSON array from given URL, corresponding to "meau" on QueryJSON
+     * @param user input of url
+     * with reference from http://carlofontanos.com/java-parsing-json-data-from-a-url/
+     */
+	public JSONObject webGet(ParserMessageJSON PMJ) {
+		String userID = PMJ.get("userId");
+		String webLink = PMJ.getTextMessage();
+		
 		JSONParser parser = new JSONParser();
 		JSONArray output = new JSONArray();
      
@@ -57,10 +56,14 @@ public class PraseMeauFromWeb {
 				}
 			}
 			in.close();
+			JSONObject thisMeal = new JSONObject();
+			thisMeal.put("userId", userID);
+			thisMeal.put("meau", output);
+			return thisMeal;
         
 		//if exists error in reading
 		} catch (Exception e) {
-			sendErrorMessage();
+			log.info("Invalid URL");
 			return null;
 		} 
 
@@ -70,7 +73,6 @@ public class PraseMeauFromWeb {
 //      } catch (ParseException e) {
 //          e.printStackTrace();
 //      }
-     
-		return output;   
+ 
 	}   
 }
