@@ -8,6 +8,7 @@ import org.junit.*;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.Date;
+import java.util.Locale;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -29,6 +30,7 @@ public class UserQuerierTester {
 
     @BeforeClass
     public static void setUpClass() {
+        Locale.setDefault(Locale.US);
         sql = SQLPool.getConnection();
         userQuerier = new UserQuerier(sql);
         goodUserJson = new JSONObject();

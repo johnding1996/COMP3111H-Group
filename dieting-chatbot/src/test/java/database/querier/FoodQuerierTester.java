@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Locale;
 
 import static org.junit.Assert.*;
 import org.junit.runner.RunWith;
@@ -27,6 +28,7 @@ public class FoodQuerierTester {
 
     @BeforeClass
     public static void setUpClass() {
+        Locale.setDefault(Locale.US);
         sql = SQLPool.getConnection();
         foodQuerier = new FoodQuerier();
         goodFoodJson = new JSONObject();

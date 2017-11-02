@@ -8,18 +8,16 @@ import org.json.JSONArray;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link SerializeKeeper}
- * Abstract class which flatten a JSONObject to redis key-value, and handle the read/write operations.
+ * Abstract base class which flatten a JSONObject to redis key-value, and handle the read/write operations.
  * Super class for {@link HistKeeper} and {@link LogKeeper}.
  * @author mcding
- * @version 1.1
+ * @version 1.2
  */
 @Slf4j
 public abstract class SerializeKeeper extends Keeper {
     protected List<String> fields;
 
     /**
-     * add
      * @param key key
      * @param json JSONObject
      * @return whether add successfully or not
@@ -27,7 +25,6 @@ public abstract class SerializeKeeper extends Keeper {
     public abstract boolean set(String key, JSONObject json);
 
     /**
-     * get
      * @param key key
      * @param number number of latest result to return
      * @return json JSONArray

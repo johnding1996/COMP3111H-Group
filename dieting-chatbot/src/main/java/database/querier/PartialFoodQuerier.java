@@ -8,8 +8,7 @@ import java.sql.ResultSet;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link PartialFoodQuerier}
- * Food querier which implements partial match search.
+ * Food Querier which implements partial match search.
  */
 @Slf4j
 public class PartialFoodQuerier extends FoodQuerier {
@@ -35,7 +34,7 @@ public class PartialFoodQuerier extends FoodQuerier {
      * Set the query limit and levenshtein algorithm parameters.
      * @param queryLimit number of rows to return when searching
      */
-    PartialFoodQuerier(int queryLimit) {
+    public PartialFoodQuerier(int queryLimit) {
         super(queryLimit);
     }
 
