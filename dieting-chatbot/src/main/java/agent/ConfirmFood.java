@@ -1,5 +1,6 @@
 package agent;
 
+import database.keeper.MenuKeeper;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -51,6 +52,8 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
     private static HashMap<String, Boolean> userStates =
             new HashMap<String, Boolean>();
 
+    private MenuKeeper menuKeeper = new MenuKeeper();
+
     /**
      * add userInfo to history if everything is correct
      */
@@ -66,7 +69,7 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
     public void printList(String userId, FormatterMessageJSON response){
         JSONObject qJSON = new JSONObject();
         //Get QueryJSON from database
-        //qJSON = getFoodJSON(userId);
+        qJSON = menuKeeper.get(userId, 1).getJSONObject(0);
         JSONArray print = qJSON.getJSONArray("menu");
         int i = 1;
         for(int j = 0; j < print.length(); j++){
