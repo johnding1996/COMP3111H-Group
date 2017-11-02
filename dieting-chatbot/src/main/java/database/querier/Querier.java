@@ -221,8 +221,8 @@ abstract class Querier {
                     assignments.add(entry.getKey() + " = " + entry.getValue());
                 }
             }
-
-            String query = String.format("UPDATE %s SET %s WHERE %s='%s';",
+            // Note that id string here should not be enclosed by quotation marks, since they are already enclosed in parseInpute
+            String query = String.format("UPDATE %s SET %s WHERE %s=%s;",
                     table, String.join(", ", assignments), idx_field, map.get(idx_field));
             if (!executeUpdate(query)){
                 log.error(String.format("Failed to update row with index %s of table %s when executing SQL query.",
