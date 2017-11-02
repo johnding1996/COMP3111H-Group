@@ -1,5 +1,7 @@
 package agent;
 
+import org.json.JSONObject;
+import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import reactor.bus.Event;
@@ -10,6 +12,7 @@ import controller.ParserMessageJSON;
 import controller.Publisher;
 import database.connection.SQLPool;
 import database.querier.PartialFoodQuerier;
+import java.util.HashMap;
 
 import static reactor.bus.selector.Selectors.$;
 import javax.annotation.PostConstruct;
@@ -27,11 +30,62 @@ public class MealAsker
     @Autowired
     private Publisher publisher;
 
+    static private HashMap<String, JSONObject> menus = new HashMap<>();
+
     @PostConstruct
     public void init() {
         if (eventBus != null) {
             eventBus.on($("ParserMessageJSON"), this);
             log.info("UserInitialInputRecord register on event bus");
+        }
+    }
+
+    /**
+     * Clear all QueryJSON
+     */
+    public void clearQueryJSON() {
+        log.info("Removing all QueryJSON object");
+        menus.clear();
+    }
+
+    /**
+     * set QueryJSON for a user
+     * @param json QueryJSON to add
+     */
+    public void setQueryJSON(JSONObject json) {
+        if (validateQueryJSON(json))
+            menus.put((String)json.get("userId"), json);
+        else log.info("Invalid Query JSON:\n" + json.toString(4));
+    }
+
+    /**
+     * get QueryJSON for a user
+     * @param userId String of user Id
+     * @return JSONObject
+     */
+    public JSONObject getQueryJSON(String userId) {
+        if (menus.containsKey(userId)) return menus.get(userId);
+        else return null;
+    }
+
+    /**
+     * Validate QueryJSON
+     * @param json QueryJSON to check
+     * @return A boolean, whether the format is valid
+     */
+    public static boolean validateQueryJSON(JSONObject json) {
+        try {
+            String userId = (String)json.get("userId");
+            JSONArray menu = (JSONArray)json.get("menu");
+            for (int i=0; i<menu.length(); ++i) {
+                JSONObject dish = menu.getJSONObject(i);
+                String dishName = (String)dish.get("name");
+                assert dishName != null;
+            }
+            return true;
+        } catch (Exception e) {
+            log.info("Invalid QueryJSON: {}", e.toString());
+            return false;
         }
     }
 
