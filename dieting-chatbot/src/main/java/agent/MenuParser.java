@@ -130,4 +130,21 @@ public class MenuParser
         }
         publisher.publish(response);
     }
+
+    /**
+     * Get the state of a given user
+     * @param userId String of user Id
+     * @return A String of the current state, null of no such user
+     */
+    public int getUserState(String userId) {
+        if (!userStates.containsKey(userId)) return -1;
+        else return userStates.get(userId).intValue();
+    }
+
+    /**
+     * Clear all user states
+     */
+    public void clearUserStates() {
+        userStates.clear();
+    }
 }
