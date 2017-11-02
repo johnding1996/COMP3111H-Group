@@ -73,6 +73,7 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
             response.appendTextMessage(i + ". " + food.getString("name"));
             i++;
         }
+        response.appendTextMessage("Please enter in the index in this format: e.g. 1;3;4, seperated by ';'");
     }
 
     /**
@@ -107,18 +108,19 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
         if (!userStates.containsKey(userId)) {
             log.info("register new user {}", userId);
             userStates.put(userId, false);
+
         }
-        boolean selection = userStates.get(userId);
 
         FormatterMessageJSON response = new FormatterMessageJSON();
         response.set("userId", userId)
                 .set("type", "reply")
                 .set("replyToken", replyToken);
         log.info(psr.toString());
+
+        boolean selection = userStates.get(userId);
         if (!selection) {
-            response.appendTextMessage(
-                    "Plz tell me what food you just have, " +
-                            "enter in this format: food1;food2;food3 (seperate with ';')");
+            response.appendTextMessage("Welcome back! Please choose among what you just ate in this list:");
+            printList(userId, response);
             userStates.put(userId, true);
         } else {
             String foodInfo = psr.getTextContent();
