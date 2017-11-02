@@ -68,7 +68,8 @@ public class MenuParser
                      .put("menu", menuArray);
             // set queryJSON for meal asker
             // no need to reply, give control to MealAsker
-            response.set("stateTransition", "menuMessage");
+            response.set("stateTransition", "menuMessage")
+                    .set("type", "transition");
         }
     }
     
