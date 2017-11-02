@@ -26,6 +26,8 @@ import utility.Validator;
 
 import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
+@Component
 public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
 
     @Autowired
@@ -49,23 +51,66 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
     /**
      * add userInfo to history if everything is correct
      */
-    public void addDatabase(String foodInfo) {
+    public void addDatabase(String foodInfo, String userId) {
         String[] food = foodInfo.split(";");
-        JSONObject userJSON = new JSONObject();
-        userJSON.put("id", u.id);
-        userJSON.put("age", u.age);
-        userJSON.put("gender", u.gender);
-        userJSON.put("weight", u.weight);
-        userJSON.put("height", u.height);
-
-        JSONObject goal = new JSONObject();
-        goal.put("weight", u.desiredWeight);
-        goal.put("due", u.goalDate);
-        userJSON.put("goal", goal);
 
         // add user info to database and remove
         log.info("User Info of {} is ready for database", u.id);
         // setUserInfo(u.id, userJSON);
-        userStates.remove(u.id);
+        userStates.remove(userId);
+    }
+
+    /**
+     * Event handler for ParserMessageJSON
+     * @param ev Event object
+     */
+    public void accept(Event<ParserMessageJSON> ev) {
+        ParserMessageJSON psr = ev.getData();
+
+        // only handle message if state is `InitialInput`
+        String currentState = psr.get("state");
+        if (!currentState.equals("RecordMeal")) return;
+
+        log.info("Entering user meal confirm handler");
+        String userId = psr.get("userId");
+        String replyToken = psr.get("replyToken");
+
+        // if the input is not text
+        if(!psr.getMessageType().equals("text")) {
+            FormatterMessageJSON response = new FormatterMessageJSON();
+            response.set("userId", userId)
+                    .set("type", "reply")
+                    .set("replyToken", replyToken)
+                    .appendTextMessage(
+                            "Please input some text at this moment ~");
+            publisher.publish(response);
+            log.info("Cannot handle image message");
+            return;
+        }
+
+        // register user if it is new
+        if (!userStates.containsKey(userId)) {
+            log.info("register new user {}", userId);
+            userStates.put(userId, false);
+        }
+        boolean selection = userStates.get(userId);
+
+        FormatterMessageJSON response = new FormatterMessageJSON();
+        response.set("userId", userId)
+                .set("type", "reply")
+                .set("replyToken", replyToken);
+        log.info(psr.toString());
+        if (!selection) {
+            response.appendTextMessage(
+                    "Plz tell me what food you just have, " +
+                            "enter in this format: food1;food2;food3 (seperate with ';')");
+            userStates.put(userId, true);
+        } else {
+            String foodInfo = psr.getTextContent();
+            response.set("stateTransition", "confirmMeal")
+                    .appendTextMessage("Great! I have recorded what you have just eaten!");
+            addDatabase(foodInfo, userId);
+        }
+        publisher.publish(response);
     }
 }
