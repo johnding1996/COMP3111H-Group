@@ -10,17 +10,15 @@ import java.util.HashSet;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link UserQuerier}
  * Querier which handles queries for User_Info table.
  */
 @Slf4j
 public class UserQuerier extends Querier {
 
     /**
-     * constructor
      * Default constructor.
      */
-    UserQuerier(){
+    public UserQuerier(){
         super();
         table = "userinfo";
         idx_field = "id";
@@ -35,7 +33,6 @@ public class UserQuerier extends Querier {
     }
 
     /**
-     * constructor
      * Constructor which uses external sql connection.
      * @param sql external sql connection
      */

@@ -33,6 +33,10 @@ import com.linecorp.bot.client.LineMessagingClient;
 import com.linecorp.bot.client.LineMessagingClientImpl;
 import com.linecorp.bot.client.LineMessagingService;
 import com.linecorp.bot.client.LineMessagingServiceBuilder;
+import com.linecorp.bot.model.event.MessageEvent;
+import com.linecorp.bot.model.event.message.ImageMessageContent;
+import com.linecorp.bot.model.event.message.TextMessageContent;
+import com.linecorp.bot.model.event.source.UserSource;
 import lombok.extern.slf4j.Slf4j;
 
 import static reactor.bus.selector.Selectors.$;
@@ -251,5 +255,115 @@ public class ChatbotControllerTester {
         }).when(publisher).publish(Matchers.any(ParserMessageJSON.class));
         controller.askWeight();
         Mockito.reset(publisher);
+    }
+
+    @Test
+    public void testChangeStateByCommand1() {
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                throws Throwable {
+                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
+                    FormatterMessageJSON.class);
+                assert fmt.get("userId").equals("commandTester");
+                assert fmt.get("type").equals("push");
+                return null;
+            }
+        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
+        controller.changeStateByCommand("commandTester", "$$$RecordMeal");
+        assert controller.getStateMachine("commandTester").getState()
+            .equals("RecordMeal");
+        Mockito.reset(publisher);
+    }
+
+    @Test
+    public void testChangeStateByCommand2() {
+        MessageEvent<TextMessageContent> event =
+            getTextMessageEvent("$$$AskMeal", "szhouan");
+        try {
+            controller.handleTextMessageEvent(event);
+            assert controller.getStateMachine("szhouan").getState()
+                .equals("AskMeal");
+        } catch (Exception e) {
+            assert false;
+        }
+    }
+
+    @Test
+    public void testInputHandling1() {
+        MessageEvent<TextMessageContent> event;
+        try {
+            controller.clearStateMachines();
+            event = getTextMessageEvent("Recommendation", "user");
+            controller.handleTextMessageEvent(event);
+            assert controller.getStateMachine("user").getState()
+                .equals("ParseMenu");
+
+            controller.clearStateMachines();
+            event = getTextMessageEvent("setting", "user");
+            controller.handleTextMessageEvent(event);
+            assert controller.getStateMachine("user").getState()
+                .equals("InitialInput");
+
+            controller.clearStateMachines();
+            event = getTextMessageEvent("feedback", "user");
+            controller.handleTextMessageEvent(event);
+            assert controller.getStateMachine("user").getState()
+                .equals("Feedback");
+        } catch (Exception e) {
+            log.info(e.toString());
+        }
+    }
+
+    @Test
+    public void testInputHandling2() {
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                throws Throwable {
+                ParserMessageJSON psr = invocation.getArgumentAt(0,
+                    ParserMessageJSON.class);
+                assert psr.get("userId").equals("user");
+                assert psr.getTextContent().equals("Something");
+                return null;
+            }
+        }).when(publisher).publish(Matchers.any(ParserMessageJSON.class));
+        MessageEvent<TextMessageContent> event;
+        event = getTextMessageEvent("user", "Something");
+    }
+
+    @Test
+    public void testCreateURI() {
+        String uri = "foo-bar";
+        String[] tokens = ChatbotController.createUri(uri).split("/");
+        assert tokens[tokens.length-1].equals(uri);
+    }
+
+    @Test
+    public void testSaveContent() {
+        ImageMessageContent content = new ImageMessageContent("id");
+        MessageEvent<ImageMessageContent> event =
+            new MessageEvent<>("token", null, content, null);
+        try {
+            controller.handleImageMessageEvent(event);
+        } catch (Exception e) {
+            log.info(e.toString());
+        }
+    }
+
+    /**
+     * Get text message event
+     * @param textContent String of text content
+     * @param userId String of user Id
+     * @return An MessageEvent<TextMessageContent> object
+     */
+    private MessageEvent<TextMessageContent> getTextMessageEvent (
+        String textContent, String userId) {
+
+        TextMessageContent text = new TextMessageContent("1234",
+            textContent);
+        UserSource userSource = new UserSource(userId);
+        return new MessageEvent<TextMessageContent>("token", userSource,
+                    text, null);
     }
 }
