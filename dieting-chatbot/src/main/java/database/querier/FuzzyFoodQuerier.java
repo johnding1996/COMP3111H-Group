@@ -23,7 +23,7 @@ public class FuzzyFoodQuerier extends FoodQuerier {
      * constructor
      * Default constructor.
      */
-    FuzzyFoodQuerier() {
+    public FuzzyFoodQuerier() {
         super();
     }
 

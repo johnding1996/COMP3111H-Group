@@ -17,7 +17,7 @@ public class PartialFoodQuerier extends FoodQuerier {
      * constructor
      * Default constructor.
      */
-    PartialFoodQuerier() {
+    public PartialFoodQuerier() {
         super();
     }
 
