@@ -15,7 +15,7 @@ import redis.clients.jedis.Jedis;
  * {"Idle", "ParseMenu", "AskMeal", "Recommend", "RecordMeal", "InitialInput", "Feedback"}
  * This state keeper will check the validity of state string.
  * @author mcding
- * @version 1.2
+ * @version 1.2.1
  */
 @Slf4j
 public class StateKeeper extends Keeper {
