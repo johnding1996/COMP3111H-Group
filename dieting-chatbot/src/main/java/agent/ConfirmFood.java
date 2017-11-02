@@ -1,4 +1,4 @@
-package src.main.java.agent;
+package agent;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -69,7 +69,8 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
         //qJSON = getFoodJSON(userId);
         JSONArray print = qJSON.getJSONArray("menu");
         int i = 1;
-        for(JSONObject food : print){
+        for(int j = 0; j < print.length(); j++){
+            JSONObject food = print.getJSONObject(j);
             response.appendTextMessage(i + ". " + food.getString("name"));
             i++;
         }
