@@ -1,9 +1,6 @@
 package agent;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.lang.Integer;
@@ -74,7 +71,7 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
             response.appendTextMessage(i + ". " + food.getString("name"));
             i++;
         }
-        response.appendTextMessage("Please enter in the index in this format: e.g. 1;3;4, seperated by ';'");
+        response.appendTextMessage("Please enter in a list of indeces seperated by ';' (e.g. 1;3;4)");
     }
 
     /**
@@ -109,7 +106,6 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
         if (!userStates.containsKey(userId)) {
             log.info("register new user {}", userId);
             userStates.put(userId, false);
-
         }
 
         FormatterMessageJSON response = new FormatterMessageJSON();
@@ -124,10 +120,18 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
             printList(userId, response);
             userStates.put(userId, true);
         } else {
-            String foodInfo = psr.getTextContent();
-            response.set("stateTransition", "confirmMeal")
-                    .appendTextMessage("Great! I have recorded what you have just eaten!");
-            addDatabase(foodInfo, userId);
+            String[] idxStrings = psr.getTextContent().split(";");
+            try {
+                List<Integer> idxs = new ArrayList<>();
+                for (String idxString: idxStrings) {
+                    idxs.add(Integer.parseInt(idxString));
+                }
+
+                response.set("stateTransition", "confirmMeal")
+                        .appendTextMessage("Great! I have recorded what you have just eaten!");
+            } catch (NumberFormatException e) {
+                response.appendTextMessage("Sorry, please enter in a list of valid indices separated by ';'.");
+            }
         }
         publisher.publish(response);
     }
