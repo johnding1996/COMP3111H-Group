@@ -1,7 +1,6 @@
-package agent.InteractFoodConfirm;
-import java.util.ArrayList;
+package agent.FoodConfirm;
+import java.util.List;
 
-import agent.InteractFoodConfirm.GetFoodCandidate;
 import database.querier.FuzzyFoodQuerier;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -19,8 +18,9 @@ public class GetFoodCandidateFuzzy extends GetFoodCandidate {
      * constructor
      * Default constructor.
      */
-    public GetFoodCandidateFuzzy() {
-        super();
+    public GetFoodCandidateFuzzy(JSONObject foodQuery) {
+
+        super(foodQuery);
     }
 
     /**
@@ -31,7 +31,7 @@ public class GetFoodCandidateFuzzy extends GetFoodCandidate {
      * key: dish name input by user
      * values: JSONArray stores candidates for this dish
      */
-    public JSONObject getFoodCandidate(ArrayList<String> foodNameList ){
+    public JSONObject getFoodCandidate(List<String> foodNameList ){
 
         JSONObject foodCandidate = new JSONObject();
 

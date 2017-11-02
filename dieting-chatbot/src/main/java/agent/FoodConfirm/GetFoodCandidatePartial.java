@@ -1,7 +1,6 @@
-package agent.InteractFoodConfirm;
-import java.util.ArrayList;
+package agent.FoodConfirm;
+import java.util.List;
 
-import agent.InteractFoodConfirm.GetFoodCandidate;
 import database.querier.PartialFoodQuerier;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -19,8 +18,8 @@ public class GetFoodCandidatePartial extends GetFoodCandidate {
      * constructor
      * Default constructor.
      */
-    public GetFoodCandidatePartial() {
-        super();
+    public GetFoodCandidatePartial(JSONObject foodQuery) {
+        super(foodQuery);
     }
 
     /**
@@ -31,7 +30,7 @@ public class GetFoodCandidatePartial extends GetFoodCandidate {
      * key: dish name input by user
      * values: JSONArray stores candidates for this dish
      */
-    public JSONObject getFoodCandidate(ArrayList<String> foodNameList ){
+    public JSONObject getFoodCandidate(List<String> foodNameList ){
         JSONObject foodCandidate = new JSONObject();
         PartialFoodQuerier PartialQuerier = new PartialFoodQuerier();
         for (int i = 0; i < foodNameList.size(); i++ ){
