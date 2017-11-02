@@ -7,6 +7,8 @@ import java.util.Calendar;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.lang.Integer;
+
+import database.keeper.MenuKeeper;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -48,6 +50,8 @@ public class MenuParser
             log.info("MenuParser register on event bus");
         }
     }
+
+    private MenuKeeper menuKeeper = new MenuKeeper();
     
     /**
      * Validate the parsed menu, and interact with user
@@ -67,6 +71,7 @@ public class MenuParser
             queryJSON.put("userId", userId)
                      .put("menu", menuArray);
             // set queryJSON for meal asker
+            menuKeeper.set(userId,queryJSON);
             // no need to reply, give control to MealAsker
             response.set("stateTransition", "menuMessage")
                     .set("type", "transition");

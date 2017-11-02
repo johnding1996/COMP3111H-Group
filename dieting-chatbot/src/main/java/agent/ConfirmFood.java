@@ -60,6 +60,7 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
 
     private MenuKeeper menuKeeper = new MenuKeeper();
 
+
     /**
      * add userInfo to history if everything is correct
      */
@@ -72,6 +73,11 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
         userStates.remove(userId);
     }
 
+    /**
+     * print list for user to select
+     * @param userId
+     * @param response
+     */
     public void printList(String userId, FormatterMessageJSON response){
         JSONObject jsonObject = new JSONObject();
         //Get QueryJSON from database
@@ -84,7 +90,7 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
         JSONArray print = jsonObject.getJSONArray("menu");
         for(int j = 0; j < print.length(); j++){
             JSONObject food = print.getJSONObject(j);
-            response.appendTextMessage((j+1)+ ". " + food.getString("name"));
+            response.appendTextMessage((j + 1) + ". " + food.getString("name"));
         }
         response.appendTextMessage("Please enter in the index in this format: e.g. 1;3;4, seperated by ';'");
     }
