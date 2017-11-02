@@ -1,10 +1,11 @@
 package agent;
 
+import database.keeper.HistKeeper;
 import database.keeper.MenuKeeper;
 
-import java.util.*;
-import java.text.ParseException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.*;
 import java.lang.Integer;
 
 import org.json.JSONException;
@@ -48,49 +49,65 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
         }
     }
 
-    // User state tracking for interaction; false stands for user did not confirm food list yet
-    private static HashMap<String, Boolean> userStates =
-            new HashMap<>();
+    /**
+     * User states tracking for interaction; false stands for user did not confirm food list yet
+     */
+    private static Map<String, Boolean> userStates = new HashMap<>();
 
     void changeUserState(String userId, boolean state) {
         userStates.put(userId, state);
     }
 
-    private MenuKeeper menuKeeper = new MenuKeeper();
-
-
     /**
      * add userInfo to history if everything is correct
+     * @param idxs list of indices
      */
-    public void addDatabase(String foodInfo, String userId) {
-        String[] food = foodInfo.split(";");
+    public void addDatabase (List<Integer> idxs, String userId, MenuKeeper menuKeeper, HistKeeper histKeeper)
+            throws NumberFormatException {
+        List<String> foodNames = new ArrayList<>();
+        try{
+            JSONArray menu = menuKeeper.get(userId, 1).getJSONObject(0).getJSONArray("menu");
+            for(int j = 0; j < menu.length(); j++){
+                foodNames.add(menu.getJSONObject(j).getString("name"));
+            }
+        } catch (JSONException e){
+            log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
+        }
+        for (Integer idx: idxs) {
+            if (idx < 1 || idx > foodNames.size()) {
+                throw new NumberFormatException();
+            }
+        }
+        for (Integer idx: idxs) {
+            JSONObject foodJson = new JSONObject();
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            foodJson.put("date", dateFormat.format(Calendar.getInstance()));
+            foodJson.put("number_of_meal", 1);
+            foodJson.put("food", foodNames.get(idx));
+            DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+            foodJson.put("timestamp", dateTimeFormat.format(Calendar.getInstance()));
 
-        // add user info to database and remove
-        log.info("User Info of {} is ready for database", userId);
-        // setUserInfo(u.id, userJSON);
-        userStates.remove(userId);
+        }
+
+        log.info(String.format("Stored the meal history of user %s in to the caches.", userId));
     }
 
     /**
      * print list for user to select
-     * @param userId
-     * @param response
+     * @param userId user id string
+     * @param response FormatterMessageJSON object
      */
-    public void printList(String userId, FormatterMessageJSON response){
-        JSONObject jsonObject = new JSONObject();
-        //Get QueryJSON from database
+    public void printList(String userId, FormatterMessageJSON response, MenuKeeper menuKeeper){
         try{
-            jsonObject = menuKeeper.get(userId, 1).getJSONObject(0);
+            JSONArray menu = menuKeeper.get(userId, 1).getJSONObject(0).getJSONArray("menu");
+            for(int j = 0; j < menu.length(); j++){
+                JSONObject food = menu.getJSONObject(j);
+                response.appendTextMessage((j + 1) + ". " + food.getString("name"));
+            }
+            response.appendTextMessage("Please enter in a list of indices separated by ';' (e.g. 1;3;4).");
         } catch (JSONException e){
-            log.warn("MenuKeeper returns a empty JSONArray", e);
+            log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
         }
-
-        JSONArray print = jsonObject.getJSONArray("menu");
-        for(int j = 0; j < print.length(); j++){
-            JSONObject food = print.getJSONObject(j);
-            response.appendTextMessage((j + 1) + ". " + food.getString("name"));
-        }
-        response.appendTextMessage("Please enter in a list of indeces seperated by ';' (e.g. 1;3;4)");
     }
 
     /**
@@ -98,6 +115,10 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
      * @param ev Event object
      */
     public void accept(Event<ParserMessageJSON> ev) {
+        MenuKeeper menuKeeper = new MenuKeeper();
+        HistKeeper histKeeper = new HistKeeper();
+
+
         ParserMessageJSON psr = ev.getData();
 
         // only handle message if state is `RecordMeal`
@@ -115,7 +136,7 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
                     .set("type", "reply")
                     .set("replyToken", replyToken)
                     .appendTextMessage(
-                            "Please input some text at this moment ~");
+                            "Please input some text at this moment.");
             publisher.publish(response);
             log.info("Cannot handle image message");
             return;
@@ -126,7 +147,6 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
             log.info("register new user {}", userId);
             userStates.put(userId, false);
         }
-
         FormatterMessageJSON response = new FormatterMessageJSON();
         response.set("userId", userId)
                 .set("type", "reply")
@@ -136,23 +156,26 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
         boolean selection = userStates.get(userId);
         if (!selection) {
             response.appendTextMessage("Welcome back! Please choose among what you just ate in this list:");
-            printList(userId, response);
+            printList(userId, response, menuKeeper);
             userStates.put(userId, true);
         } else {
             String[] idxStrings = psr.getTextContent().split(";");
             try {
                 List<Integer> idxs = new ArrayList<>();
-
                 for (String idxString: idxStrings) {
-                    idxs.add(Integer.parseInt(idxString));
+                    int idx = Integer.parseInt(idxString);
+                    idxs.add(idx);
                 }
-
                 response.set("stateTransition", "confirmMeal")
                         .appendTextMessage("Great! I have recorded what you have just eaten!");
+                addDatabase(idxs, userId, menuKeeper, histKeeper);
+                userStates.remove(userId);
             } catch (NumberFormatException e) {
                 response.appendTextMessage("Sorry, please enter in a list of valid indices separated by ';'.");
             }
         }
+        menuKeeper.close();
+        histKeeper.close();
         publisher.publish(response);
     }
 }
