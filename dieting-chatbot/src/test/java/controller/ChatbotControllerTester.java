@@ -215,16 +215,7 @@ public class ChatbotControllerTester {
     public void testTimeoutState() throws Exception {
         assert controller.taskScheduler != null;
         String userId = "timeoutTest";
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) {
-                Runnable runnable = invocation.getArgumentAt(0,
-                    Runnable.class);
-                runnable.run();
-                return null;
-            }
-        }).when(taskScheduler).schedule(
-            any(Runnable.class), any(Date.class));
+        overrideTaskScheduler();
         Mockito.doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation)
@@ -290,29 +281,25 @@ public class ChatbotControllerTester {
     }
 
     @Test
-    public void testInputHandling1() {
+    public void testInputHandling1() throws Exception {
         MessageEvent<TextMessageContent> event;
-        try {
-            controller.clearStateMachines();
-            event = getTextMessageEvent("Recommendation", "user");
-            controller.handleTextMessageEvent(event);
-            assert controller.getStateMachine("user").getState()
-                .equals("ParseMenu");
+        controller.clearStateMachines();
+        event = getTextMessageEvent("Recommendation", "user");
+        controller.handleTextMessageEvent(event);
+        assert controller.getStateMachine("user").getState()
+            .equals("ParseMenu");
 
-            controller.clearStateMachines();
-            event = getTextMessageEvent("setting", "user");
-            controller.handleTextMessageEvent(event);
-            assert controller.getStateMachine("user").getState()
-                .equals("InitialInput");
+        controller.clearStateMachines();
+        event = getTextMessageEvent("setting", "user");
+        controller.handleTextMessageEvent(event);
+        assert controller.getStateMachine("user").getState()
+            .equals("InitialInput");
 
-            controller.clearStateMachines();
-            event = getTextMessageEvent("feedback", "user");
-            controller.handleTextMessageEvent(event);
-            assert controller.getStateMachine("user").getState()
-                .equals("Feedback");
-        } catch (Exception e) {
-            log.info(e.toString());
-        }
+        controller.clearStateMachines();
+        event = getTextMessageEvent("feedback", "user");
+        controller.handleTextMessageEvent(event);
+        assert controller.getStateMachine("user").getState()
+            .equals("Feedback");
     }
 
     @Test
@@ -351,6 +338,39 @@ public class ChatbotControllerTester {
         }
     }
 
+    @Test
+    public void testNoReplyCallback() {
+        controller.clearStateMachines();
+        overrideTaskScheduler();
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                throws Throwable {
+                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
+                    FormatterMessageJSON.class);
+                assert fmt.get("userId").equals("noReplier");
+                assert fmt.get("type").equals("push");
+                log.info(fmt.toString());
+                return null;
+            }
+        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
+        controller.registerNoReplyCallback("noReplier");
+        Mockito.reset(taskScheduler);
+    }
+
+    private void overrideTaskScheduler() {
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) {
+                Runnable runnable = invocation.getArgumentAt(0,
+                    Runnable.class);
+                runnable.run();
+                return null;
+            }
+        }).when(taskScheduler).schedule(
+            any(Runnable.class), any(Date.class));
+    }
+
     /**
      * Get text message event
      * @param textContent String of text content
@@ -362,7 +382,7 @@ public class ChatbotControllerTester {
 
         TextMessageContent text = new TextMessageContent("1234",
             textContent);
-        UserSource userSource = new UserSource(userId);
+        UserSource userSource = new UserSource("U"+userId);
         return new MessageEvent<TextMessageContent>("token", userSource,
                     text, null);
     }
