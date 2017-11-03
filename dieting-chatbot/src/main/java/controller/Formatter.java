@@ -74,7 +74,7 @@ public class Formatter {
     
     private void push(@NonNull String userId, @NonNull List<Message> messages) {
         log.info("FORMATTER: send push message");
-        PushMessage pushMessage = new PushMessage(userId, messages);
+        PushMessage pushMessage = new PushMessage("U"+userId, messages);
         if (lineMessagingClient != null)
             lineMessagingClient.pushMessage(pushMessage);
     }

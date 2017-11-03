@@ -3,7 +3,7 @@ package database.connection;
 import java.sql.Connection;
 import java.sql.SQLException;
 import org.apache.commons.dbcp2.BasicDataSource;
-
+import org.springframework.stereotype.Component;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -16,10 +16,18 @@ import lombok.extern.slf4j.Slf4j;
  * @version 1.2.1
  */
 @Slf4j
+@Component
 public class SQLPool {
     private static BasicDataSource connectionPool;
 
     static {
+        initialization();
+    }
+
+    /**
+     * Initialization
+     */
+    public static void initialization() {
         try {
             URI dbUri = new URI(System.getenv("DATABASE_URL"));
             String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + ':' + dbUri.getPort()

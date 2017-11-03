@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 /**
  * Statically keep the Redis connection pool.
@@ -21,6 +22,13 @@ public class RedisPool {
     private static JedisPool pool;
 
     static {
+        initialization();
+    }
+
+    /**
+     * Initialization
+     */
+    public static void initialization() {
         try {
             URI uri = new URI(System.getenv("REDIS_URL"));
             pool = new JedisPool(new JedisPoolConfig(), uri);

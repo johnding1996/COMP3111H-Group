@@ -25,7 +25,7 @@ public abstract class Keeper {
     /**
      * Close the connection once it is not used anymore.
      */
-    protected void close() {
+    public void close() {
         RedisPool.closeConnection(jedis);
     }
 

@@ -30,6 +30,7 @@ import org.springframework.stereotype.Component;
 import org.json.JSONArray;
 import org.json.JSONException;
 import controller.Publisher;
+import controller.ChatbotController;
 import controller.FormatterMessageJSON;
 import database.querier.FoodQuerier;
 import database.querier.FuzzyFoodQuerier;
@@ -72,6 +73,17 @@ public class FoodRecommender {
      * @param menuJSON A JSONObject of MenuJSON format
      */
     public void doRecommendation(JSONObject menuJSON) {
+        String userId = menuJSON.getString("userId");
+        JSONObject userJSON = getUserJSON(userId);
+        if (userJSON == null) {
+            FormatterMessageJSON fmt = new FormatterMessageJSON();
+            fmt.set("userId", userId)
+               .set("type", "push")
+               .appendTextMessage("Sorry, I don't have your personal " +
+               "information yet, please type 'setting' for that");
+            publisher.publish(fmt);
+            return;
+        }
         JSONObject foodScoreJSON = getMenuScore(menuJSON);
         generateRecommendation(foodScoreJSON);
     }

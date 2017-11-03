@@ -7,6 +7,8 @@ import java.util.Calendar;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.lang.Integer;
+
+import database.keeper.MenuKeeper;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -32,8 +34,7 @@ public class MenuParser
     implements Consumer<Event<ParserMessageJSON>> {
     
     // User state tracking
-    private static HashMap<String, Integer> userStates =
-        new HashMap<String, Integer>();
+    private static HashMap<String, Integer> userStates = new HashMap<String, Integer>();
     
     @Autowired
     private EventBus eventBus;
@@ -41,22 +42,27 @@ public class MenuParser
     @Autowired
     private Publisher publisher;
 
+    @Autowired(required=false)
+    private MealAsker mealAsker;
+
     @PostConstruct
     public void init() {
         if (eventBus != null) {
             eventBus.on($("ParserMessageJSON"), this);
             log.info("MenuParser register on event bus");
         }
+        if (mealAsker == null) {
+            log.info("Cannot find mealAsker bean");
+        }
     }
-    
+
     /**
      * Validate the parsed menu, and interact with user
      * @param userId String of user Id
      * @param response FormatterMessageJSON for replying user
      * @param menuArray Parsed JSONArray as menu
      */
-    public void checkAndReply(String userId,
-        FormatterMessageJSON response, JSONArray menuArray) {
+    public void checkAndReply(String userId, FormatterMessageJSON response, JSONArray menuArray, MenuKeeper menuKeeper) {
         if(menuArray == null) {
             response.appendTextMessage("Looks like the menu is empty, " +
                 "please try again");
@@ -67,6 +73,16 @@ public class MenuParser
             queryJSON.put("userId", userId)
                      .put("menu", menuArray);
             // set queryJSON for meal asker
+            if (mealAsker != null) {
+                mealAsker.setQueryJSON(queryJSON);
+            } else {
+                for (int i=0; i<100; ++i)
+                log.info("Error: mealAsker is null");
+            }
+
+            // keep menu in redis
+            menuKeeper.set(userId, queryJSON);
+
             // no need to reply, give control to MealAsker
             response.set("stateTransition", "menuMessage")
                     .set("type", "transition");
@@ -95,7 +111,7 @@ public class MenuParser
                     .set("type", "reply")
                     .set("replyToken", replyToken)
                     .appendTextMessage(
-                        "Sorry but I don't understand this image");
+                        "Sorry but I don't understand this image, give me some text please ~");
             publisher.publish(response);
             log.info("Cannot handle image message");
             return;
@@ -115,6 +131,8 @@ public class MenuParser
                 .set("type", "reply")
                 .set("replyToken", replyToken);
 
+        MenuKeeper menuKeeper = new MenuKeeper();
+
         if (userState == 0) {
             response.appendTextMessage(
                 "Long time no see! What is your menu today? " +
@@ -127,8 +145,9 @@ public class MenuParser
             } else {
                 menuArray = TextMenuParser.buildMenu(text);
             }
-            checkAndReply(userId, response, menuArray);
+            checkAndReply(userId, response, menuArray, menuKeeper);
         }
+        menuKeeper.close();
         publisher.publish(response);
     }
 
