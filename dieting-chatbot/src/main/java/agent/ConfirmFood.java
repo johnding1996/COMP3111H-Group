@@ -54,6 +54,7 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
      * false stands for user did not confirm food list yet
      */
     private static Map<String, Boolean> userStates = new HashMap<>();
+    private static Map<String, Integer> menuCount = new HashMap<>();
 
     /**
      * Change user state
@@ -71,23 +72,21 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
      * add userInfo to history if everything is correct
      * @param idxs list of indices
      */
-    public void addDatabase (List<Integer> idxs, String userId, MenuKeeper menuKeeper, HistKeeper histKeeper)
+    public void updateDatabase (List<Integer> idxs, String userId)
             throws NumberFormatException {
         List<String> foodNames = new ArrayList<>();
-        try{
-            JSONArray menu = menuKeeper.get(userId, 1).getJSONObject(0).getJSONArray("menu");
+        MenuKeeper menuKeeper = new MenuKeeper();
+        HistKeeper histKeeper = new HistKeeper();
+        try {
+            JSONArray menu = menuKeeper.get(userId, 1)
+                .getJSONObject(0).getJSONArray("menu");
             for(int j = 0; j < menu.length(); j++){
                 foodNames.add(menu.getJSONObject(j).getString("name"));
             }
         } catch (JSONException e){
             log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
         }
-        for (Integer idx: idxs) {
-            if (idx < 1 || idx > foodNames.size()) {
-                throw new NumberFormatException();
-            }
-        }
-        for (Integer idx: idxs) {
+        for (Integer idx : idxs) {
             JSONObject foodJson = new JSONObject();
             DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
             foodJson.put("date", dateFormat.format(Calendar.getInstance()));
@@ -95,10 +94,13 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
             foodJson.put("food", foodNames.get(idx));
             DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
             foodJson.put("timestamp", dateTimeFormat.format(Calendar.getInstance()));
-
+            histKeeper.set(userId, foodJson);
+            log.info("Food JSON:\n{}", foodJson.toString(4));
         }
 
         log.info(String.format("Stored the meal history of user %s in to the caches.", userId));
+        menuKeeper.close();
+        histKeeper.close();
     }
 
     /**
@@ -119,6 +121,7 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
             }
             reply += "Please enter in a list of " +
                 "indices separated by ';' (e.g. 1;3;4).";
+            menuCount.put(userId, menu.length());
         } catch (JSONException e){
             log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
         }
@@ -171,21 +174,28 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
             response.appendTextMessage(getMenu(userId));
             userStates.put(userId, true);
         } else {
-            HistKeeper histKeeper = new HistKeeper();
-
             String[] idxStrings = psr.getTextContent().split(";");
             List<Integer> idxs = new ArrayList<>();
             for (String idxString : idxStrings) {
                 idxString = idxString.trim();
-                if (Validator.isInteger(idxString))
-                    idxs.add(Integer.parseInt(idxString));
+                if (Validator.isInteger(idxString)) {
+                    int x = Integer.parseInt(idxString);
+                    if (x >= 1 && x <= menuCount.get(userId).intValue())
+                        idxs.add(x - 1);
+                }
             }
-            response.set("stateTransition", "confirmMeal")
-                    .appendTextMessage("Great! " +
-                    "I have recorded what you have just eaten!");
-            // addDatabase(idxs, userId, menuKeeper, histKeeper);
-            userStates.remove(userId);
-            log.info("CONFIRM MEAL: remove user {}", userId);
+            if (idxs.size() == 0) {
+                log.info("Invalid meal option");
+                response.appendTextMessage("Your input is invalid!");
+            } else {
+                response.set("stateTransition", "confirmMeal")
+                        .appendTextMessage("Great! " +
+                        "I have recorded what you have just eaten!");
+                updateDatabase(idxs, userId);
+                userStates.remove(userId);
+                menuCount.remove(userId);
+                log.info("CONFIRM MEAL: remove user {}", userId);
+            }
         }
         publisher.publish(response);
     }
