@@ -102,7 +102,12 @@ public class MenuParser
 
         // only handle message if state is `ParseMenu`
         String currentState = psr.get("state");
-        if (!currentState.equals("ParseMenu")) return;
+        if (!currentState.equals("ParseMenu")) {
+            String userId = psr.get("userId");
+            if (userStates.containsKey(userId))
+                userStates.remove(userId);
+            return;
+        }
 
         log.info("Entering user menu input handler");
         String userId = psr.get("userId");

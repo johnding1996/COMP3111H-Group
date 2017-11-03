@@ -468,6 +468,18 @@ public class ChatbotController
                     fmt.set("type", "push")
                        .set("userId", userId)
                        .appendTextMessage(replies[randomNum]);
+                    String state = getStateMachine(userId).getState();
+                    switch (state) {
+                        case "Idle":
+                        fmt.appendTextMessage("To set your personal info, " +
+                            "send 'setting'. If you want to obtain recommendation, " +
+                            "please say 'recommendation'.");
+                        break;
+
+                        case "Recommend":
+                        fmt.appendTextMessage("Did you finish your meal? " +
+                            "If yes, say 'finish' and I will record what you eat");
+                    }
                     publisher.publish(fmt);
                     noReplyFutures.remove(userId);
                 }

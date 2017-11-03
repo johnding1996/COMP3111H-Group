@@ -127,7 +127,12 @@ public class UserInitialInputRecord
 
         // only handle message if state is `InitialInput`
         String currentState = psr.get("state");
-        if (!currentState.equals("InitialInput")) return;
+        if (!currentState.equals("InitialInput")) {
+            String userId = psr.get("userId");
+            if (userStates.containsKey(userId))
+                userStates.remove(userId);
+            return;
+        }
 
         log.info("Entering user initial input handler");
         String userId = psr.get("userId");
@@ -147,7 +152,8 @@ public class UserInitialInputRecord
         }
 
         // skip state transition message
-        if (psr.getTextContent().equals(ChatbotController.DEBUG_COMMAND_PREFIX))
+        if (psr.getTextContent().equals(
+            ChatbotController.DEBUG_COMMAND_PREFIX))
             return;
         
         // register user if it is new

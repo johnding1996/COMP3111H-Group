@@ -108,7 +108,12 @@ public class MealAsker
 
         // only handle message if state is `AskMeal`
         String currentState = psr.get("state");
-        if (!currentState.equals("AskMeal")) return;
+        if (!currentState.equals("AskMeal")) {
+            String userId = psr.get("userId");
+            if (menus.containsKey(userId))
+                menus.remove(userId);
+            return;
+        }
 
         log.info("Entering user ask meal handler");
         String userId = psr.get("userId");

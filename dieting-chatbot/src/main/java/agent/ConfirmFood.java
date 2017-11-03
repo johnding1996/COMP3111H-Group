@@ -137,7 +137,14 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
 
         // only handle message if state is `RecordMeal`
         String currentState = psr.get("state");
-        if (!currentState.equals("RecordMeal")) return;
+        if (!currentState.equals("RecordMeal")) {
+            String userId = psr.get("userId");
+            if (userStates.containsKey(userId))
+                userStates.remove(userId);
+            if (menuCount.containsKey(userId))
+                userStates.remove(userId);
+            return;
+        }
 
         log.info("Entering user meal confirm handler");
         String userId = psr.get("userId");
