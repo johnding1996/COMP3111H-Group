@@ -56,6 +56,7 @@ public class MealAskerTester {
             }
         }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
         asker.accept(ev);
+        Mockito.reset(publisher);
     }
 
     @Test
@@ -76,6 +77,7 @@ public class MealAskerTester {
             }
         }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
         asker.accept(ev);
+        Mockito.reset(publisher);
     }
 
     @Test

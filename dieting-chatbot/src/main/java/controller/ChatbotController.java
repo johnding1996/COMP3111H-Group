@@ -202,12 +202,19 @@ public class ChatbotController
 
         registerNoReplyCallback(userId);
 
-        if (debugFlag && textContent.startsWith(
-            DEBUG_COMMAND_PREFIX)) {
-                log.info("User initiated state transition using command");
-                changeStateByCommand(userId, textContent);
-                return;
-            }
+        boolean isSpecial = textContent.startsWith(DEBUG_COMMAND_PREFIX);
+        // isSpecial = isSpecial || textContent.equals("SETTING")
+        //     || textContent.equals("RECOMMEND");
+        isSpecial = isSpecial || textContent.equals("CANCEL");
+        if (debugFlag && isSpecial) {
+            log.info("User initiated state transition using command");
+            // if (textContent.equals("SETTING")) textContent = "$$$InitialInput";
+            // if (textContent.equals("RECOMMEND")) textContent = "$$$ParseMenu";
+            if (textContent.equals("CANCEL")) textContent = "$$$Idle";
+            changeStateByCommand(userId, textContent);
+            publishStateTransition(userId);
+            return;
+        }
 
         /* update state */
         if (state.equals("Idle")) {
@@ -221,6 +228,10 @@ public class ChatbotController
             state = stateMachine.getState();
             log.info("State transition handled by Controller");
             log.info("userId={}, newState={}", userId, state);
+        } else if (state.equals("Recommend")) {
+            if (isFinishMeal(textContent)) {
+                toNextState(userId, "timeout");
+            }
         }
         ParserMessageJSON psr = new ParserMessageJSON();
         psr.set("userId", userId)
@@ -304,7 +315,16 @@ public class ChatbotController
         if (!isStateChanged) return;
         registerStateTransitionCallback(userId);
 
-        // publish state transition message
+        publishStateTransition(userId);
+    }
+
+    /**
+     * Publish state transition message
+     * @param userId String of user Id
+     */
+    public void publishStateTransition(String userId) {
+        log.info("PUBLISHER: publishing state transition");
+        StateMachine stateMachine = getStateMachine(userId);
         ParserMessageJSON psr = new ParserMessageJSON();
         psr.set("userId", userId)
            .set("state", stateMachine.getState())
@@ -408,6 +428,23 @@ public class ChatbotController
     }
 
     /**
+     * Check whether a text means finish meal
+     */
+    static public boolean isFinishMeal(String msg) {
+        for (String word : TextProcessor.sentenceToWords(msg)) {
+            if (finishMealWords.contains(word)) return true;
+        }
+        return false;
+    }
+    static private HashSet<String> finishMealWords;
+    static {
+        List<String> list = Arrays.asList(
+            "finish", "done"
+        );
+        finishMealWords = new HashSet<String>(list);
+    }
+
+    /**
      * A debug helper function for changing state
      * @param userId String of user Id
      * @param command Command for state transition
@@ -450,7 +487,7 @@ public class ChatbotController
                     FormatterMessageJSON fmt = new FormatterMessageJSON();
                     String[] replies = {
                         "Sorry but I don't understand what you said.",
-                        "Oops, what are you saying?",
+                        "Oops, that is complicated for me.",
                         "Well, that doesn't make sense to me.",
                         "Well, I really do not understand that."
                     };
@@ -459,6 +496,19 @@ public class ChatbotController
                     fmt.set("type", "push")
                        .set("userId", userId)
                        .appendTextMessage(replies[randomNum]);
+                    String state = getStateMachine(userId).getState();
+                    switch (state) {
+                        case "Idle":
+                        fmt.appendTextMessage("To set your personal info, " +
+                            "send 'setting'.\nIf you want to obtain recommendation, " +
+                            "please say 'recommendation'.\n" +
+                            "You can aways cancel an operation by saying 'CANCEL'");
+                        break;
+
+                        case "Recommend":
+                        fmt.appendTextMessage("You mean you've finished your meal? " +
+                            "If yes, say 'finish' and I will record what you eat");
+                    }
                     publisher.publish(fmt);
                     noReplyFutures.remove(userId);
                 }

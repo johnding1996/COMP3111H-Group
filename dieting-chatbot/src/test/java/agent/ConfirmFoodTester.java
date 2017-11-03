@@ -62,7 +62,7 @@ public class ConfirmFoodTester {
                 .set("state", "Feedback")
                 .set("replyToken", "token")
                 .setTextMessage("1234", "1;2;3");
-        confirmFood.changeUserState(psr.get("userId"), false);
+        confirmFood.changeUserState(psr.get("userId"), 0);
         Event<ParserMessageJSON> ev =
                 new Event<ParserMessageJSON>(null, psr);
         Mockito.doAnswer(new Answer<Void>() {
@@ -91,7 +91,7 @@ public class ConfirmFoodTester {
                 .set("state", "Feedback")
                 .set("replyToken", "token")
                 .setTextMessage("1234", "1;2;3");
-        confirmFood.changeUserState(psr.get("userId"), true);
+        confirmFood.changeUserState(psr.get("userId"), 1);
         Event<ParserMessageJSON> ev =
                 new Event<ParserMessageJSON>(null, psr);
         Mockito.doAnswer(new Answer<Void>() {

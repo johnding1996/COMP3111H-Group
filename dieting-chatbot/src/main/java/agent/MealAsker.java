@@ -108,7 +108,12 @@ public class MealAsker
 
         // only handle message if state is `AskMeal`
         String currentState = psr.get("state");
-        if (!currentState.equals("AskMeal")) return;
+        if (!currentState.equals("AskMeal")) {
+            String userId = psr.get("userId");
+            if (menus.containsKey(userId))
+                menus.remove(userId);
+            return;
+        }
 
         log.info("Entering user ask meal handler");
         String userId = psr.get("userId");
@@ -128,9 +133,9 @@ public class MealAsker
         
         if (menus.containsKey(userId)) {
             JSONObject queryJSON = menus.get(userId);
-            response.appendTextMessage("OK, I got your menu!");
-            response.appendTextMessage("The Menu is " +
-                queryJSON.toString(4));
+            response.appendTextMessage("Well, I got your menu");
+            response.appendTextMessage("The Menu I got is\n" +
+                formatQueryJSON(queryJSON));
             response.set("stateTransition", "confirmMeal");
             publisher.publish(response);
 
@@ -145,13 +150,52 @@ public class MealAsker
     }
 
     /**
+     * Format a QueryJSON
+     * @param queryJSON A QueryJSON
+     * @return formatted String
+     */
+    public String formatQueryJSON(JSONObject queryJSON) {
+        String ret = "";
+        JSONArray menu = queryJSON.getJSONArray("menu");
+        for (int i=0; i<menu.length(); ++i) {
+            JSONObject dish = menu.getJSONObject(i);
+            String dishName = dish.getString("name");
+            ret += String.format("Dish %d -- %s\n", i+1, dishName);
+        }
+        return ret;
+    }
+
+    /**
+     * Format a MenuJSON
+     * @param menu A menu in JSONArray
+     * @return formatted String
+     */
+    public String formatMenuJSON(JSONArray menu) {
+        String ret = "";
+        for (int i=0; i<menu.length(); ++i) {
+            JSONObject dish = menu.getJSONObject(i);
+            String dishName = dish.getString("dishName");
+            ret += "* " + dishName + "\n";
+            String tab = "---";
+            JSONArray foodContent = dish.getJSONArray("foodContent");
+            for (int j=0; j<foodContent.length(); ++j) {
+                String description = foodContent.getJSONObject(j)
+                    .getString("description");
+                ret += tab + description.toLowerCase() + "\n";
+            }
+        }
+        return ret;
+    }
+
+    /**
      * Transform a QueryJSON to MenuJSON
      * @param queryJSON A JSONObject of QueryJSON format
      * @return A MenuJSON
      */
     public JSONObject queryJSONtoMenuJSON(JSONObject queryJSON) {
         JSONObject menuJSON = new JSONObject();
-        menuJSON.put("userId", queryJSON.getString("userId"));
+        String userId = queryJSON.getString("userId");
+        menuJSON.put("userId", userId);
         JSONArray menu = new JSONArray();
         JSONArray queryMenu = queryJSON.getJSONArray("menu");
         for (int i=0; i<queryMenu.length(); ++i) {
@@ -163,6 +207,12 @@ public class MealAsker
             menu.put(dish);
         }
         menuJSON.put("menu", menu);
+        FormatterMessageJSON fmt = new FormatterMessageJSON();
+        fmt.set("userId", userId)
+           .set("type", "push")
+           .appendTextMessage("And this is the food content of each dish I found")
+           .appendTextMessage(formatMenuJSON(menu));
+        publisher.publish(fmt);
         return menuJSON;
     }
 
