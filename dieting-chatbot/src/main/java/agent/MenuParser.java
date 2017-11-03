@@ -14,6 +14,7 @@ import org.json.JSONObject;
 
 import controller.ParserMessageJSON;
 import controller.Publisher;
+import controller.ChatbotController;
 import controller.FormatterMessageJSON;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -117,6 +118,11 @@ public class MenuParser
                         "Sorry but I don't understand this image, give me some text please ~");
             publisher.publish(response);
             log.info("Cannot handle image message");
+            return;
+        }
+
+        if (psr.getTextContent().equals(ChatbotController.DEBUG_COMMAND_PREFIX)) {
+            log.info("do not handle transition psr");
             return;
         }
         
