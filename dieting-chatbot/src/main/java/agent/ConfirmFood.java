@@ -89,11 +89,11 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
         for (Integer idx : idxs) {
             JSONObject foodJson = new JSONObject();
             DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            foodJson.put("date", dateFormat.format(Calendar.getInstance()));
+            foodJson.put("date", dateFormat.format(new Date()));
             foodJson.put("number_of_meal", 1);
             foodJson.put("food", foodNames.get(idx));
             DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-            foodJson.put("timestamp", dateTimeFormat.format(Calendar.getInstance()));
+            foodJson.put("timestamp", dateTimeFormat.format(new Date()));
             histKeeper.set(userId, foodJson);
             log.info("Food JSON:\n{}", foodJson.toString(4));
         }
