@@ -7,12 +7,18 @@ import org.springframework.stereotype.Component;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.fn.Consumer;
+import utility.TextProcessor;
 import controller.FormatterMessageJSON;
 import controller.ParserMessageJSON;
 import controller.Publisher;
 import database.connection.SQLPool;
+import database.querier.FuzzyFoodQuerier;
 import database.querier.PartialFoodQuerier;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 
 import static reactor.bus.selector.Selectors.$;
 import javax.annotation.PostConstruct;
@@ -104,17 +110,93 @@ public class MealAsker
         String userId = psr.get("userId");
         String replyToken = psr.get("replyToken");
 
+        FormatterMessageJSON response = new FormatterMessageJSON();
+        response.set("userId", userId)
+                .set("type", "push");
         // if the input is not text
         if(!psr.getMessageType().equals("text")) {
-            FormatterMessageJSON response = new FormatterMessageJSON();
-            response.set("userId", userId)
-                    .set("type", "reply")
-                    .set("replyToken", replyToken)
-                    .appendTextMessage(
-                        "Sorry but I don't understand this image");
+            response.appendTextMessage(
+                "Sorry but I don't understand this image");
             publisher.publish(response);
             log.info("Cannot handle image message");
             return;
         }
+        
+        response.appendTextMessage("OK, I got your menu!");
+        publisher.publish(response);
+    }
+
+    /**
+     * Transform a QueryJSON to MenuJSON
+     * @param queryJSON A JSONObject of QueryJSON format
+     * @return A MenuJSON
+     */
+    public JSONObject queryJSONtoMenuJSON(JSONObject queryJSON) {
+        JSONObject menuJSON = new JSONObject();
+        menuJSON.put("userId", queryJSON.getString("userId"));
+        JSONArray menu = new JSONArray();
+        JSONArray queryMenu = queryJSON.getJSONArray("menu");
+        for (int i=0; i<queryMenu.length(); ++i) {
+            JSONObject queryDish = queryMenu.getJSONObject(i);
+            JSONObject dish = new JSONObject();
+            String dishName = queryDish.getString("name");
+            dish.put("dishId", dishName);
+            dish.put("foodContent", getFoodContent(dishName));
+        }
+        menuJSON.put("menu", menu);
+        return menuJSON;
+    }
+
+    /**
+     * Return food content JSONArray given dish name
+     * @param dishName String of dish name
+     * @return A JSONArray containing food content
+     */
+    public JSONArray getFoodContent(String dishName) {
+        List<String> keyWords = filterDishName(dishName);
+        FuzzyFoodQuerier querier = new FuzzyFoodQuerier();
+        querier.setQueryLimit(1);
+
+        JSONArray foodContent = new JSONArray();
+        for (String word : keyWords) {
+            JSONObject candidate = querier.search(word)
+                .getJSONObject(0);
+            log.info("candidate:\n{}", candidate.toString(4));
+            int index = candidate.getInt("ndb_no");
+            String description = candidate.getString("shrt_desc");
+            JSONObject item = new JSONObject();
+            item.put("idx", index);
+            item.put("description", description);
+            foodContent.put(item);
+        }
+        querier.close();
+        return foodContent;
+    }
+
+    private static final HashSet<String> discardWords;
+    static {
+        List<String> list = Arrays.asList(
+            "of", "with", "and", "the", "a", "on", "in",
+            "served", "fried", "minced", "stewed", "baked",
+            "roasted", "grilled", "dish", "some",
+            "sweet", "sour", "spicy", "salty"
+        );
+        discardWords = new HashSet<>(list);
+    }
+
+    /**
+     * Filter dish name
+     * @param dishName String of dish name
+     * @return A list of words filtered
+     */
+    public static List<String> filterDishName(String dishName) {
+        ArrayList<String> list = new ArrayList<>();
+        List<String> rawList = TextProcessor.sentenceToWords(dishName);
+        for (String word : rawList) {
+            if (!discardWords.contains(word)) {
+                list.add(word);
+            }
+        }
+        return list;
     }
 }

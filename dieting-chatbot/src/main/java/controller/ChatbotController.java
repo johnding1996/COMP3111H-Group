@@ -131,7 +131,7 @@ public class ChatbotController
 
     private static final boolean debugFlag = true;
     private static final String DEBUG_COMMAND_PREFIX = "$$$";
-    private static final int NO_REPLY_TIMEOUT = 10;
+    private static final int NO_REPLY_TIMEOUT = 3;
  
     /**
      * Register on eventBus
@@ -294,6 +294,7 @@ public class ChatbotController
 
     /**
      * State transition wrapper, to next state and register callback
+     * And publish state transition
      * @param userId String of user id
      * @param transition String representing the state transition
      */
@@ -302,6 +303,14 @@ public class ChatbotController
         boolean isStateChanged = stateMachine.toNextState(transition);
         if (!isStateChanged) return;
         registerStateTransitionCallback(userId);
+
+        // publish state transition message
+        ParserMessageJSON psr = new ParserMessageJSON();
+        psr.set("userId", userId)
+           .set("state", stateMachine.getState())
+           .set("replyToken", "invalid")
+           .setTextMessage("noId", "no_text");
+        publisher.publish(psr);
     }
 
     /**
@@ -443,7 +452,7 @@ public class ChatbotController
                         "Sorry but I don't understand what you said.",
                         "Oops, what are you saying?",
                         "Well, that doesn't make sense to me.",
-                        "OK, let's get onto the topic."
+                        "Well, I really do not understand that."
                     };
                     int randomNum = ThreadLocalRandom.current()
                         .nextInt(0, replies.length);

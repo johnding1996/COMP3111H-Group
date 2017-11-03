@@ -4,6 +4,7 @@ import controller.FormatterMessageJSON;
 import controller.ParserMessageJSON;
 import controller.Publisher;
 import controller.TestConfiguration;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -152,5 +153,21 @@ public class MealAskerTester {
         assert asker.getQueryJSON("abc") != null;
         asker.clearQueryJSON();
         assert asker.getQueryJSON("abc") == null;
+    }
+
+    @Test
+    public void testFilterDishName() {
+        String dishName = "A dish with some fried and stewed spicy chicken";
+        List<String> keyWords = MealAsker.filterDishName(dishName);
+        assert keyWords.size() == 1;
+        assert keyWords.get(0).equals("chicken");
+    }
+
+    @Test
+    public void testGetFoodContent() {
+        String dishName = "Spicy Bean curd with Minced Pork served with Rice";
+        JSONArray foodContent = asker.getFoodContent(dishName);
+        log.info("FoodContent:\n{}", foodContent.toString(4));
+        assert foodContent.length() == 4;
     }
 }

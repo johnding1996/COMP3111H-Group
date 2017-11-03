@@ -317,6 +317,7 @@ public class ChatbotControllerTester {
         }).when(publisher).publish(Matchers.any(ParserMessageJSON.class));
         MessageEvent<TextMessageContent> event;
         event = getTextMessageEvent("user", "Something");
+        Mockito.reset(publisher);
     }
 
     @Test
