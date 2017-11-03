@@ -71,8 +71,9 @@ public class FoodRecommender {
     /**
      * Wrapper for doing recommendation
      * @param menuJSON A JSONObject of MenuJSON format
+     * @return Whether recommendation succeed
      */
-    public void doRecommendation(JSONObject menuJSON) {
+    public boolean doRecommendation(JSONObject menuJSON) {
         String userId = menuJSON.getString("userId");
         JSONObject userJSON = getUserJSON(userId);
         if (userJSON == null) {
@@ -80,12 +81,14 @@ public class FoodRecommender {
             fmt.set("userId", userId)
                .set("type", "push")
                .appendTextMessage("Sorry, I don't have your personal " +
-               "information yet, please type 'SETTING' for that");
+               "information yet, please type 'CANCEL' to cancel this operation, " +
+               "and then say 'setting' to set your personal information");
             publisher.publish(fmt);
-            return;
+            return false;
         }
         JSONObject foodScoreJSON = getMenuScore(menuJSON);
         generateRecommendation(foodScoreJSON);
+        return true;
     }
 
     /**
