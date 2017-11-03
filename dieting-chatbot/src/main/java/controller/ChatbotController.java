@@ -19,6 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.concurrent.CompletableFuture;
@@ -97,6 +98,8 @@ import static reactor.bus.selector.Selectors.$;
 import javax.annotation.PostConstruct;
 import java.net.URI;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 import utility.Validator;
 
 @Slf4j
@@ -108,6 +111,8 @@ public class ChatbotController
 
     private HashMap<String, StateMachine> stateMachines = new
         HashMap<String, StateMachine>();
+    private HashMap<String, ScheduledFuture<?>> noReplyFutures = new
+        HashMap<String, ScheduledFuture<?>>();
 
     @Autowired(required = false)
     private LineMessagingClient lineMessagingClient;
@@ -125,19 +130,17 @@ public class ChatbotController
     public TaskScheduler taskScheduler;
 
     private static final boolean debugFlag = true;
-    private static final String DEBUG_COMMAND_PREFIX = "$$$";
+    public static final String DEBUG_COMMAND_PREFIX = "$$$";
+    private static final int NO_REPLY_TIMEOUT = 3;
  
     /**
      * Register on eventBus
      */
     @PostConstruct
     public void init() {
-        log.info("Register for FormatterMessageJSON");
-        try {
+        if (eventBus != null) {
+            log.info("Register FormatterMessageJSON on eventBus");
             eventBus.on($("FormatterMessageJSON"), this);
-        } catch (Exception e) {
-            log.info("Failed to register on eventBus: " +
-                e.toString());
         }
     }
 
@@ -163,16 +166,22 @@ public class ChatbotController
         FormatterMessageJSON formatterMessageJSON = ev.getData();
         log.info("\nChatbotController:\n" + formatterMessageJSON.toString());
         
+        String userId = (String)formatterMessageJSON.get("userId");
         /* Handle state transition if any */
         if (formatterMessageJSON.get("stateTransition") != null) {
-            String userId = (String)formatterMessageJSON.get("userId");
             String transition = (String)formatterMessageJSON.get("stateTransition");
             log.info("User {} triggers state transition {}",
                 userId, transition);
             toNextState(userId, transition);
         }
-        if (!formatterMessageJSON.get("type").equals("transition"))
+        if (!formatterMessageJSON.get("type").equals("transition")) {
             formatter.sendMessage(formatterMessageJSON);
+            if (noReplyFutures.containsKey(userId)) {
+                ScheduledFuture<?> future = noReplyFutures.get(userId);
+                future.cancel(false);
+                log.info("No reply future cancelled for user {}", userId);
+            }
+        }
     }
 
     @EventMapping
@@ -184,15 +193,28 @@ public class ChatbotController
         String textContent = event.getMessage().getText();
         String messageId = event.getMessage().getId();
 
+        // remove first letter 'U' from userId
+        int endIndex = userId.length();
+        userId = userId.substring(1, endIndex);
+
         StateMachine stateMachine = getStateMachine(userId);
         String state = stateMachine.getState();
 
-        if (debugFlag && textContent.startsWith(
-            DEBUG_COMMAND_PREFIX)) {
-                log.info("User initiated state transition using command");
-                changeStateByCommand(userId, textContent);
-                return;
-            }
+        registerNoReplyCallback(userId);
+
+        boolean isSpecial = textContent.startsWith(DEBUG_COMMAND_PREFIX);
+        // isSpecial = isSpecial || textContent.equals("SETTING")
+        //     || textContent.equals("RECOMMEND");
+        isSpecial = isSpecial || textContent.equals("CANCEL");
+        if (debugFlag && isSpecial) {
+            log.info("User initiated state transition using command");
+            // if (textContent.equals("SETTING")) textContent = "$$$InitialInput";
+            // if (textContent.equals("RECOMMEND")) textContent = "$$$ParseMenu";
+            if (textContent.equals("CANCEL")) textContent = "$$$Idle";
+            changeStateByCommand(userId, textContent);
+            publishStateTransition(userId);
+            return;
+        }
 
         /* update state */
         if (state.equals("Idle")) {
@@ -206,6 +228,10 @@ public class ChatbotController
             state = stateMachine.getState();
             log.info("State transition handled by Controller");
             log.info("userId={}, newState={}", userId, state);
+        } else if (state.equals("Recommend")) {
+            if (isFinishMeal(textContent)) {
+                toNextState(userId, "timeout");
+            }
         }
         ParserMessageJSON psr = new ParserMessageJSON();
         psr.set("userId", userId)
@@ -279,6 +305,7 @@ public class ChatbotController
 
     /**
      * State transition wrapper, to next state and register callback
+     * And publish state transition
      * @param userId String of user id
      * @param transition String representing the state transition
      */
@@ -287,6 +314,23 @@ public class ChatbotController
         boolean isStateChanged = stateMachine.toNextState(transition);
         if (!isStateChanged) return;
         registerStateTransitionCallback(userId);
+
+        publishStateTransition(userId);
+    }
+
+    /**
+     * Publish state transition message
+     * @param userId String of user Id
+     */
+    public void publishStateTransition(String userId) {
+        log.info("PUBLISHER: publishing state transition");
+        StateMachine stateMachine = getStateMachine(userId);
+        ParserMessageJSON psr = new ParserMessageJSON();
+        psr.set("userId", userId)
+           .set("state", stateMachine.getState())
+           .set("replyToken", "invalid")
+           .setTextMessage("noId", DEBUG_COMMAND_PREFIX);
+        publisher.publish(psr);
     }
 
     /**
@@ -384,6 +428,23 @@ public class ChatbotController
     }
 
     /**
+     * Check whether a text means finish meal
+     */
+    static public boolean isFinishMeal(String msg) {
+        for (String word : TextProcessor.sentenceToWords(msg)) {
+            if (finishMealWords.contains(word)) return true;
+        }
+        return false;
+    }
+    static private HashSet<String> finishMealWords;
+    static {
+        List<String> list = Arrays.asList(
+            "finish", "done"
+        );
+        finishMealWords = new HashSet<String>(list);
+    }
+
+    /**
      * A debug helper function for changing state
      * @param userId String of user Id
      * @param command Command for state transition
@@ -406,6 +467,54 @@ public class ChatbotController
         StateMachine stateMachine = getStateMachine(userId);
         stateMachine.setState(newState);
         registerStateTransitionCallback(userId);
+    }
+
+    /**
+     * Register callback for no reply case
+     * @param userId String of user Id
+     */
+    public void registerNoReplyCallback(String userId) {
+        // cancel previous callback
+        if (noReplyFutures.containsKey(userId)) {
+            ScheduledFuture<?> future = noReplyFutures.get(userId);
+            if (future != null) future.cancel(false);
+            log.info("Cancel previous no reply callback for user {}", userId);
+        }
+        noReplyFutures.put(userId, taskScheduler.schedule(
+            new Runnable() {
+                @Override
+                public void run() {
+                    FormatterMessageJSON fmt = new FormatterMessageJSON();
+                    String[] replies = {
+                        "Sorry but I don't understand what you said.",
+                        "Oops, that is complicated for me.",
+                        "Well, that doesn't make sense to me.",
+                        "Well, I really do not understand that."
+                    };
+                    int randomNum = ThreadLocalRandom.current()
+                        .nextInt(0, replies.length);
+                    fmt.set("type", "push")
+                       .set("userId", userId)
+                       .appendTextMessage(replies[randomNum]);
+                    String state = getStateMachine(userId).getState();
+                    switch (state) {
+                        case "Idle":
+                        fmt.appendTextMessage("To set your personal info, " +
+                            "send 'setting'.\nIf you want to obtain recommendation, " +
+                            "please say 'recommendation'.\n" +
+                            "You can aways cancel an operation by saying 'CANCEL'");
+                        break;
+
+                        case "Recommend":
+                        fmt.appendTextMessage("You mean you've finished your meal? " +
+                            "If yes, say 'finish' and I will record what you eat");
+                    }
+                    publisher.publish(fmt);
+                    noReplyFutures.remove(userId);
+                }
+            },
+            new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));
+        log.info("Register new no reply callback for user {}", userId);
     }
     /* ------------------------ LOGIC END ------------------------ */
 

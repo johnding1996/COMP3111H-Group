@@ -30,6 +30,7 @@ import org.springframework.stereotype.Component;
 import org.json.JSONArray;
 import org.json.JSONException;
 import controller.Publisher;
+import controller.ChatbotController;
 import controller.FormatterMessageJSON;
 import database.querier.FoodQuerier;
 import database.querier.FuzzyFoodQuerier;
@@ -70,10 +71,24 @@ public class FoodRecommender {
     /**
      * Wrapper for doing recommendation
      * @param menuJSON A JSONObject of MenuJSON format
+     * @return Whether recommendation succeed
      */
-    public void doRecommendation(JSONObject menuJSON) {
+    public boolean doRecommendation(JSONObject menuJSON) {
+        String userId = menuJSON.getString("userId");
+        JSONObject userJSON = getUserJSON(userId);
+        if (userJSON == null) {
+            FormatterMessageJSON fmt = new FormatterMessageJSON();
+            fmt.set("userId", userId)
+               .set("type", "push")
+               .appendTextMessage("Sorry, I don't have your personal " +
+               "information yet, please type 'CANCEL' to cancel this operation, " +
+               "and then say 'setting' to set your personal information");
+            publisher.publish(fmt);
+            return false;
+        }
         JSONObject foodScoreJSON = getMenuScore(menuJSON);
         generateRecommendation(foodScoreJSON);
+        return true;
     }
 
     /**
@@ -129,7 +144,8 @@ public class FoodRecommender {
         FormatterMessageJSON fmt = new FormatterMessageJSON();
         fmt.set("userId", userId)
            .set("type", "push")
-           .appendTextMessage(replyText);
+           .appendTextMessage(replyText)
+           .appendTextMessage("And please tell me when you finish your meal :)");
         publisher.publish(fmt);
         return;
     }
@@ -142,8 +158,8 @@ public class FoodRecommender {
     public String generateReplyText(JSONObject dishResult) {
         String dishName = dishResult.getString("dishName");
         int portionSize = dishResult.getInt("portionSize");
-        return String.format("You should choose this dish: %s; " +
-            "and the recommended portion size is %d gram",
+        return String.format("You should choose this dish: %s\n" +
+            "And the recommended portion size is %d gram",
             dishName, portionSize);
     }
 
@@ -214,7 +230,10 @@ public class FoodRecommender {
 
         double averageCalorie = getAverageNutrient(foodList, "energ_kcal");
         double userBMR = getUserBMR(userJSON) * 1.2;
-        double rawPortionSize = userBMR / (3 * averageCalorie);
+        double rawPortionSize = 100 * userBMR / (3 * averageCalorie);
+        log.info("averageCalorie: " + averageCalorie);
+        log.info("user BMR: " + userBMR);
+        log.info("raw portion size: " + rawPortionSize);
         int roundedPortionSize = (int)Math.round(rawPortionSize / 50) * 50;
         return roundedPortionSize;
     }

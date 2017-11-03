@@ -7,11 +7,14 @@ import java.util.Calendar;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.lang.Integer;
+
+import database.keeper.MenuKeeper;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import controller.ParserMessageJSON;
 import controller.Publisher;
+import controller.ChatbotController;
 import controller.FormatterMessageJSON;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,8 +35,7 @@ public class MenuParser
     implements Consumer<Event<ParserMessageJSON>> {
     
     // User state tracking
-    private static HashMap<String, Integer> userStates =
-        new HashMap<String, Integer>();
+    private static HashMap<String, Integer> userStates = new HashMap<String, Integer>();
     
     @Autowired
     private EventBus eventBus;
@@ -41,14 +43,20 @@ public class MenuParser
     @Autowired
     private Publisher publisher;
 
+    @Autowired(required=false)
+    private MealAsker mealAsker;
+
     @PostConstruct
     public void init() {
         if (eventBus != null) {
             eventBus.on($("ParserMessageJSON"), this);
             log.info("MenuParser register on event bus");
         }
+        if (mealAsker == null) {
+            log.info("Cannot find mealAsker bean");
+        }
     }
-    
+
     /**
      * Validate the parsed menu, and interact with user
      * @param userId String of user Id
@@ -67,6 +75,18 @@ public class MenuParser
             queryJSON.put("userId", userId)
                      .put("menu", menuArray);
             // set queryJSON for meal asker
+            if (mealAsker != null) {
+                mealAsker.setQueryJSON(queryJSON);
+            } else {
+                for (int i=0; i<100; ++i)
+                log.info("Error: mealAsker is null");
+            }
+
+            // keep menu in redis
+            MenuKeeper keeper = new MenuKeeper();
+            keeper.set(userId, queryJSON);
+            keeper.close();
+
             // no need to reply, give control to MealAsker
             response.set("stateTransition", "menuMessage")
                     .set("type", "transition");
@@ -82,7 +102,12 @@ public class MenuParser
 
         // only handle message if state is `ParseMenu`
         String currentState = psr.get("state");
-        if (!currentState.equals("ParseMenu")) return;
+        if (!currentState.equals("ParseMenu")) {
+            String userId = psr.get("userId");
+            if (userStates.containsKey(userId))
+                userStates.remove(userId);
+            return;
+        }
 
         log.info("Entering user menu input handler");
         String userId = psr.get("userId");
@@ -95,9 +120,14 @@ public class MenuParser
                     .set("type", "reply")
                     .set("replyToken", replyToken)
                     .appendTextMessage(
-                        "Sorry but I don't understand this image");
+                        "Sorry but I don't understand this image, give me some text please ~");
             publisher.publish(response);
             log.info("Cannot handle image message");
+            return;
+        }
+
+        if (psr.getTextContent().startsWith(ChatbotController.DEBUG_COMMAND_PREFIX)) {
+            log.info("do not handle transition psr");
             return;
         }
         
@@ -112,8 +142,7 @@ public class MenuParser
         Integer userState = userStates.get(userId);
         FormatterMessageJSON response = new FormatterMessageJSON();
         response.set("userId", userId)
-                .set("type", "reply")
-                .set("replyToken", replyToken);
+                .set("type", "push");
 
         if (userState == 0) {
             response.appendTextMessage(

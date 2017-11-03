@@ -27,7 +27,7 @@ public class UserQuerier extends Querier {
                 "id", "name", "age", "gender", "weight", "height", "goal_weight", "due_date"
         );
         critical_fields = new HashSet<>(Arrays.asList(
-                "id", "name", "age", "gender", "weight", "height"
+                "id", "age", "gender", "weight", "height"
         ));
         queryLimit = 1;
     }
