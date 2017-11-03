@@ -106,8 +106,8 @@ public class Formatter {
         String type = fmt.get("type").toString();
         switch(type) {
             case "reply":
-                reply(fmt.get("replyToken").toString(), messages);
-                break;
+                // reply(fmt.get("replyToken").toString(), messages);
+                // break;
             case "push":
                 push(fmt.get("userId").toString(), messages);
                 break;
