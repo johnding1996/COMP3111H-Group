@@ -14,6 +14,7 @@ import org.json.JSONObject;
 
 import controller.ParserMessageJSON;
 import controller.Publisher;
+import controller.ChatbotController;
 import controller.FormatterMessageJSON;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +63,8 @@ public class MenuParser
      * @param response FormatterMessageJSON for replying user
      * @param menuArray Parsed JSONArray as menu
      */
-    public void checkAndReply(String userId, FormatterMessageJSON response, JSONArray menuArray, MenuKeeper menuKeeper) {
+    public void checkAndReply(String userId,
+        FormatterMessageJSON response, JSONArray menuArray) {
         if(menuArray == null) {
             response.appendTextMessage("Looks like the menu is empty, " +
                 "please try again");
@@ -81,7 +83,9 @@ public class MenuParser
             }
 
             // keep menu in redis
-            menuKeeper.set(userId, queryJSON);
+            MenuKeeper keeper = new MenuKeeper();
+            keeper.set(userId, queryJSON);
+            keeper.close();
 
             // no need to reply, give control to MealAsker
             response.set("stateTransition", "menuMessage")
@@ -116,6 +120,11 @@ public class MenuParser
             log.info("Cannot handle image message");
             return;
         }
+
+        if (psr.getTextContent().equals(ChatbotController.DEBUG_COMMAND_PREFIX)) {
+            log.info("do not handle transition psr");
+            return;
+        }
         
         String text = psr.getTextContent();
 
@@ -131,8 +140,6 @@ public class MenuParser
                 .set("type", "reply")
                 .set("replyToken", replyToken);
 
-        MenuKeeper menuKeeper = new MenuKeeper();
-
         if (userState == 0) {
             response.appendTextMessage(
                 "Long time no see! What is your menu today? " +
@@ -145,9 +152,8 @@ public class MenuParser
             } else {
                 menuArray = TextMenuParser.buildMenu(text);
             }
-            checkAndReply(userId, response, menuArray, menuKeeper);
+            checkAndReply(userId, response, menuArray);
         }
-        menuKeeper.close();
         publisher.publish(response);
     }
 

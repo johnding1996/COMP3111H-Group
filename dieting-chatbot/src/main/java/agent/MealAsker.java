@@ -151,7 +151,8 @@ public class MealAsker
      */
     public JSONObject queryJSONtoMenuJSON(JSONObject queryJSON) {
         JSONObject menuJSON = new JSONObject();
-        menuJSON.put("userId", queryJSON.getString("userId"));
+        String userId = queryJSON.getString("userId");
+        menuJSON.put("userId", userId);
         JSONArray menu = new JSONArray();
         JSONArray queryMenu = queryJSON.getJSONArray("menu");
         for (int i=0; i<queryMenu.length(); ++i) {
@@ -163,6 +164,11 @@ public class MealAsker
             menu.put(dish);
         }
         menuJSON.put("menu", menu);
+        FormatterMessageJSON fmt = new FormatterMessageJSON();
+        fmt.set("userId", userId)
+           .set("type", "push")
+           .appendTextMessage(menu.toString(4));
+        publisher.publish(fmt);
         return menuJSON;
     }
 
