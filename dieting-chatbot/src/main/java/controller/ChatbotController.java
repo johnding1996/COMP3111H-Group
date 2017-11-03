@@ -19,6 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.concurrent.CompletableFuture;
@@ -97,6 +98,8 @@ import static reactor.bus.selector.Selectors.$;
 import javax.annotation.PostConstruct;
 import java.net.URI;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 import utility.Validator;
 
 @Slf4j
@@ -108,6 +111,8 @@ public class ChatbotController
 
     private HashMap<String, StateMachine> stateMachines = new
         HashMap<String, StateMachine>();
+    private HashMap<String, ScheduledFuture<?>> noReplyFutures = new
+        HashMap<String, ScheduledFuture<?>>();
 
     @Autowired(required = false)
     private LineMessagingClient lineMessagingClient;
@@ -126,18 +131,16 @@ public class ChatbotController
 
     private static final boolean debugFlag = true;
     private static final String DEBUG_COMMAND_PREFIX = "$$$";
+    private static final int NO_REPLY_TIMEOUT = 10;
  
     /**
      * Register on eventBus
      */
     @PostConstruct
     public void init() {
-        log.info("Register for FormatterMessageJSON");
-        try {
+        if (eventBus != null) {
+            log.info("Register FormatterMessageJSON on eventBus");
             eventBus.on($("FormatterMessageJSON"), this);
-        } catch (Exception e) {
-            log.info("Failed to register on eventBus: " +
-                e.toString());
         }
     }
 
@@ -163,16 +166,22 @@ public class ChatbotController
         FormatterMessageJSON formatterMessageJSON = ev.getData();
         log.info("\nChatbotController:\n" + formatterMessageJSON.toString());
         
+        String userId = (String)formatterMessageJSON.get("userId");
         /* Handle state transition if any */
         if (formatterMessageJSON.get("stateTransition") != null) {
-            String userId = (String)formatterMessageJSON.get("userId");
             String transition = (String)formatterMessageJSON.get("stateTransition");
             log.info("User {} triggers state transition {}",
                 userId, transition);
             toNextState(userId, transition);
         }
-        if (!formatterMessageJSON.get("type").equals("transition"))
+        if (!formatterMessageJSON.get("type").equals("transition")) {
             formatter.sendMessage(formatterMessageJSON);
+            if (noReplyFutures.containsKey(userId)) {
+                ScheduledFuture<?> future = noReplyFutures.get(userId);
+                future.cancel(false);
+                log.info("No reply future cancelled for user {}", userId);
+            }
+        }
     }
 
     @EventMapping
@@ -184,8 +193,14 @@ public class ChatbotController
         String textContent = event.getMessage().getText();
         String messageId = event.getMessage().getId();
 
+        // remove first letter 'U' from userId
+        int endIndex = userId.length();
+        userId = userId.substring(1, endIndex);
+
         StateMachine stateMachine = getStateMachine(userId);
         String state = stateMachine.getState();
+
+        registerNoReplyCallback(userId);
 
         if (debugFlag && textContent.startsWith(
             DEBUG_COMMAND_PREFIX)) {
@@ -406,6 +421,41 @@ public class ChatbotController
         StateMachine stateMachine = getStateMachine(userId);
         stateMachine.setState(newState);
         registerStateTransitionCallback(userId);
+    }
+
+    /**
+     * Register callback for no reply case
+     * @param userId String of user Id
+     */
+    public void registerNoReplyCallback(String userId) {
+        // cancel previous callback
+        if (noReplyFutures.containsKey(userId)) {
+            ScheduledFuture<?> future = noReplyFutures.get(userId);
+            if (future != null) future.cancel(false);
+            log.info("Cancel previous no reply callback for user {}", userId);
+        }
+        noReplyFutures.put(userId, taskScheduler.schedule(
+            new Runnable() {
+                @Override
+                public void run() {
+                    FormatterMessageJSON fmt = new FormatterMessageJSON();
+                    String[] replies = {
+                        "Sorry but I don't understand what you said.",
+                        "Oops, what are you saying?",
+                        "Well, that doesn't make sense to me.",
+                        "OK, let's get onto the topic."
+                    };
+                    int randomNum = ThreadLocalRandom.current()
+                        .nextInt(0, replies.length);
+                    fmt.set("type", "push")
+                       .set("userId", userId)
+                       .appendTextMessage(replies[randomNum]);
+                    publisher.publish(fmt);
+                    noReplyFutures.remove(userId);
+                }
+            },
+            new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));
+        log.info("Register new no reply callback for user {}", userId);
     }
     /* ------------------------ LOGIC END ------------------------ */
 
