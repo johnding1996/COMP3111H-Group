@@ -79,7 +79,6 @@ public class MenuParser
      * @param ev Event object
      */
     public void accept(Event<ParserMessageJSON> ev) {
-        MenuKeeper menuKeeper = new MenuKeeper();
         ParserMessageJSON psr = ev.getData();
 
         // only handle message if state is `ParseMenu`
@@ -116,6 +115,8 @@ public class MenuParser
         response.set("userId", userId)
                 .set("type", "reply")
                 .set("replyToken", replyToken);
+
+        MenuKeeper menuKeeper = new MenuKeeper();
 
         if (userState == 0) {
             response.appendTextMessage(

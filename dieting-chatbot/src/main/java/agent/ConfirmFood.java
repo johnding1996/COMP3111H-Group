@@ -115,10 +115,6 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
      * @param ev Event object
      */
     public void accept(Event<ParserMessageJSON> ev) {
-        MenuKeeper menuKeeper = new MenuKeeper();
-        HistKeeper histKeeper = new HistKeeper();
-
-
         ParserMessageJSON psr = ev.getData();
 
         // only handle message if state is `RecordMeal`
@@ -152,6 +148,9 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
                 .set("type", "reply")
                 .set("replyToken", replyToken);
         log.info(psr.toString());
+
+        MenuKeeper menuKeeper = new MenuKeeper();
+        HistKeeper histKeeper = new HistKeeper();
 
         boolean selection = userStates.get(userId);
         if (!selection) {
