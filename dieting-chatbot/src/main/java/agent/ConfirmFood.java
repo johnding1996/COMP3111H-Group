@@ -50,12 +50,21 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
     }
 
     /**
-     * User states tracking for interaction; false stands for user did not confirm food list yet
+     * User states tracking for interaction
+     * false stands for user did not confirm food list yet
      */
     private static Map<String, Boolean> userStates = new HashMap<>();
 
-    void changeUserState(String userId, boolean state) {
-        userStates.put(userId, state);
+    /**
+     * Change user state
+     * @param userId String of user Id
+     * @param state New user state
+     */
+    public void changeUserState(String userId, boolean state) {
+        if (userStates.containsKey(userId)) {
+            userStates.put(userId, state);
+            log.info("Change state of user {} to {}", userId, state);
+        }
     }
 
     /**
@@ -93,21 +102,27 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
     }
 
     /**
-     * print list for user to select
-     * @param userId user id string
-     * @param response FormatterMessageJSON object
+     * Get list of menu previously input by user
+     * @param userId String of user Id
+     * @return Menu list in String
      */
-    public void printList(String userId, FormatterMessageJSON response, MenuKeeper menuKeeper){
-        try{
-            JSONArray menu = menuKeeper.get(userId, 1).getJSONObject(0).getJSONArray("menu");
+    public String getMenu(String userId) {
+        MenuKeeper keeper = new MenuKeeper();
+        String reply = "";
+        try {
+            JSONArray menu = keeper.get(userId, 1)
+                .getJSONObject(0).getJSONArray("menu");
             for(int j = 0; j < menu.length(); j++){
                 JSONObject food = menu.getJSONObject(j);
-                response.appendTextMessage((j + 1) + ". " + food.getString("name"));
+                reply += String.format("%d - %s\n", j + 1,
+                    food.getString("name"));
             }
-            response.appendTextMessage("Please enter in a list of indices separated by ';' (e.g. 1;3;4).");
+            reply += "Please enter in a list of " +
+                "indices separated by ';' (e.g. 1;3;4).";
         } catch (JSONException e){
             log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
         }
+        return reply;
     }
 
     /**
@@ -132,7 +147,7 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
                     .set("type", "reply")
                     .set("replyToken", replyToken)
                     .appendTextMessage(
-                            "Please input some text at this moment.");
+                        "Please input some text at this moment.");
             publisher.publish(response);
             log.info("Cannot handle image message");
             return;
@@ -145,36 +160,33 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
         }
         FormatterMessageJSON response = new FormatterMessageJSON();
         response.set("userId", userId)
-                .set("type", "reply")
-                .set("replyToken", replyToken);
+                .set("type", "push");
         log.info(psr.toString());
-
-        MenuKeeper menuKeeper = new MenuKeeper();
-        HistKeeper histKeeper = new HistKeeper();
 
         boolean selection = userStates.get(userId);
         if (!selection) {
-            response.appendTextMessage("Welcome back! Please choose among what you just ate in this list:");
-            printList(userId, response, menuKeeper);
+            log.info("CONFIRM MEAL: conversation initiated");
+            response.appendTextMessage(
+                "Welcome back! Please choose among what you just ate in this list:");
+            response.appendTextMessage(getMenu(userId));
             userStates.put(userId, true);
         } else {
+            HistKeeper histKeeper = new HistKeeper();
+
             String[] idxStrings = psr.getTextContent().split(";");
-            try {
-                List<Integer> idxs = new ArrayList<>();
-                for (String idxString: idxStrings) {
-                    int idx = Integer.parseInt(idxString);
-                    idxs.add(idx);
-                }
-                response.set("stateTransition", "confirmMeal")
-                        .appendTextMessage("Great! I have recorded what you have just eaten!");
-                addDatabase(idxs, userId, menuKeeper, histKeeper);
-                userStates.remove(userId);
-            } catch (NumberFormatException e) {
-                response.appendTextMessage("Sorry, please enter in a list of valid indices separated by ';'.");
+            List<Integer> idxs = new ArrayList<>();
+            for (String idxString : idxStrings) {
+                idxString = idxString.trim();
+                if (Validator.isInteger(idxString))
+                    idxs.add(Integer.parseInt(idxString));
             }
+            response.set("stateTransition", "confirmMeal")
+                    .appendTextMessage("Great! " +
+                    "I have recorded what you have just eaten!");
+            // addDatabase(idxs, userId, menuKeeper, histKeeper);
+            userStates.remove(userId);
+            log.info("CONFIRM MEAL: remove user {}", userId);
         }
-        menuKeeper.close();
-        histKeeper.close();
         publisher.publish(response);
     }
 }
