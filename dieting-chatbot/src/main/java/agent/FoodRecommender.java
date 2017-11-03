@@ -227,6 +227,9 @@ public class FoodRecommender {
         double averageCalorie = getAverageNutrient(foodList, "energ_kcal");
         double userBMR = getUserBMR(userJSON) * 1.2;
         double rawPortionSize = 100 * userBMR / (3 * averageCalorie);
+        log.info("averageCalorie: " + averageCalorie);
+        log.info("user BMR: " + userBMR);
+        log.info("raw portion size: " + rawPortionSize);
         int roundedPortionSize = (int)Math.round(rawPortionSize / 50) * 50;
         return roundedPortionSize;
     }
