@@ -138,12 +138,9 @@ public class ChatbotController
      */
     @PostConstruct
     public void init() {
-        log.info("Register for FormatterMessageJSON");
-        try {
+        if (eventBus != null) {
+            log.info("Register FormatterMessageJSON on eventBus");
             eventBus.on($("FormatterMessageJSON"), this);
-        } catch (Exception e) {
-            log.info("Failed to register on eventBus: " +
-                e.toString());
         }
     }
 
@@ -434,7 +431,7 @@ public class ChatbotController
         // cancel previous callback
         if (noReplyFutures.containsKey(userId)) {
             ScheduledFuture<?> future = noReplyFutures.get(userId);
-            future.cancel(false);
+            if (future != null) future.cancel(false);
             log.info("Cancel previous no reply callback for user {}", userId);
         }
         noReplyFutures.put(userId, taskScheduler.schedule(
@@ -454,6 +451,7 @@ public class ChatbotController
                        .set("userId", userId)
                        .appendTextMessage(replies[randomNum]);
                     publisher.publish(fmt);
+                    noReplyFutures.remove(userId);
                 }
             },
             new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));
