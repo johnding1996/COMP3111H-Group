@@ -2,6 +2,7 @@ package misc;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.text.ParseException;
@@ -11,6 +12,8 @@ import org.json.JSONObject;
 
 import controller.ParserMessageJSON;
 import controller.Publisher;
+import database.querier.UserQuerier;
+import controller.ChatbotController;
 import controller.FormatterMessageJSON;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +24,7 @@ import reactor.fn.Consumer;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import javax.annotation.PostConstruct;
-
+import utility.TextProcessor;
 import utility.Validator;
 
 import lombok.extern.slf4j.Slf4j;
@@ -103,15 +106,15 @@ public class UserInitialInputRecord
         userJSON.put("gender", u.gender);
         userJSON.put("weight", u.weight);
         userJSON.put("height", u.height);
+        userJSON.put("goal_weight", u.desiredWeight);
+        userJSON.put("due_date", u.goalDate);
 
-        JSONObject goal = new JSONObject();
-        goal.put("weight", u.desiredWeight);
-        goal.put("due", u.goalDate);
-        userJSON.put("goal", goal);
-        
-        // add user info to database and remove
         log.info("User Info of {} is ready for database", u.id);
-        // setUserInfo(u.id, userJSON);
+        log.info(userJSON.toString(4));
+        UserQuerier querier = new UserQuerier();
+        querier.add(userJSON);
+        querier.close();
+        
         userStates.remove(u.id);
     }
     
@@ -142,6 +145,10 @@ public class UserInitialInputRecord
             log.info("Cannot handle image message");
             return;
         }
+
+        // skip state transition message
+        if (psr.getTextContent().equals(ChatbotController.DEBUG_COMMAND_PREFIX))
+            return;
         
         // register user if it is new
         if (!userStates.containsKey(userId)) {
@@ -170,7 +177,16 @@ public class UserInitialInputRecord
                         "Tell me your gender please, type in 'male' or 'female'");
                     break;
                 case "gender":
-                    user.gender = psr.getTextContent();
+                    List<String> words = TextProcessor.sentenceToWords(
+                        psr.getTextContent());
+                    boolean isMale = true;
+                    for (String word : words) {
+                        if (word.equals("female") || word.equals("woman")) {
+                            isMale = false;
+                            break;
+                        }
+                    }
+                    user.gender = isMale?"male":"female";
                     response.appendTextMessage("Hey, what is your weight? " +
                         "Just simply give me an integer (in terms of kg)");
                     break;

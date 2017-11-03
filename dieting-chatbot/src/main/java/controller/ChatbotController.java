@@ -130,7 +130,7 @@ public class ChatbotController
     public TaskScheduler taskScheduler;
 
     private static final boolean debugFlag = true;
-    private static final String DEBUG_COMMAND_PREFIX = "$$$";
+    public static final String DEBUG_COMMAND_PREFIX = "$$$";
     private static final int NO_REPLY_TIMEOUT = 3;
  
     /**
@@ -309,7 +309,7 @@ public class ChatbotController
         psr.set("userId", userId)
            .set("state", stateMachine.getState())
            .set("replyToken", "invalid")
-           .setTextMessage("noId", "no_text");
+           .setTextMessage("noId", DEBUG_COMMAND_PREFIX);
         publisher.publish(psr);
     }
 

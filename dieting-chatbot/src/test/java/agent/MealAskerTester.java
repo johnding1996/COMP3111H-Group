@@ -23,7 +23,7 @@ import reactor.bus.Event;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {MealAsker.class})
+@SpringBootTest(classes = {MealAsker.class, FoodRecommender.class})
 @ContextConfiguration(classes = TestConfiguration.class)
 public class MealAskerTester {
     @Autowired
@@ -169,5 +169,26 @@ public class MealAskerTester {
         JSONArray foodContent = asker.getFoodContent(dishName);
         log.info("FoodContent:\n{}", foodContent.toString(4));
         assert foodContent.length() == 4;
+    }
+
+    @Test
+    public void testGetMenuJSON() {
+        JSONObject queryJSON = new JSONObject();
+        queryJSON.put("userId", "szhouan");
+        JSONArray queryMenu = new JSONArray();
+        JSONObject dish;
+        dish = new JSONObject();
+        dish.put("name", "Fish and potato");
+        queryMenu.put(dish);
+        dish = new JSONObject();
+        dish.put("name", "Rice with pork");
+        queryMenu.put(dish);
+        dish = new JSONObject();
+        dish.put("name", "Fried beef");
+        queryMenu.put(dish);
+        queryJSON.put("menu", queryMenu);
+        log.info("queryJSON:\n{}", queryMenu.toString(4));
+        JSONObject menuJSON = asker.queryJSONtoMenuJSON(queryJSON);
+        log.info("menuJSON\n{}", menuJSON.toString(4));
     }
 }

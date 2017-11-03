@@ -12,6 +12,7 @@ import controller.FormatterMessageJSON;
 import controller.ParserMessageJSON;
 import controller.Publisher;
 import database.connection.SQLPool;
+import database.keeper.MenuKeeper;
 import database.querier.FuzzyFoodQuerier;
 import database.querier.PartialFoodQuerier;
 import java.util.ArrayList;
@@ -35,6 +36,9 @@ public class MealAsker
 
     @Autowired
     private Publisher publisher;
+
+    @Autowired
+    private FoodRecommender recommender;
 
     static private HashMap<String, JSONObject> menus = new HashMap<>();
 
@@ -122,8 +126,22 @@ public class MealAsker
             return;
         }
         
-        response.appendTextMessage("OK, I got your menu!");
-        publisher.publish(response);
+        if (menus.containsKey(userId)) {
+            JSONObject queryJSON = menus.get(userId);
+            response.appendTextMessage("OK, I got your menu!");
+            response.appendTextMessage("The Menu is " +
+                queryJSON.toString(4));
+            response.set("stateTransition", "Recommend");
+            publisher.publish(response);
+
+            menus.remove(userId);
+            JSONObject menuJSON = queryJSONtoMenuJSON(queryJSON);
+            log.info("MenuJSON:\n{}", menuJSON.toString(4));
+            recommender.doRecommendation(menuJSON);
+        } else {
+            response.appendTextMessage("Oops, looks like your menu is empty");
+            publisher.publish(response);
+        }
     }
 
     /**
@@ -140,8 +158,9 @@ public class MealAsker
             JSONObject queryDish = queryMenu.getJSONObject(i);
             JSONObject dish = new JSONObject();
             String dishName = queryDish.getString("name");
-            dish.put("dishId", dishName);
+            dish.put("dishName", dishName);
             dish.put("foodContent", getFoodContent(dishName));
+            menu.put(dish);
         }
         menuJSON.put("menu", menu);
         return menuJSON;
