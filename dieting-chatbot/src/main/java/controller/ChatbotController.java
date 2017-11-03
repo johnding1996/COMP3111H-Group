@@ -206,6 +206,7 @@ public class ChatbotController
             DEBUG_COMMAND_PREFIX)) {
                 log.info("User initiated state transition using command");
                 changeStateByCommand(userId, textContent);
+                publishStateTransition(userId);
                 return;
             }
 
@@ -304,7 +305,15 @@ public class ChatbotController
         if (!isStateChanged) return;
         registerStateTransitionCallback(userId);
 
-        // publish state transition message
+        publishStateTransition(userId);
+    }
+
+    /**
+     * Publish state transition message
+     * @param userId String of user Id
+     */
+    public void publishStateTransition(String userId) {
+        StateMachine stateMachine = getStateMachine(userId);
         ParserMessageJSON psr = new ParserMessageJSON();
         psr.set("userId", userId)
            .set("state", stateMachine.getState())
