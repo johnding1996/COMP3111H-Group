@@ -141,14 +141,12 @@ public class ConfirmFood implements Consumer<Event<ParserMessageJSON>> {
 
         log.info("Entering user meal confirm handler");
         String userId = psr.get("userId");
-        String replyToken = psr.get("replyToken");
 
         // if the input is not text
         if(!psr.getMessageType().equals("text")) {
             FormatterMessageJSON response = new FormatterMessageJSON();
             response.set("userId", userId)
-                    .set("type", "reply")
-                    .set("replyToken", replyToken)
+                    .set("type", "push")
                     .appendTextMessage(
                         "Please input some text at this moment.");
             publisher.publish(response);
