@@ -30,9 +30,4 @@ public class TestConfiguration {
     public Publisher createPublisher() {
         return Mockito.mock(Publisher.class);
     }
-
-    @Bean
-    public UserQuerier createUserQuerier() {
-        return Mockito.mock(UserQuerier.class);
-    }
 }
