@@ -1,5 +1,6 @@
 package agent;
 
+import controller.ChatbotController;
 import controller.FormatterMessageJSON;
 import controller.ParserMessageJSON;
 import controller.Publisher;

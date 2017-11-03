@@ -42,11 +42,17 @@ public class MenuParser
     @Autowired
     private Publisher publisher;
 
+    @Autowired(required=false)
+    private MealAsker mealAsker;
+
     @PostConstruct
     public void init() {
         if (eventBus != null) {
             eventBus.on($("ParserMessageJSON"), this);
             log.info("MenuParser register on event bus");
+        }
+        if (mealAsker == null) {
+            log.info("Cannot find mealAsker bean");
         }
     }
 
@@ -67,7 +73,16 @@ public class MenuParser
             queryJSON.put("userId", userId)
                      .put("menu", menuArray);
             // set queryJSON for meal asker
+            if (mealAsker != null) {
+                mealAsker.setQueryJSON(queryJSON);
+            } else {
+                for (int i=0; i<100; ++i)
+                log.info("Error: mealAsker is null");
+            }
+
+            // keep menu in redis
             menuKeeper.set(userId, queryJSON);
+
             // no need to reply, give control to MealAsker
             response.set("stateTransition", "menuMessage")
                     .set("type", "transition");
