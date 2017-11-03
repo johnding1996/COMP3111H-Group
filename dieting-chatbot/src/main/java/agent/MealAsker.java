@@ -131,7 +131,7 @@ public class MealAsker
             response.appendTextMessage("OK, I got your menu!");
             response.appendTextMessage("The Menu is " +
                 queryJSON.toString(4));
-            response.set("stateTransition", "Recommend");
+            response.set("stateTransition", "confirmMeal");
             publisher.publish(response);
 
             menus.remove(userId);
