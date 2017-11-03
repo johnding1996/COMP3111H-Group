@@ -9,7 +9,7 @@ public class State {
 
     private int timeout; // in sec
     private String timeoutState;
-    public static final int DEFAULT_TIMEOUT = 60; // 1 hour
+    public static final int DEFAULT_TIMEOUT = 3600; // 1 hour
     private static HashSet<String> stateNameSet;
     static {
         stateNameSet = new HashSet<String>();

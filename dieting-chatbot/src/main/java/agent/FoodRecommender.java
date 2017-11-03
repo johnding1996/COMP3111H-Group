@@ -80,7 +80,7 @@ public class FoodRecommender {
             fmt.set("userId", userId)
                .set("type", "push")
                .appendTextMessage("Sorry, I don't have your personal " +
-               "information yet, please type 'setting' for that");
+               "information yet, please type 'SETTING' for that");
             publisher.publish(fmt);
             return;
         }
@@ -141,7 +141,8 @@ public class FoodRecommender {
         FormatterMessageJSON fmt = new FormatterMessageJSON();
         fmt.set("userId", userId)
            .set("type", "push")
-           .appendTextMessage(replyText);
+           .appendTextMessage(replyText)
+           .appendTextMessage("And please tell me when you finish your meal :)");
         publisher.publish(fmt);
         return;
     }
@@ -154,8 +155,8 @@ public class FoodRecommender {
     public String generateReplyText(JSONObject dishResult) {
         String dishName = dishResult.getString("dishName");
         int portionSize = dishResult.getInt("portionSize");
-        return String.format("You should choose this dish: %s; " +
-            "and the recommended portion size is %d gram",
+        return String.format("You should choose this dish: %s\n" +
+            "And the recommended portion size is %d gram",
             dishName, portionSize);
     }
 

@@ -102,7 +102,12 @@ public class MenuParser
 
         // only handle message if state is `ParseMenu`
         String currentState = psr.get("state");
-        if (!currentState.equals("ParseMenu")) return;
+        if (!currentState.equals("ParseMenu")) {
+            String userId = psr.get("userId");
+            if (userStates.containsKey(userId))
+                userStates.remove(userId);
+            return;
+        }
 
         log.info("Entering user menu input handler");
         String userId = psr.get("userId");
@@ -121,7 +126,7 @@ public class MenuParser
             return;
         }
 
-        if (psr.getTextContent().equals(ChatbotController.DEBUG_COMMAND_PREFIX)) {
+        if (psr.getTextContent().startsWith(ChatbotController.DEBUG_COMMAND_PREFIX)) {
             log.info("do not handle transition psr");
             return;
         }
@@ -137,8 +142,7 @@ public class MenuParser
         Integer userState = userStates.get(userId);
         FormatterMessageJSON response = new FormatterMessageJSON();
         response.set("userId", userId)
-                .set("type", "reply")
-                .set("replyToken", replyToken);
+                .set("type", "push");
 
         if (userState == 0) {
             response.appendTextMessage(
