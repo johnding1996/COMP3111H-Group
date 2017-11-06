@@ -10,6 +10,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -45,7 +46,9 @@ import com.google.common.io.ByteStreams;
 
 import com.linecorp.bot.client.LineMessagingClient;
 import com.linecorp.bot.client.MessageContentResponse;
+import com.linecorp.bot.model.PushMessage;
 import com.linecorp.bot.model.ReplyMessage;
+import com.linecorp.bot.model.action.Action;
 import com.linecorp.bot.model.action.MessageAction;
 import com.linecorp.bot.model.action.PostbackAction;
 import com.linecorp.bot.model.action.URIAction;
@@ -258,6 +261,22 @@ public class ChatbotController
         handleImageContent(replyToken, event, messageId);
     }
 
+    @EventMapping
+	public void handlePostbackEvent(PostbackEvent event) {
+        String replyToken = event.getReplyToken();
+        String data = event.getPostbackContent().getData();
+        log.info("Got postback " + data);
+        String[] msg = data.split("&");
+        switch(msg[0]){
+            case "Setting":
+            break;
+            case "MenuInput":
+            break;
+            case "Feedback":
+            break;
+        }
+    }
+    
     /**
      * Event Handler for Image
      */
@@ -469,6 +488,38 @@ public class ChatbotController
         registerStateTransitionCallback(userId);
     }
 
+
+    static CarouselColumn setting = new CarouselColumn("https://example.com/bot/images/item1.jpg"
+    , "Setting"
+    , "Configure your information by clicking on the buttons", 
+    Arrays.asList(
+        new PostbackAction("Initial Setting", "action=Setting&label=InitialSetting"),
+        new MessageAction("Change Weight", "action=Setting&label=ChangeWeight"),
+        new PostbackAction("Set Goal", "action=Setting&label=SetGoal")
+    ));
+    static CarouselColumn menuInput = new CarouselColumn("https://example.com/bot/images/item2.jpg"
+    , "Menu Input"
+    , "You can give the menu to me in text, URI, or Image format", 
+    Arrays.asList(
+        new PostbackAction("Text", "action=MenuInput&label=Text"),
+        new PostbackAction("URI", "action=MenuInput&label=URI"),
+        new PostbackAction("Image", "action=MenuInput&label=Image")
+    ));
+    static CarouselColumn feedback = new CarouselColumn("https://example.com/bot/images/item1.jpg"
+    , "Feedback", 
+    "You can get your recent information from me", 
+    Arrays.asList(
+        new PostbackAction("Daily Report", "action=Feedback&label=DailyReport"),
+        new PostbackAction("Weekly Report", "action=Feedback&label=WeeklyReport"),
+        new PostbackAction("Get Chart", "action=Feedback&label=GetChart")
+    ));
+    static CarouselTemplate carouselTemplate = new CarouselTemplate(Arrays.asList(
+        setting,
+        menuInput,
+        feedback
+    ));
+    static TemplateMessage idleMessage = new TemplateMessage("Carousel Template Test", carouselTemplate);
+
     /**
      * Register callback for no reply case
      * @param userId String of user Id
@@ -503,6 +554,9 @@ public class ChatbotController
                             "send 'setting'.\nIf you want to obtain recommendation, " +
                             "please say 'recommendation'.\n" +
                             "You can aways cancel an operation by saying 'CANCEL'");
+                        log.info("Send template message");
+                        PushMessage pushMessage = new PushMessage("U" + userId, idleMessage);
+                        lineMessagingClient.pushMessage(pushMessage);
                         break;
 
                         case "Recommend":
