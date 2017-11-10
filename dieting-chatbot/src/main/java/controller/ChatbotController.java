@@ -99,6 +99,7 @@ import reactor.bus.EventBus;
 import static reactor.bus.selector.Selectors.$;
 
 import javax.annotation.PostConstruct;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.concurrent.ThreadLocalRandom;
@@ -285,11 +286,19 @@ public class ChatbotController
      * Event Handler for Image
      */
     private void handleImageContent(String replyToken, Event event, String uri) {
+        URL url = null;
         
+        // handle Exception
+        try {
+            url = new URL(uri);
+        } catch (MalformedURLException e) {
+            System.out.println("The URL is not valid.");
+            System.out.println(e.getMessage());
+        }
         Ocr.setUp(); // one time setup
         Ocr ocr = new Ocr(); // create a new OCR engine
         ocr.startEngine("eng", Ocr.SPEED_FASTEST); // English
-        String s = ocr.recognize(new URL[] {new URL(uri)}
+        String s = ocr.recognize(new URL[] {url}
         , Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT);
         log.info("Result: " + s);
         // ocr more images here ...
