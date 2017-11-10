@@ -35,6 +35,7 @@ import controller.FormatterMessageJSON;
 import database.querier.FoodQuerier;
 import database.querier.FuzzyFoodQuerier;
 import database.querier.UserQuerier;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -57,6 +58,7 @@ public class FoodRecommender {
                      .put(getConfigJSON("calcium", 800, 5));
         log.info("Configuration for recommender:\n{}",
             configuration.toString(4));
+        Locale.setDefault(Locale.US);
     }
 
     private static JSONObject getConfigJSON(String name,
