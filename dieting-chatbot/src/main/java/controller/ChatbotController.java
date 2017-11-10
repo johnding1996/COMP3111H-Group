@@ -100,7 +100,7 @@ import static reactor.bus.selector.Selectors.$;
 
 import javax.annotation.PostConstruct;
 import java.net.URI;
-
+import java.net.URL;
 import java.util.concurrent.ThreadLocalRandom;
 
 import utility.Validator;
@@ -289,7 +289,7 @@ public class ChatbotController
         Ocr.setUp(); // one time setup
         Ocr ocr = new Ocr(); // create a new OCR engine
         ocr.startEngine("eng", Ocr.SPEED_FASTEST); // English
-        String s = ocr.recognize(new File[] {new File(uri)}
+        String s = ocr.recognize(new URL[] {new URL(uri)}
         , Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT);
         log.info("Result: " + s);
         // ocr more images here ...
