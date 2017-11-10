@@ -105,6 +105,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import utility.Validator;
 
+import java.io.File;
+import com.asprise.ocr.Ocr;
+
 @Slf4j
 @Service
 @LineMessageHandler
@@ -247,17 +250,9 @@ public class ChatbotController
     @EventMapping
     public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event)
         throws IOException {
-
-        final MessageContentResponse response;
+        log.info("Get IMAGE message !!!!!!!!!!!!!!!!!!!!!!!!!!");
         String messageId = event.getMessage().getId();
         String replyToken = event.getReplyToken();
-        try {
-            response = lineMessagingClient.getMessageContent(messageId).get();
-        } catch (InterruptedException | ExecutionException e) {
-            log.info("Cannot get image: {}", e.getMessage());
-            throw new RuntimeException(e);
-        }
-        DownloadedContent jpg = saveContent("jpg", response);
         handleImageContent(replyToken, event, messageId);
     }
 
@@ -281,11 +276,27 @@ public class ChatbotController
      * Event Handler for Image
      */
     private void handleImageContent(String replyToken, Event event, String id) {
-        ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
-        parserMessageJSON.set("userId", event.getSource().getUserId())
-            .set("state", "Idle").set("replyToken", replyToken)
-            .setImageMessage(id);
-        publisher.publish(parserMessageJSON);
+        MessageContentResponse img;
+        try {
+            img = lineMessagingClient.getMessageContent(id).get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.info("cannot get image: " + e.getMessage());
+        }
+        DownloadedContent png = saveContent("png", img);
+        log.info("Get png uri {}", png.getUri());
+        Ocr.setUp(); // one time setup
+        Ocr ocr = new Ocr(); // create a new OCR engine
+        ocr.startEngine("eng", Ocr.SPEED_FASTEST); // English
+        String s = ocr.recognize(new File[] {new File(png.getUri())}
+        , Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT);
+        log.info("Result: " + s);
+        // ocr more images here ...
+        ocr.stopEngine();
+        //ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
+        // parserMessageJSON.set("userId", event.getSource().getUserId())
+        //     .set("state", "Idle").set("replyToken", replyToken)
+        //     .setImageMessage(png.getUri());
+        // publisher.publish(parserMessageJSON);
     }
 
     /* ------------------------ LOGIC START ------------------------ */
