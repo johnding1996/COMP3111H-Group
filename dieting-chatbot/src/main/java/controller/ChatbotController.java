@@ -253,7 +253,16 @@ public class ChatbotController
         log.info("Get IMAGE message !!!!!!!!!!!!!!!!!!!!!!!!!!");
         String messageId = event.getMessage().getId();
         String replyToken = event.getReplyToken();
-        handleImageContent(replyToken, event, messageId);
+        final MessageContentResponse response;
+        try {
+            response = lineMessagingClient.getMessageContent(messageId).get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.info("cannot get image: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+        DownloadedContent png = saveContent("png", response);
+        log.info("Get png uri {}", png.getUri());
+        handleImageContent(replyToken, event, png.getUri());
     }
 
     @EventMapping
@@ -275,19 +284,12 @@ public class ChatbotController
     /**
      * Event Handler for Image
      */
-    private void handleImageContent(String replyToken, Event event, String id) {
-        MessageContentResponse img;
-        try {
-            img = lineMessagingClient.getMessageContent(id).get();
-        } catch (InterruptedException | ExecutionException e) {
-            log.info("cannot get image: " + e.getMessage());
-        }
-        DownloadedContent png = saveContent("png", img);
-        log.info("Get png uri {}", png.getUri());
+    private void handleImageContent(String replyToken, Event event, String uri) {
+        
         Ocr.setUp(); // one time setup
         Ocr ocr = new Ocr(); // create a new OCR engine
         ocr.startEngine("eng", Ocr.SPEED_FASTEST); // English
-        String s = ocr.recognize(new File[] {new File(png.getUri())}
+        String s = ocr.recognize(new File[] {new File(uri)}
         , Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT);
         log.info("Result: " + s);
         // ocr more images here ...
