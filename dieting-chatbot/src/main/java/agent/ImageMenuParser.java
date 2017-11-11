@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import org.json.JSONArray;
@@ -24,13 +25,22 @@ public class ImageMenuParser{
      * @param url URL string to use
      * @return A JSON array
      */
-    public static String readJsonFromImage(String url)
+    public static String readJsonFromImage(String uri)
         throws IOException, JSONException {
-
+        
+        URL url = null;
+        
+        // handle Exception
+        try {
+            url = new URL(uri);
+        } catch (MalformedURLException e) {
+            System.out.println("The URL is not valid.");
+            System.out.println(e.getMessage());
+        }
         Ocr.setUp(); // one time setup
         Ocr ocr = new Ocr(); // create a new OCR engine
         ocr.startEngine("eng", Ocr.SPEED_FASTEST); // English
-        String s = ocr.recognize(new File[] {new File(url)}
+        String s = ocr.recognize(new URL[] {url}
         , Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT);
         log.info("Result: " + s);
         // ocr more images here ...

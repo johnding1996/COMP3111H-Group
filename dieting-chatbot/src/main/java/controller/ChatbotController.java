@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -251,7 +252,7 @@ public class ChatbotController
     @EventMapping
     public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event)
         throws IOException {
-        log.info("Get IMAGE message !!!!!!!!!!!!!!!!!!!!!!!!!!");
+        log.info("Get IMAGE message from user: {} !!!!!!!!!!!!!!!!!!!!!!!!!!", event.getSource().getUserId());
         String messageId = event.getMessage().getId();
         String replyToken = event.getReplyToken();
         final MessageContentResponse response;
@@ -261,6 +262,28 @@ public class ChatbotController
             log.info("cannot get image: " + e.getMessage());
             throw new RuntimeException(e);
         }
+        //TEST: store the image I uploaded in a static url
+        if(event.getSource().getUserId().equals("U60ee860ae5e086599f9e2baff5efcf15")) {
+            log.info("Get image sent from Lucis");
+            
+            Path bgPath = DietingChatbotApplication.staticPath.resolve("pikachu.png");
+            DownloadedContent background = new DownloadedContent(bgPath
+            , createUri("/static/" + bgPath.getFileName()));
+            // Boolean bool = background.createNewFile;
+            // log.info("File created: " + bool);
+            try (OutputStream outputStream = Files.newOutputStream(background.path)) {
+                ByteStreams.copy(response.getStream(), outputStream);
+                log.info("Saved pikachu: {}", background);
+                List<Message> messages = new ArrayList<Message>();
+                messages.add(new ImageMessage(background.getUri(), background.getUri()));
+                lineMessagingClient.replyMessage(new ReplyMessage(replyToken, messages));
+            } catch(IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return;
+        }
+
+
         DownloadedContent png = saveContent("png", response);
         log.info("Get png uri {}", png.getUri());
         handleImageContent(replyToken, event, png.getUri());
@@ -271,13 +294,29 @@ public class ChatbotController
         String replyToken = event.getReplyToken();
         String data = event.getPostbackContent().getData();
         log.info("Got postback " + data);
-        String[] msg = data.split("&");
-        switch(msg[0]){
+        String action = data.split("&")[0].split("=")[1];
+        String label = data.split("&")[1].split("=")[1];
+        switch(action) {
             case "Setting":
+                switch(label) {
+                    case "InitialSetting":
+                    case "ChangeWeight":
+                    case "SetGoal":
+                }
             break;
             case "MenuInput":
+                switch(label) {
+                    case "Text":
+                    case "URI":
+                    case "Image":
+                }
             break;
             case "Feedback":
+                switch(label) {
+                    case "DailyReport":
+                    case "WeeklyReport":
+                    case "GetChart":
+                }
             break;
         }
     }
@@ -511,7 +550,7 @@ public class ChatbotController
     }
 
 
-    static CarouselColumn setting = new CarouselColumn("https://example.com/bot/images/item1.jpg"
+    static CarouselColumn setting = new CarouselColumn("https://murmuring-headland-42797.herokuapp.com/static/pikachu.png"
     , "Setting"
     , "Configure your information by clicking on the buttons", 
     Arrays.asList(
