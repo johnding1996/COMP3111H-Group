@@ -16,7 +16,10 @@ Code Coverage (Master): [![codecov](https://codecov.io/gh/johnding1996/COMP3111H
 
 [JavaDoc](https://johnding1996.github.io/COMP3111H-Group/javadoc/index.html)
 
-### Github Wikis (Maybe not up-to-date)
+### JavaDoc CheckStyle
 
+[Checkstyle Main](https://johnding1996.github.io/COMP3111H-Group/checkstyle/main.html)
+
+[Checkstyle Test](https://johnding1996.github.io/COMP3111H-Group/checkstyle/test.html)
 
 ### Others
