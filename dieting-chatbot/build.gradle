@@ -18,6 +18,7 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'idea'
+apply plugin: 'checkstyle'
 
 dependencies {
     compile project(':line-bot-spring-boot')
@@ -78,4 +79,10 @@ jar {
     manifest {
         attributes 'Main-Class': 'controller.DietingChatbotApplication'
     }
+}
+
+checkstyle {
+    toolVersion "7.6.1"
+    ignoreFailures = true
+    configFile = rootProject.file('dieting-chatbot/config/checkstyle/checkstyle.xml')
 }

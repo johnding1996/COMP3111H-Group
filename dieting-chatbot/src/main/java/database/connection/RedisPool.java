@@ -26,7 +26,7 @@ public class RedisPool {
     }
 
     /**
-     * Initialization
+     * Initialization.
      */
     public static void initialization() {
         try {

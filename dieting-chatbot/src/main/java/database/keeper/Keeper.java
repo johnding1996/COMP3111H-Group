@@ -13,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public abstract class Keeper {
+    /**
+     * Jedis connection for this Keeper.
+     */
     protected Jedis jedis;
 
     /**

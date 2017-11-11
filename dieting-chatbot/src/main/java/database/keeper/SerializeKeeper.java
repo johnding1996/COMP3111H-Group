@@ -15,9 +15,13 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public abstract class SerializeKeeper extends Keeper {
+    /**
+     * The list of fields for corresponding SerializeKeeper.
+     */
     protected List<String> fields;
 
     /**
+     * Set a key with JSONObject value.
      * @param key key
      * @param json JSONObject
      * @return whether add successfully or not
@@ -25,6 +29,7 @@ public abstract class SerializeKeeper extends Keeper {
     public abstract boolean set(String key, JSONObject json);
 
     /**
+     * Get a JSONObject value of a key.
      * @param key key
      * @param number number of latest result to return
      * @return json JSONArray
@@ -32,12 +37,26 @@ public abstract class SerializeKeeper extends Keeper {
     public abstract JSONArray get(String key, int number);
 
 
+    /**
+     * Append a JSONObject to a list with specific key.
+     * @param prefix key field prefix
+     * @param key key
+     * @param json JSONObject to append with
+     * @return whether the appending operation is successful or not
+     */
     protected boolean appendList(String prefix, String key, JSONObject json) {
         // Check validity
         Long statusCodeReply = jedis.rpush(prefix + ":" + key, json.toString());
         return (statusCodeReply > 0);
     }
 
+    /**
+     * Get the latest several records of a list with specific key.
+     * @param prefix key field prefix
+     * @param key key
+     * @param number the number of latest records to get
+     * @return JSONArray as a list of latest several JSONObject records
+     */
     protected JSONArray rangeList(String prefix, String key, int number) {
         List<String> values = jedis.lrange(prefix + ":" + key, -number, -1);
         if (values == null) {
@@ -51,6 +70,12 @@ public abstract class SerializeKeeper extends Keeper {
         return jsonArray;
     }
 
+    /**
+     * Utility method to shallow check a JSONObject by a list of fields.
+     * @param jsonObject JSONObject to check
+     * @param fields a list of fields
+     * @return whether the JSONObject is valid or not
+     */
     protected boolean checkValitidy(JSONObject jsonObject, List<String> fields) {
         for (String field: fields) {
             if (!jsonObject.has(field)){
@@ -60,6 +85,12 @@ public abstract class SerializeKeeper extends Keeper {
         return true;
     }
 
+    /**
+     * Utility method to shallow check a JSONArray by checking its JSONObjects one by one.
+     * @param jsonArray JSONArray to check
+     * @param fields a list of fields
+     * @return whether the JSONArray is valid or not
+     */
     protected boolean checkValidity(JSONArray jsonArray, List<String> fields) {
         for (int i=0; i<jsonArray.length(); i++) {
             JSONObject jsonObject = jsonArray.getJSONObject(i);

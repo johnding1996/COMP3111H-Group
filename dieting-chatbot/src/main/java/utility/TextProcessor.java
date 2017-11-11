@@ -6,7 +6,7 @@ import java.util.List;
 
 public class TextProcessor {
     /**
-     * Get a list of words from a sentence
+     * Get a list of words from a sentence.
      * @param sentence A sentence in String
      * @return A list of lowercase word in String,
      *         ordered accordingly
