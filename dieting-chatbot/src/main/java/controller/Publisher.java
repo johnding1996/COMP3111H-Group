@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
+import utility.FormatterMessageJSON;
+import utility.ParserMessageJSON;
 
 /**
  * Publisher
@@ -23,9 +25,5 @@ public class Publisher {
 
     public void publish(ParserMessageJSON parserMessageJSON) {
         eventBus.notify("ParserMessageJSON", Event.wrap(parserMessageJSON));
-    }
-
-    @PostConstruct
-    public void registration() {
     }
 }

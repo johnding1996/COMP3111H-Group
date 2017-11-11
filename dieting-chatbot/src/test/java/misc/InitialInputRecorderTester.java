@@ -1,7 +1,5 @@
 package misc;
 
-import controller.FormatterMessageJSON;
-import controller.ParserMessageJSON;
 import controller.Publisher;
 import controller.TestConfiguration;
 import lombok.extern.slf4j.Slf4j;
@@ -18,14 +16,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import reactor.bus.Event;
+import utility.FormatterMessageJSON;
+import utility.ParserMessageJSON;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {UserInitialInputRecord.class})
+@SpringBootTest(classes = {InitialInputRecorder.class})
 @ContextConfiguration(classes = TestConfiguration.class)
-public class UserInitialInputRecordTester {
+public class InitialInputRecorderTester {
     @Autowired
-    private UserInitialInputRecord recorder;
+    private InitialInputRecorder recorder;
 
     @Autowired
     private Publisher publisher;
@@ -38,23 +38,23 @@ public class UserInitialInputRecordTester {
 
     @Test
     public void testValidateInput1() {
-        assert UserInitialInputRecord.validateInput("age", "20");
-        assert UserInitialInputRecord.validateInput("gender", "male");
-        assert UserInitialInputRecord.validateInput("weight", "55");
-        assert UserInitialInputRecord.validateInput("desiredWeight", "60");
-        assert UserInitialInputRecord.validateInput("height", "180");
-        assert UserInitialInputRecord.validateInput("goalDate", "3000-4-1");
+        assert InitialInputRecorder.validateInput("age", "20");
+        assert InitialInputRecorder.validateInput("gender", "male");
+        assert InitialInputRecorder.validateInput("weight", "55");
+        assert InitialInputRecorder.validateInput("desiredWeight", "60");
+        assert InitialInputRecorder.validateInput("height", "180");
+        assert InitialInputRecorder.validateInput("goalDate", "3000-4-1");
     }
 
     @Test
     public void testValidateInput2() {
-        assert !UserInitialInputRecord.validateInput("age", "-20");
-        assert !UserInitialInputRecord.validateInput("gender", "lema");
-        assert !UserInitialInputRecord.validateInput("weight", "100000");
-        assert !UserInitialInputRecord.validateInput("desiredWeight", "0.60");
-        assert !UserInitialInputRecord.validateInput("height", "3.14");
-        assert !UserInitialInputRecord.validateInput("goalDate", "3-4-1");
-        assert !UserInitialInputRecord.validateInput("invalidField", "foobar");
+        assert !InitialInputRecorder.validateInput("age", "-20");
+        assert !InitialInputRecorder.validateInput("gender", "lema");
+        assert !InitialInputRecorder.validateInput("weight", "100000");
+        assert !InitialInputRecorder.validateInput("desiredWeight", "0.60");
+        assert !InitialInputRecorder.validateInput("height", "3.14");
+        assert !InitialInputRecorder.validateInput("goalDate", "3-4-1");
+        assert !InitialInputRecorder.validateInput("invalidField", "foobar");
     }
 
     @Test
@@ -124,7 +124,7 @@ public class UserInitialInputRecordTester {
     }
 
     /**
-     * Add user to internal state of UserInitialInputRecord
+     * Add user to internal state of InitialInputRecorder
      * @param userId String of user Id
      */
     private void addUser(String userId) {
@@ -141,11 +141,8 @@ public class UserInitialInputRecordTester {
      */
     private Event<ParserMessageJSON> getParserMessageJSONEvent(
         String userId, String text) {
-        ParserMessageJSON psr = new ParserMessageJSON();
-        psr.set("userId", userId)
-           .set("replyToken", "314159")
-           .set("state", "InitialInput")
-           .setTextMessage("1234", text);
+        ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
+        psr.set("textContent", text);
         return new Event<>(null, psr);
     }
 
@@ -162,14 +159,9 @@ public class UserInitialInputRecordTester {
             public Void answer(InvocationOnMock invocation) {
                 FormatterMessageJSON fmt = invocation.getArgumentAt(0,
                     FormatterMessageJSON.class);
-                JSONArray messages = (JSONArray) fmt.get("messages");
+                JSONArray messages = fmt.getMessageArray();
                 String text = (String) messages.getJSONObject(0)
                     .get("textContent");
-                String transition = (String) fmt.get("stateTransition");
-                if (transition != null) {
-                    log.info("State transition: {}", transition);
-                    assert transition.equals("userInitialInput");
-                }
                 log.info("Reply Message: {}", text);
                 assert text.startsWith(prefix);
                 return null;
