@@ -83,5 +83,6 @@ jar {
 
 checkstyle {
     toolVersion "7.6.1"
+    ignoreFailures = true
     configFile = rootProject.file('dieting-chatbot/config/checkstyle/checkstyle.xml')
 }
