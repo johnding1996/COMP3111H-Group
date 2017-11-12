@@ -53,7 +53,7 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
     private static Map<String, Integer> menuCount = new HashMap<>();
 
     /**
-     * Change user state
+     * Change user state, for testing purpose
      * @param userId String of user Id
      * @param state New user state
      */
@@ -123,9 +123,9 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
         ParserMessageJSON psr = ev.getData();
 
         // only handle message if state is `AskPortion`
+        String userId = psr.get("userId");
         String currentState = psr.get("state");
         if (!currentState.equals("AskPortion")) {
-            String userId = psr.get("userId");
             if (userStates.containsKey(userId))
                 userStates.remove(userId);
             if (menuCount.containsKey(userId))
@@ -134,7 +134,6 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
         }
 
         log.info("Entering user meal portion-asker handler");
-        String userId = psr.get("userId");
 
         // if the input is not text
         if(!psr.getMessageType().equals("text")) {
@@ -171,7 +170,7 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
             String update = psr.getTextContent().toLowerCase();
             if(update.equals("yes")){
                 response.appendTextMessage("Okay, so give me about your update in this format: " +
-                        "1:100, 'dish index':'portion in gram'");
+                        "'dish index':'portion in gram', such as 1:100");
                 response.appendTextMessage("Typically, an apple is around 100g");
                 response.appendTextMessage("Note that if you finish all updates you desired, " +
                         "you just need to type 'leave' to end the session");
@@ -190,10 +189,32 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
             if (info.equals("leave")){
                 userStates.remove(userId);
                 menuCount.remove(userId);
-                response.appendTextMessage("Alright, we are going to process your update");
+                response.appendTextMessage("Alright, we are going to process your update")
+                        .set("stateTransition", "confirmMeal");
             }
             else{
-                //TODO
+                int menuNum = menuCount.get(userId).intValue();
+                String[] portion = psr.getTextContent().split(";");
+                boolean done = true;
+                if (!Validator.isInteger(portion[0]))
+                    done = false;
+                else if (!Validator.isInteger(portion[1]))
+                    done = false;
+                int index = Integer.parseInt(portion[0]);
+                int port = Integer.parseInt(portion[1]);
+                if (index < 1 || index > menuNum)
+                    done = false;
+                else if (port < 1 || port > 7000)
+                    done = false;
+
+                if (!done) {
+                    response.appendTextMessage("Plz enter in this format, " +
+                            "'dish index':'portion in gram', " +
+                            "both of the number shall be integer. " +
+                            "Or type 'leave' if no more update desired.");
+                }
+                else
+                    updateDatabase(index, port, userId);
             }
         }
         publisher.publish(response);
