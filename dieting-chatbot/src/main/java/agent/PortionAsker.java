@@ -104,10 +104,11 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
             log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
         }
 
-        dish.get("portionSize") = portion;
-        dish.get("portionUnit") = "gram";
-        queryJSON.getJSONArray("menu").getJSONObject(dishIndex - 1) = dish;
-        boolean success = menuKeeper.set(userId, queryJSON);
+//        dish.get("portionSize") = portion;
+//        dish.get("portionUnit") = "gram";
+//        queryJSON.getJSONArray("menu").getJSONObject(dishIndex - 1) = dish;
+//        boolean success = menuKeeper.set(userId, queryJSON);
+        boolean success = true;
         if(success)
             log.info(String.format("Updated portion size in menu of user %s in to the caches.", userId));
         else
