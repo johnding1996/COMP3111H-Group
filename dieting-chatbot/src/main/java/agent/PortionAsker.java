@@ -171,7 +171,7 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
             String update = psr.getTextContent().toLowerCase();
             if(update.equals("yes")){
                 response.appendTextMessage("Okay, so give me about your update in this format: " +
-                        "1:100g, 'dish index':'portion in gram'");
+                        "1:100, 'dish index':'portion in gram'");
                 response.appendTextMessage("Typically, an apple is around 100g");
                 response.appendTextMessage("Note that if you finish all updates you desired, " +
                         "you just need to type 'leave' to end the session");
