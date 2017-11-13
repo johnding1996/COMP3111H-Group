@@ -11,5 +11,13 @@
             "description": "LINE bot Channel secret from the Channel Console",
             "required":  true
         }
-    }
+    },
+    "addons": [
+        {
+            "plan": "heroku-redis:hobby-dev"
+        },
+        {
+            "plan": "heroku-postgresql:hobby-dev"
+        }
+    ]
 }
