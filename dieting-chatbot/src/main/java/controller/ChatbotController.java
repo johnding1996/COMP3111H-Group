@@ -14,9 +14,15 @@ import com.linecorp.bot.model.message.Message;
 import com.linecorp.bot.model.message.TextMessage;
 import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
+
+import agent.IntentionClassifier;
+
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import utility.Validator;
 import utility.FormatterMessageJSON;
 import utility.ParserMessageJSON;
@@ -45,6 +51,8 @@ public class ChatbotController
 
     private HashMap<String, State> states = new HashMap<>();
 
+    private HashMap<String, ScheduledFuture<?>> noReplyFutures = new HashMap<>();
+
     @Autowired(required = false)
     private LineMessagingClient lineMessagingClient;
 
@@ -57,9 +65,10 @@ public class ChatbotController
     @Autowired
     private TaskScheduler taskScheduler;
 
-    private static final boolean debugFlag = true;
-    public static final String DEBUG_COMMAND_PREFIX = "$$$";
-    private static final int NO_REPLY_TIMEOUT = 3;
+    @Autowired(required = false)
+    private IntentionClassifier classifier;
+
+    private static final int NO_REPLY_TIMEOUT = 1;
  
     /**
      * Register on eventBus.
@@ -68,7 +77,7 @@ public class ChatbotController
     public void init() {
         if (eventBus != null) {
             eventBus.on($("FormatterMessageJSON"), this);
-            log.info("Register FormatterMessageJSON on eventBus");
+            log.info("ChatbotController register on eventBus");
         }
     }
 
@@ -80,6 +89,11 @@ public class ChatbotController
     public void accept(Event<FormatterMessageJSON> ev) {
         FormatterMessageJSON fmt = ev.getData();
         String userId = fmt.getUserId();
+        if (noReplyFutures.containsKey(userId)) {
+            ScheduledFuture<?> future = noReplyFutures.remove(userId);
+            if (future != null) future.cancel(false);
+            log.info("No reply future cancelled for user {}", userId);
+        }
 
         // build message list
         List<Message> messages = new ArrayList<>();
@@ -123,21 +137,38 @@ public class ChatbotController
         int endIndex = userId.length();
         userId = userId.substring(1, endIndex);
 
+        log.info("textContent: {}", textContent);
+
         // construct user state
         if (!states.containsKey(userId)) {
             states.put(userId, State.IDLE);
         }
 
-        // test
-        if (getUserState(userId) == State.IDLE) {
-            setUserState(userId, State.INITIAL_INPUT);
+        // cancel session?
+        if (textContent.equals("CANCEL")) {
+            log.info("Session cancelled by user {}", userId);
+            setUserState(userId, State.IDLE);
+
+            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+            fmt.appendTextMessage("OK, the session is cancelled.");
+            publisher.publish(fmt);
+            return;
         }
 
         // publish message
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.set("messageId", messageId)
            .set("textContent", textContent);
-        publisher.publish(psr);
+        registerNoReplyCallback(userId);
+        if (getUserState(userId) != State.IDLE) {
+            publisher.publish(psr);
+        } else {
+            // Prevent race condition
+            Event<ParserMessageJSON> ev = new Event<>(null, psr);
+            if (classifier != null) {
+                classifier.accept(ev);
+            }
+        }
     }
 
     /**
@@ -155,21 +186,111 @@ public class ChatbotController
     }
 
     /**
-     * Set state of a user, register timeout callback, and publish the transition
-     * @param userId String of user Id
-     * @param newState New state for the user
-     * @return A boolean indicating whether set state succeed
+     * Set state of a user, register timeout callback, and publish the transition.
+     * @param userId String of user Id.
+     * @param newState New state for the user.
+     * @return A boolean indicating whether set state succeed.
      */
     public boolean setUserState(String userId, State newState) {
         if (states.containsKey(userId)) {
-            if (states.get(userId) != newState) {
-                ParserMessageJSON psr = new ParserMessageJSON(userId, "transition");
-                publisher.publish(psr);
+            State currentState = states.get(userId);
+            if (currentState == newState) {
+                log.info("State will not change for user {}", userId);
+                return false;
+            }
+            log.info("State of user {} changed to {}", userId, newState.toString());
+            try {
+                // prevent race condition
+                // Message handled by one agent module will not be handled by another
+                Thread.sleep(600);
+            } catch (Exception e) {
+                log.info(e.toString());
             }
             states.put(userId, newState);
+            ParserMessageJSON psr = new ParserMessageJSON(userId, "transition");
+            // prevent null value
+            psr.set("textContent", "")
+               .set("messageId", "");
+            publisher.publish(psr);
+            taskScheduler.schedule(getTimeoutCallback(userId,
+                newState, newState==State.RECOMMEND?State.RECORD_MEAL:State.IDLE),
+                State.getTimeoutDate());
             return true;
         } else {
+            log.info("No such user {}", userId);
             return false;
         }
+    }
+
+    /**
+     * Helper function returning callback function for timeout event.
+     * @param userId String of user Id.
+     * @param currentState Current state of user when the function is called.
+     *                     Must not be State.INVALID.
+     * @param nextState The next state of the user when timeout happens.
+     * @return A runnable object as callback function.
+     */
+    private Runnable getTimeoutCallback(String userId,
+        State currentState, State nextState) {
+        return new Runnable() {
+            @Override
+            public void run() {
+                State state = getUserState(userId);
+                if (currentState != state) return;
+                if (nextState == State.INVALID) {
+                    states.remove(userId);
+                    log.info("Remove state of user {}", userId);
+                } else {
+                    setUserState(userId, nextState);
+                }
+            }
+        };
+    }
+
+    private static final String[] replies = {
+        "Sorry, but I don't understand what you said.",
+        "Oops, that is complicated for me.",
+        "Well, that doesn't make sense to me.",
+        "Well, I really do not understand that."
+    };
+    /**
+     * Register no-reply callback for user input.
+     * If no agent module replies the user, the controller will reply default message.
+     * @param userId String of user Id.
+     */
+    private void registerNoReplyCallback(String userId) {
+        // cancel previous callback
+        if (noReplyFutures.containsKey(userId)) {
+            ScheduledFuture<?> future = noReplyFutures.get(userId);
+            if (future != null) future.cancel(false);
+            log.info("Cancel previous no reply callback for user {}", userId);
+        }
+        noReplyFutures.put(userId, taskScheduler.schedule(
+            new Runnable() {
+                @Override
+                public void run() {
+                    FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+                    int randomNum = ThreadLocalRandom.current()
+                        .nextInt(0, replies.length);
+                    fmt.appendTextMessage(replies[randomNum]); // general reply
+                    State state = getUserState(userId);
+                    switch (state) {
+                        case IDLE:
+                        fmt.appendTextMessage("To set your personal info, " +
+                            "send 'setting'.\nIf you want to obtain recommendation, " +
+                            "please say 'recommendation'.\n" +
+                            "You can aways cancel an operation by saying 'CANCEL'");
+                        break;
+
+                        default:
+                        fmt.appendTextMessage("You could cancel the session by saying CANCEL");
+                        break;
+                    }
+                    publisher.publish(fmt);
+                    noReplyFutures.remove(userId);
+                }
+            },
+            new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));
+        log.info("Register new no reply callback for user {}", userId);
     }
 }

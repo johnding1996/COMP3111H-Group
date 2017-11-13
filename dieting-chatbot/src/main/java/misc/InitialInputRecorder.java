@@ -55,7 +55,7 @@ public class InitialInputRecorder
     public void init() {
         if (eventBus != null) {
             eventBus.on($("ParserMessageJSON"), this);
-            log.info("UserInitialInputRecord register on event bus");
+            log.info("InitialInputRecorder register on event bus");
         }
     }
     
@@ -136,14 +136,13 @@ public class InitialInputRecorder
 
         // Is it my duty?
         String userId = psr.getUserId();
-        State globalState = controller==null?
-            State.INVALID:controller.getUserState(userId);
-        if (globalState != State.INITIAL_INPUT ||
-            psr.getType() == "transition") {
+        State globalState = controller==null ?
+            State.INVALID : controller.getUserState(userId);
+        if (globalState != State.INITIAL_INPUT) {
             // not my duty, clean up if needed
             if (states.containsKey(userId)) {
-                log.info("Clear user {}", userId);
                 states.remove(userId);
+                log.info("Clear user {}", userId);
             }
             return;
         }
@@ -153,8 +152,8 @@ public class InitialInputRecorder
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         publisher.publish(fmt);
 
-        // if the input is not text
-        if(!psr.getType().equals("text")) {
+        // if the input is image
+        if(psr.getType().equals("image")) {
             FormatterMessageJSON response = new FormatterMessageJSON(userId);
             response.appendTextMessage(
                         "Please input some text at this moment ~");
@@ -223,6 +222,7 @@ public class InitialInputRecorder
 
                     // remove user, and notify state transition
                     states.remove(userId);
+                    log.info("Internal state for user {} removed", userId);
                     if (controller != null)
                         controller.setUserState(userId, State.IDLE);
                     break;
@@ -234,9 +234,9 @@ public class InitialInputRecorder
     }
 
     /**
-     * Set the state of a given user
-     * @param userId String of user Id
-     * @param stateIndex index of the new state
+     * Set the state of a given user.
+     * @param userId String of user Id.
+     * @param stateIndex index of the new state.
      */
     public void setUserState(String userId, int stateIndex) {
         if (!states.containsKey(userId)) {
@@ -250,9 +250,9 @@ public class InitialInputRecorder
     }
 
     /**
-     * Get the state of a given user
-     * @param userId String of user Id
-     * @return A String of the current state, null of no such user
+     * Get the state of a given user.
+     * @param userId String of user Id.
+     * @return A String of the current state, null if no such user.
      */
     public String getUserState(String userId) {
         if (!states.containsKey(userId)) return null;
@@ -260,14 +260,14 @@ public class InitialInputRecorder
     }
 
     /**
-     * Clear all user states
+     * Clear all user states.
      */
     public void clearUserStates() {
         states.clear();
     }
 
     /**
-     * Inner class for tracking user interaction
+     * Inner class for tracking user interaction.
      */
     class UserInitialState {
         private int stateIndex;

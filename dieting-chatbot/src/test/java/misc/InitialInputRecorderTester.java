@@ -58,17 +58,6 @@ public class InitialInputRecorderTester {
     }
 
     @Test
-    public void testStateGetterSetter() {
-        String userId = "agong";
-        recorder.clearUserStates();
-        recorder.setUserState(userId, 2);
-        assert recorder.getUserState(userId) == null;
-        addUser(userId);
-        recorder.setUserState(userId, 2);
-        assert recorder.getUserState(userId).equals("gender");
-    }
-
-    @Test
     public void testAccept1() {
         recorder.clearUserStates();
         Event<ParserMessageJSON> ev =
@@ -79,6 +68,7 @@ public class InitialInputRecorderTester {
         Mockito.reset(publisher);
     }
 
+    /*
     @Test
     public void testAccept2() {
         String userId = "szhouan";
@@ -99,7 +89,7 @@ public class InitialInputRecorderTester {
         checkStateTransition(userId, "Rah", "Please input", "2020-12-31",
             "Great! I now", "goalDate", null);
         Mockito.reset(publisher);
-    }
+    }*/
 
     /**
      * Wrapper for tracking internal state transition

@@ -65,7 +65,7 @@ public class StateKeeper extends Keeper {
         }
         // Check validity
         if (!checkValidity(state)) {
-            log.error(String.format("Invalid state string %s when handling state loading for user %d", state, key));
+            log.error(String.format("Invalid state string %s when handling state loading for user %s", state, key));
             // If invalid value is found, delete key and return null
             jedis.del(KEY_PREFIX + ":" + key);
             return null;
