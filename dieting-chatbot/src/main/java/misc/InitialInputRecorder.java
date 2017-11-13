@@ -10,11 +10,10 @@ import java.text.SimpleDateFormat;
 import java.lang.Integer;
 import org.json.JSONObject;
 
-import controller.ParserMessageJSON;
 import controller.Publisher;
-import database.querier.UserQuerier;
+import controller.State;
 import controller.ChatbotController;
-import controller.FormatterMessageJSON;
+import database.querier.UserQuerier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -24,14 +23,20 @@ import reactor.fn.Consumer;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import javax.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import utility.FormatterMessageJSON;
+import utility.ParserMessageJSON;
 import utility.TextProcessor;
 import utility.Validator;
 
-import lombok.extern.slf4j.Slf4j;
-
+/**
+ * UserInitialInputRecorder: add user initial input.
+ * @author cliubf, szhouan
+ * @version v2.0.0
+ */
 @Slf4j
 @Component
-public class UserInitialInputRecord
+public class InitialInputRecorder
     implements Consumer<Event<ParserMessageJSON>> {
 
     @Autowired
@@ -40,20 +45,26 @@ public class UserInitialInputRecord
     @Autowired
     private Publisher publisher;
 
+    @Autowired(required = false)
+    private ChatbotController controller;
+
+    /**
+     * Register on eventBus.
+     */
     @PostConstruct
     public void init() {
         if (eventBus != null) {
             eventBus.on($("ParserMessageJSON"), this);
-            log.info("UserInitialInputRecord register on event bus");
+            log.info("InitialInputRecorder register on event bus");
         }
     }
     
     // User state tracking for interaction
-    private static HashMap<String, UserInitialState> userStates =
+    private static HashMap<String, UserInitialState> states =
         new HashMap<String, UserInitialState>();
     
     /**
-     * Validate user input
+     * Validate user input.
      * @param type The type of information.
      *             Should be one of "age", "gender", "weight", "desiredWeight",
      *             "height", "due"
@@ -97,9 +108,10 @@ public class UserInitialInputRecord
     }
     
     /**
-     * add userInfo to database if everything is correct
+     * Add userInfo to database if everything is correct.
+     * @param u state variable for the user.
      */
-    public void addDatabase(UserInitialState u) {
+    private void addDatabase(UserInitialState u) {
         JSONObject userJSON = new JSONObject();
         userJSON.put("id", u.id);
         userJSON.put("age", u.age);
@@ -114,60 +126,51 @@ public class UserInitialInputRecord
         UserQuerier querier = new UserQuerier();
         querier.add(userJSON);
         querier.close();
-        
-        userStates.remove(u.id);
     }
     
     /**
-     * Event handler for ParserMessageJSON
+     * Event handler for ParserMessageJSON.
      * @param ev Event object
      */
     public void accept(Event<ParserMessageJSON> ev) {
         ParserMessageJSON psr = ev.getData();
 
-        // only handle message if state is `InitialInput`
-        String currentState = psr.get("state");
-        if (!currentState.equals("InitialInput")) {
-            String userId = psr.get("userId");
-            if (userStates.containsKey(userId))
-                userStates.remove(userId);
+        // Is it my duty?
+        String userId = psr.getUserId();
+        State globalState = controller==null ?
+            State.INVALID : controller.getUserState(userId);
+        if (globalState != State.INITIAL_INPUT) {
+            // not my duty, clean up if needed
+            if (states.containsKey(userId)) {
+                states.remove(userId);
+                log.info("Clear user {}", userId);
+            }
             return;
         }
 
+        // Acknowledge that the psr is handled
         log.info("Entering user initial input handler");
-        String userId = psr.get("userId");
-        String replyToken = psr.get("replyToken");
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        publisher.publish(fmt);
 
-        // if the input is not text
-        if(!psr.getMessageType().equals("text")) {
-            FormatterMessageJSON response = new FormatterMessageJSON();
-            response.set("userId", userId)
-                    .set("type", "reply")
-                    .set("replyToken", replyToken)
-                    .appendTextMessage(
+        // if the input is image
+        if(psr.getType().equals("image")) {
+            FormatterMessageJSON response = new FormatterMessageJSON(userId);
+            response.appendTextMessage(
                         "Please input some text at this moment ~");
             publisher.publish(response);
             log.info("Cannot handle image message");
             return;
         }
 
-        // skip state transition message
-        if (psr.getTextContent().equals(
-            ChatbotController.DEBUG_COMMAND_PREFIX))
-            return;
-        
         // register user if it is new
-        if (!userStates.containsKey(userId)) {
+        if (!states.containsKey(userId)) {
             log.info("register new user {}", userId);
-            userStates.put(userId, new UserInitialState(userId));
+            states.put(userId, new UserInitialState(userId));
         }
-        UserInitialState user = userStates.get(userId);
-        FormatterMessageJSON response = new FormatterMessageJSON();
-        response.set("userId", userId)
-                .set("type", "reply")
-                .set("replyToken", replyToken);
-        log.info(psr.toString());
-        if (!validateInput(user.getState(), psr.getTextContent())) {
+        UserInitialState user = states.get(userId);
+        FormatterMessageJSON response = new FormatterMessageJSON(userId);
+        if (!validateInput(user.getState(), psr.get("textContent"))) {
             response.appendTextMessage(
                 "Please input a valid value according to instruction");
         } else {
@@ -178,13 +181,13 @@ public class UserInitialInputRecord
                         "Give me an integer please ~");
                     break;
                 case "age":
-                    user.age = Integer.parseInt(psr.getTextContent());
+                    user.age = Integer.parseInt(psr.get("textContent"));
                     response.appendTextMessage(
                         "Tell me your gender please, type in 'male' or 'female'");
                     break;
                 case "gender":
                     List<String> words = TextProcessor.sentenceToWords(
-                        psr.getTextContent());
+                        psr.get("textContent"));
                     boolean isMale = true;
                     for (String word : words) {
                         if (word.equals("female") || word.equals("woman")) {
@@ -197,27 +200,32 @@ public class UserInitialInputRecord
                         "Just simply give me an integer (in terms of kg)");
                     break;
                 case "weight":
-                    user.weight = Integer.parseInt(psr.getTextContent());
+                    user.weight = Integer.parseInt(psr.get("textContent"));
                     response.appendTextMessage("How about the height in cm?");
                     break;
                 case "height":
-                    user.height = Integer.parseInt(psr.getTextContent());
+                    user.height = Integer.parseInt(psr.get("textContent"));
                     response.appendTextMessage(
                         "Emmm... What is your desired weight?" +
                         "(give an integer in terms of kg)");
                     break;
                 case "desiredWeight":
-                    user.desiredWeight = Integer.parseInt(psr.getTextContent());
+                    user.desiredWeight = Integer.parseInt(psr.get("textContent"));
                     response.appendTextMessage(
                         "Alright, now tell when you want to finish this goal? " +
                         "(type in yyyy-mm-dd format)");
                     break;
                 case "goalDate":
-                    user.goalDate = psr.getTextContent();
-                    response.set("stateTransition", "userInitialInput")
-                            .appendTextMessage(
+                    user.goalDate = psr.get("textContent");
+                    response.appendTextMessage(
                         "Great! I now understand what you need!");
                     addDatabase(user);
+
+                    // remove user, and notify state transition
+                    states.remove(userId);
+                    log.info("Internal state for user {} removed", userId);
+                    if (controller != null)
+                        controller.setUserState(userId, State.IDLE);
                     break;
                 default:
             }
@@ -227,40 +235,40 @@ public class UserInitialInputRecord
     }
 
     /**
-     * Set the state of a given user
-     * @param userId String of user Id
-     * @param stateIndex index of the new state
+     * Set the state of a given user.
+     * @param userId String of user Id.
+     * @param stateIndex index of the new state.
      */
     public void setUserState(String userId, int stateIndex) {
-        if (!userStates.containsKey(userId)) {
+        if (!states.containsKey(userId)) {
             log.info("Set state for nonexisting user {}", userId);
             return;
         }
-        UserInitialState u = userStates.get(userId);
+        UserInitialState u = states.get(userId);
         u.setState(stateIndex);
         log.info("Overriding state of user {} to {}", userId,
             u.getState());
     }
 
     /**
-     * Get the state of a given user
-     * @param userId String of user Id
-     * @return A String of the current state, null of no such user
+     * Get the state of a given user.
+     * @param userId String of user Id.
+     * @return A String of the current state, null if no such user.
      */
     public String getUserState(String userId) {
-        if (!userStates.containsKey(userId)) return null;
-        else return userStates.get(userId).getState();
+        if (!states.containsKey(userId)) return null;
+        else return states.get(userId).getState();
     }
 
     /**
-     * Clear all user states
+     * Clear all user states.
      */
     public void clearUserStates() {
-        userStates.clear();
+        states.clear();
     }
 
     /**
-     * Inner class for tracking user interaction
+     * Inner class for tracking user interaction.
      */
     class UserInitialState {
         private int stateIndex;

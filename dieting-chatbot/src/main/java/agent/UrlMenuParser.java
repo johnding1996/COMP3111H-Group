@@ -13,14 +13,18 @@ import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * UrlMenuParser: parser menu from URL.
+ * @author cliubf, szhouan
+ * @version v1.0.0
+ */
 @Slf4j
 @Component
 public class UrlMenuParser {
-
     /**
-     * Read String from a Reader
-     * @param rd The Reader to use
-     * @return The String read from rd
+     * Read String from a Reader.
+     * @param rd The Reader to use.
+     * @return The String read from rd.
      */
     private static String readAll(Reader rd) throws IOException {
         StringBuilder sb = new StringBuilder();
@@ -32,9 +36,11 @@ public class UrlMenuParser {
     }
 
     /**
-     * Parse JSON object from url
-     * @param url URL string to use
-     * @return A JSON array
+     * Parse JSON object from url.
+     * @param url URL string to use.
+     * @return A JSON array.
+     * @throws IOException if error occurs in stream input.
+     * @throws JSONException if error occurs in building JSONArray.
      */
     public static JSONArray readJsonFromUrl(String url)
         throws IOException, JSONException {
@@ -52,9 +58,9 @@ public class UrlMenuParser {
     }
 
     /**
-     * Build menu information from JSON array
-     * @param arr A JSON array
-     * @return A JSON array; null if no dish is successfully parsed
+     * Build menu information from JSON array.
+     * @param arr A JSON array.
+     * @return A JSON array; null if no dish is successfully parsed.
      */
     public static JSONArray buildMenu(JSONArray arr) {
         JSONArray ret = new JSONArray();
@@ -80,17 +86,16 @@ public class UrlMenuParser {
     }
 
     /**
-     * Build menu information from given URL
-     * @param url String of URL
-     * @return A JSON array; null if no dish is successfully parsed
+     * Build menu information from given URL.
+     * @param url String of URL.
+     * @return A JSON array; null if no dish is successfully parsed.
      */
     public static JSONArray buildMenu(String url) {
         try {
             JSONArray arr = readJsonFromUrl(url);
             return buildMenu(arr);
         } catch (Exception e) {
-            log.info("Error in parsing JSON from the given URL: {}",
-                url);
+            log.info("Error in parsing JSON from the given URL: {}", url);
             return null;
         }
     }
