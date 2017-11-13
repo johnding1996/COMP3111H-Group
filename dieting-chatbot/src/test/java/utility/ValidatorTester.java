@@ -74,6 +74,7 @@ public class ValidatorTester {
     public void isFutureDate() {
         assert Validator.isFutureDate("3000-1-1", "yyyy-MM-dd");
         assert Validator.isFutureDate("5000-12-31", "yyyy-MM-dd");
+        assert !Validator.isFutureDate("2017-13-100", "yyyy-MM-dd");
         assert !Validator.isFutureDate("1500-3-1", "yyyy-MM-dd");
         assert !Validator.isFutureDate("1998-8-14", "yyyy-MM-dd");
         assert !Validator.isFutureDate("Not a date", "yyyy-MM-dd");

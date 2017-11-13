@@ -205,10 +205,14 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
                 response.appendTextMessage("Your input is not an integer");
             } else {
                 int portionSize = Integer.parseInt(textContent);
-                response.appendTextMessage(
-                    String.format("So you have eaten %d gram of the dish", portionSize))
-                        .appendTextMessage("One more question: what is your weight now?");
-                states.put(userId, state+1);
+                if (portionSize <= 0) {
+                    response.appendTextMessage("Your input is invalid");
+                } else {
+                    response.appendTextMessage(
+                        String.format("So you have eaten %d gram of the dish", portionSize))
+                            .appendTextMessage("One more question: what is your weight now?");
+                    states.put(userId, state+1);
+                }
             }
         } else if (state == 3) {
             String textContent = psr.get("textContent");

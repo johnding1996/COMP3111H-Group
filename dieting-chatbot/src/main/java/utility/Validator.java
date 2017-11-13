@@ -85,6 +85,7 @@ public class Validator {
     public static boolean isFutureDate(String str, String format) {
         try {
             SimpleDateFormat sdf = new SimpleDateFormat(format);
+            sdf.setLenient(false);
             Date future = sdf.parse(str);
             Date today = new Date();
             log.info(future.toString());
