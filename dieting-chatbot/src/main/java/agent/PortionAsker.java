@@ -178,6 +178,8 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
             else if(update.equals("no")){
                 userStates.remove(userId);
                 menuCount.remove(userId);
+                response.appendTextMessage("Alright, let's move on")
+                        .set("stateTransition", "confirmMeal");
             }
             else
                 response.appendTextMessage("Sorry, I'm not sure about this. " +
@@ -212,8 +214,10 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
                             "both of the number shall be integer. " +
                             "Or type 'leave' if no more update desired.");
                 }
-                else
+                else{
                     updateDatabase(index, port, userId);
+                    response.appendTextMessage("Roger this ~");
+                }
             }
         }
         publisher.publish(response);
