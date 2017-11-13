@@ -20,7 +20,7 @@ import reactor.bus.Event;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {ConfirmFood.class})
+@SpringBootTest(classes = {PortionAsker.class})
 @ContextConfiguration(classes = TestConfiguration.class)
 public class PortionAskerTester {
     @Autowired
