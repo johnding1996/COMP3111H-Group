@@ -1,118 +1,49 @@
 package controller;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
-import com.linecorp.bot.model.profile.UserProfileResponse;
-
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import com.google.common.io.ByteStreams;
-
 import com.linecorp.bot.client.LineMessagingClient;
-import com.linecorp.bot.client.MessageContentResponse;
-import com.linecorp.bot.model.ReplyMessage;
-import com.linecorp.bot.model.action.MessageAction;
-import com.linecorp.bot.model.action.PostbackAction;
-import com.linecorp.bot.model.action.URIAction;
-import com.linecorp.bot.model.event.BeaconEvent;
-import com.linecorp.bot.model.event.Event;
-import com.linecorp.bot.model.event.FollowEvent;
-import com.linecorp.bot.model.event.JoinEvent;
+import com.linecorp.bot.model.PushMessage;
 import com.linecorp.bot.model.event.MessageEvent;
-import com.linecorp.bot.model.event.PostbackEvent;
-import com.linecorp.bot.model.event.UnfollowEvent;
-import com.linecorp.bot.model.event.message.AudioMessageContent;
-import com.linecorp.bot.model.event.message.ImageMessageContent;
-import com.linecorp.bot.model.event.message.LocationMessageContent;
-import com.linecorp.bot.model.event.message.StickerMessageContent;
 import com.linecorp.bot.model.event.message.TextMessageContent;
-import com.linecorp.bot.model.event.source.GroupSource;
-import com.linecorp.bot.model.event.source.RoomSource;
-import com.linecorp.bot.model.event.source.Source;
-import com.linecorp.bot.model.message.AudioMessage;
 import com.linecorp.bot.model.message.ImageMessage;
-import com.linecorp.bot.model.message.ImagemapMessage;
-import com.linecorp.bot.model.message.LocationMessage;
 import com.linecorp.bot.model.message.Message;
-import com.linecorp.bot.model.message.StickerMessage;
-import com.linecorp.bot.model.message.TemplateMessage;
 import com.linecorp.bot.model.message.TextMessage;
-import com.linecorp.bot.model.message.imagemap.ImagemapArea;
-import com.linecorp.bot.model.message.imagemap.ImagemapBaseSize;
-import com.linecorp.bot.model.message.imagemap.MessageImagemapAction;
-import com.linecorp.bot.model.message.imagemap.URIImagemapAction;
-import com.linecorp.bot.model.message.template.ButtonsTemplate;
-import com.linecorp.bot.model.message.template.CarouselColumn;
-import com.linecorp.bot.model.message.template.CarouselTemplate;
-import com.linecorp.bot.model.message.template.ConfirmTemplate;
-import com.linecorp.bot.model.response.BotApiResponse;
 import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
-
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import utility.Validator;
+import utility.FormatterMessageJSON;
+import utility.ParserMessageJSON;
 import utility.TextProcessor;
-
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-
-import reactor.Environment;
+import reactor.bus.Event;
 import reactor.bus.EventBus;
+import reactor.fn.Consumer;
 
 import static reactor.bus.selector.Selectors.$;
-
 import javax.annotation.PostConstruct;
-import java.net.URI;
 
-import java.util.concurrent.ThreadLocalRandom;
-
-import utility.Validator;
-
+/**
+ * ChatbotController: interfacing with LINE API, handle global state transition.
+ * @author szhouan
+ * @version v2.0.0
+ */
 @Slf4j
 @Service
 @LineMessageHandler
 public class ChatbotController
-    implements reactor.fn.Consumer<reactor.bus.Event<
+    implements Consumer<reactor.bus.Event<
         FormatterMessageJSON>> {
 
-    private HashMap<String, StateMachine> stateMachines = new
-        HashMap<String, StateMachine>();
-    private HashMap<String, ScheduledFuture<?>> noReplyFutures = new
-        HashMap<String, ScheduledFuture<?>>();
+    private HashMap<String, State> states = new HashMap<>();
 
     @Autowired(required = false)
     private LineMessagingClient lineMessagingClient;
@@ -121,75 +52,70 @@ public class ChatbotController
     private Publisher publisher;
 
     @Autowired
-    private Formatter formatter;
-
-    @Autowired
     private EventBus eventBus;
 
     @Autowired
-    public TaskScheduler taskScheduler;
+    private TaskScheduler taskScheduler;
 
     private static final boolean debugFlag = true;
     public static final String DEBUG_COMMAND_PREFIX = "$$$";
     private static final int NO_REPLY_TIMEOUT = 3;
  
     /**
-     * Register on eventBus
+     * Register on eventBus.
      */
     @PostConstruct
     public void init() {
         if (eventBus != null) {
-            log.info("Register FormatterMessageJSON on eventBus");
             eventBus.on($("FormatterMessageJSON"), this);
-        }
-    }
-
-    @Scheduled(cron = "0 0 20 * * *", zone = "GMT+08")
-    public void askWeight() {
-        log.info("AskForWeight: **************************");
-        List<String> userIdList = getUserIdList();
-        for (String userId : userIdList) {
-            toNextState(userId, "askWeightTrigger");
-            String state = getStateMachine(userId).getState();
-            ParserMessageJSON psr = new ParserMessageJSON();
-            psr.set("userId", userId)
-               .set("state", state);
-            publisher.publish(psr);
+            log.info("Register FormatterMessageJSON on eventBus");
         }
     }
 
     /**
-     * EventBus FormatterMessageJSON event handle
+     * EventBus FormatterMessageJSON event handler.
+     * Send LINE message if required.
      * @param ev FormatterMessageJSON event
      */
-    public void accept(reactor.bus.Event<FormatterMessageJSON> ev) {
-        FormatterMessageJSON formatterMessageJSON = ev.getData();
-        log.info("\nChatbotController:\n" + formatterMessageJSON.toString());
-        
-        String userId = (String)formatterMessageJSON.get("userId");
-        /* Handle state transition if any */
-        if (formatterMessageJSON.get("stateTransition") != null) {
-            String transition = (String)formatterMessageJSON.get("stateTransition");
-            log.info("User {} triggers state transition {}",
-                userId, transition);
-            toNextState(userId, transition);
+    public void accept(Event<FormatterMessageJSON> ev) {
+        FormatterMessageJSON fmt = ev.getData();
+        String userId = fmt.getUserId();
+
+        // build message list
+        List<Message> messages = new ArrayList<>();
+        JSONArray arr = fmt.getMessageArray();
+        if (arr.length() == 0) {
+            return;
         }
-        if (!formatterMessageJSON.get("type").equals("transition")) {
-            formatter.sendMessage(formatterMessageJSON);
-            if (noReplyFutures.containsKey(userId)) {
-                ScheduledFuture<?> future = noReplyFutures.get(userId);
-                future.cancel(false);
-                log.info("No reply future cancelled for user {}", userId);
+        for (int i=0; i<arr.length(); ++i) {
+            JSONObject obj = arr.getJSONObject(i);
+            switch (obj.getString("type")) {
+                case "text":
+                    messages.add(new TextMessage(obj.getString("textContent")));
+                    break;
+                case "image":
+                    messages.add(new ImageMessage(obj.getString("originalContentUrl"),
+                        obj.getString("previewContentUrl")));
+                    break;
+                default:
+                    log.info("Invalid message type {}", obj.getString("type"));
             }
         }
+        log.info("CONTROLLER: Send push message");
+        PushMessage pushMessage = new PushMessage("U"+userId, messages);
+        if (lineMessagingClient != null)
+            lineMessagingClient.pushMessage(pushMessage);
     }
 
+    /**
+     * Event handler for LINE text message.
+     * @param event LINE text message event
+     */
     @EventMapping
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event)
         throws Exception {
 
         String userId = event.getSource().getUserId();
-        String replyToken = event.getReplyToken();
         String textContent = event.getMessage().getText();
         String messageId = event.getMessage().getId();
 
@@ -197,360 +123,53 @@ public class ChatbotController
         int endIndex = userId.length();
         userId = userId.substring(1, endIndex);
 
-        StateMachine stateMachine = getStateMachine(userId);
-        String state = stateMachine.getState();
-
-        registerNoReplyCallback(userId);
-
-        boolean isSpecial = textContent.startsWith(DEBUG_COMMAND_PREFIX);
-        // isSpecial = isSpecial || textContent.equals("SETTING")
-        //     || textContent.equals("RECOMMEND");
-        isSpecial = isSpecial || textContent.equals("CANCEL");
-        if (debugFlag && isSpecial) {
-            log.info("User initiated state transition using command");
-            // if (textContent.equals("SETTING")) textContent = "$$$InitialInput";
-            // if (textContent.equals("RECOMMEND")) textContent = "$$$ParseMenu";
-            if (textContent.equals("CANCEL")) textContent = "$$$Idle";
-            changeStateByCommand(userId, textContent);
-            publishStateTransition(userId);
-            return;
+        // construct user state
+        if (!states.containsKey(userId)) {
+            states.put(userId, State.IDLE);
         }
 
-        /* update state */
-        if (state.equals("Idle")) {
-            if (isRecommendationRequest(textContent)) {
-                toNextState(userId, "recommendationRequest");
-            } else if (isInitialInputRequest(textContent)) {
-                toNextState(userId, "initialInputRequest");
-            } else if (isFeedbackRequest(textContent)) {
-                toNextState(userId, "feedbackRequest");
-            }
-            state = stateMachine.getState();
-            log.info("State transition handled by Controller");
-            log.info("userId={}, newState={}", userId, state);
-        } else if (state.equals("Recommend")) {
-            if (isFinishMeal(textContent)) {
-                toNextState(userId, "timeout");
-            }
+        // test
+        if (getUserState(userId) == State.IDLE) {
+            setUserState(userId, State.INITIAL_INPUT);
         }
-        ParserMessageJSON psr = new ParserMessageJSON();
-        psr.set("userId", userId)
-           .set("state", state)
-           .set("replyToken", replyToken)
-           .setTextMessage(messageId, textContent);
-        publisher.publish(psr);
-    }
 
-    @EventMapping
-    public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event)
-        throws IOException {
-
-        final MessageContentResponse response;
-        String messageId = event.getMessage().getId();
-        String replyToken = event.getReplyToken();
-        try {
-            response = lineMessagingClient.getMessageContent(messageId).get();
-        } catch (InterruptedException | ExecutionException e) {
-            log.info("Cannot get image: {}", e.getMessage());
-            throw new RuntimeException(e);
-        }
-        DownloadedContent jpg = saveContent("jpg", response);
-        handleImageContent(replyToken, event, messageId);
-    }
-
-    /**
-     * Event Handler for Image
-     */
-    private void handleImageContent(String replyToken, Event event, String id) {
-        ParserMessageJSON parserMessageJSON = new ParserMessageJSON();
-        parserMessageJSON.set("userId", event.getSource().getUserId())
-            .set("state", "Idle").set("replyToken", replyToken)
-            .setImageMessage(id);
-        publisher.publish(parserMessageJSON);
-    }
-
-    /* ------------------------ LOGIC START ------------------------ */
-    /**
-     * Clear all state machines
-     */
-    public void clearStateMachines() {
-        stateMachines.clear();
-        log.info("Clear all state machines");
-    }
-
-    /**
-     * Get state machine corresponding to the user
-     * @param userId String of user id
-     * @return StateMachine
-     *         If there is no record before, initialize to Idle
-     */
-    public StateMachine getStateMachine(String userId) {
-        if (!stateMachines.containsKey(userId)) {
-            log.info("Creating state machine for {}", userId);
-            stateMachines.put(userId, new StateMachine(userId));
-        }
-        return stateMachines.get(userId);
-    }
-
-
-    /**
-     * Get user Id list
-     * @return List of user Id in String
-     */
-    public List<String> getUserIdList() {
-        ArrayList<String> ret = new ArrayList<>();
-        ret.add("U60ee860ae5e086599f9e2baff5efcf15");
-        return ret;
-    }
-
-    /**
-     * State transition wrapper, to next state and register callback
-     * And publish state transition
-     * @param userId String of user id
-     * @param transition String representing the state transition
-     */
-    public void toNextState(String userId, String transition) {
-        StateMachine stateMachine = getStateMachine(userId);
-        boolean isStateChanged = stateMachine.toNextState(transition);
-        if (!isStateChanged) return;
-        registerStateTransitionCallback(userId);
-
-        publishStateTransition(userId);
-    }
-
-    /**
-     * Publish state transition message
-     * @param userId String of user Id
-     */
-    public void publishStateTransition(String userId) {
-        log.info("PUBLISHER: publishing state transition");
-        StateMachine stateMachine = getStateMachine(userId);
-        ParserMessageJSON psr = new ParserMessageJSON();
-        psr.set("userId", userId)
-           .set("state", stateMachine.getState())
-           .set("replyToken", "invalid")
-           .setTextMessage("noId", DEBUG_COMMAND_PREFIX);
+        // publish message
+        ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
+        psr.set("messageId", messageId)
+           .set("textContent", textContent);
         publisher.publish(psr);
     }
 
     /**
-     * Register callback after state transition
+     * Get state of a user.
      * @param userId String of user Id
+     * @return State of the user. State.INVALID is returned if there
+     *         is no record for this user
      */
-    private void registerStateTransitionCallback(String userId) {
-        StateMachine stateMachine = getStateMachine(userId);
-        State state = stateMachine.getStateObject();
-        int timeout = state.getTimeout();
-        String timeoutState = state.getTimeoutState();
-        if (!state.getName().equals("Idle")) {
-            log.info("register call back that will run after {} sec", timeout);
-            taskScheduler.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    toNextState(userId, "timeout");
-                    ParserMessageJSON psr = new ParserMessageJSON();
-                    psr.set("userId", userId)
-                       .set("state", timeoutState);
-                    publisher.publish(psr);
-                }
-            }, new Date(1000*timeout + (new Date()).getTime()));
+    public State getUserState(String userId) {
+        if (states.containsKey(userId)) {
+            return states.get(userId);
         } else {
-            log.info("remove state machine for {} after {} sec",
-                userId, timeout);
-            taskScheduler.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    stateMachines.remove(userId);
-                    log.info("state machine for {} removed", userId);
-                }
-            }, new Date(1000*State.DEFAULT_TIMEOUT
-                + (new Date()).getTime()));
+            return State.INVALID;
         }
     }
 
     /**
-     * Check whether a text is a recommendation request
-     * @param msg String from user
+     * Set state of a user, register timeout callback, and publish the transition
+     * @param userId String of user Id
+     * @param newState New state for the user
+     * @return A boolean indicating whether set state succeed
      */
-    static public boolean isRecommendationRequest(String msg) {
-        for (String word : TextProcessor.sentenceToWords(msg)) {
-            if (recommendKeywords.contains(word)) return true;
-        }
-        return false;
-    }
-    static private HashSet<String> recommendKeywords;
-    static {
-        recommendKeywords = new HashSet<String>();
-        recommendKeywords.add("recommendation");
-        recommendKeywords.add("recommendations");
-        recommendKeywords.add("recommend");
-        recommendKeywords.add("menu");
-        recommendKeywords.add("suggestion");
-        recommendKeywords.add("suggest");
-    }
-
-    /**
-     * Check whether a text is an initial input request
-     * @param msg String from user
-     */
-    static public boolean isInitialInputRequest(String msg) {
-        for (String word : TextProcessor.sentenceToWords(msg)) {
-            if (initialInputKeywords.contains(word)) {
-                return true;
+    public boolean setUserState(String userId, State newState) {
+        if (states.containsKey(userId)) {
+            if (states.get(userId) != newState) {
+                ParserMessageJSON psr = new ParserMessageJSON(userId, "transition");
+                publisher.publish(psr);
             }
+            states.put(userId, newState);
+            return true;
+        } else {
+            return false;
         }
-        return false;
-    }
-    static private HashSet<String> initialInputKeywords;
-    static {
-        initialInputKeywords = new HashSet<String>();
-        initialInputKeywords.add("setting");
-        initialInputKeywords.add("settings");
-        initialInputKeywords.add("personal");
-    }
-
-    /**
-     * Check whether a text is a feedback request
-     * @param msg String from user
-     */
-    static public boolean isFeedbackRequest(String msg) {
-        for (String word : TextProcessor.sentenceToWords(msg)) {
-            if (feedbackKeywords.contains(word)) return true;
-        }
-        return false;
-    }
-    static private HashSet<String> feedbackKeywords;
-    static {
-        feedbackKeywords = new HashSet<String>();
-        feedbackKeywords.add("feedback");
-        feedbackKeywords.add("report");
-        feedbackKeywords.add("digest");
-    }
-
-    /**
-     * Check whether a text means finish meal
-     */
-    static public boolean isFinishMeal(String msg) {
-        for (String word : TextProcessor.sentenceToWords(msg)) {
-            if (finishMealWords.contains(word)) return true;
-        }
-        return false;
-    }
-    static private HashSet<String> finishMealWords;
-    static {
-        List<String> list = Arrays.asList(
-            "finish", "done"
-        );
-        finishMealWords = new HashSet<String>(list);
-    }
-
-    /**
-     * A debug helper function for changing state
-     * @param userId String of user Id
-     * @param command Command for state transition
-     */
-    public void changeStateByCommand(String userId, String command) {
-        assert command.startsWith(DEBUG_COMMAND_PREFIX);
-        String newState = command.substring(DEBUG_COMMAND_PREFIX.length());
-
-        /* Send push message */
-        FormatterMessageJSON fmt = new FormatterMessageJSON();
-        fmt.set("userId", userId)
-           .set("type", "push")
-           .appendTextMessage("New state: " + newState);
-        if (State.validateStateName(newState))
-            fmt.appendTextMessage("Change state succeed");
-        else fmt.appendTextMessage("Change state failed, invalid state " +
-            newState);
-        publisher.publish(fmt);
-
-        StateMachine stateMachine = getStateMachine(userId);
-        stateMachine.setState(newState);
-        registerStateTransitionCallback(userId);
-    }
-
-    /**
-     * Register callback for no reply case
-     * @param userId String of user Id
-     */
-    public void registerNoReplyCallback(String userId) {
-        // cancel previous callback
-        if (noReplyFutures.containsKey(userId)) {
-            ScheduledFuture<?> future = noReplyFutures.get(userId);
-            if (future != null) future.cancel(false);
-            log.info("Cancel previous no reply callback for user {}", userId);
-        }
-        noReplyFutures.put(userId, taskScheduler.schedule(
-            new Runnable() {
-                @Override
-                public void run() {
-                    FormatterMessageJSON fmt = new FormatterMessageJSON();
-                    String[] replies = {
-                        "Sorry but I don't understand what you said.",
-                        "Oops, that is complicated for me.",
-                        "Well, that doesn't make sense to me.",
-                        "Well, I really do not understand that."
-                    };
-                    int randomNum = ThreadLocalRandom.current()
-                        .nextInt(0, replies.length);
-                    fmt.set("type", "push")
-                       .set("userId", userId)
-                       .appendTextMessage(replies[randomNum]);
-                    String state = getStateMachine(userId).getState();
-                    switch (state) {
-                        case "Idle":
-                        fmt.appendTextMessage("To set your personal info, " +
-                            "send 'setting'.\nIf you want to obtain recommendation, " +
-                            "please say 'recommendation'.\n" +
-                            "You can aways cancel an operation by saying 'CANCEL'");
-                        break;
-
-                        case "Recommend":
-                        fmt.appendTextMessage("You mean you've finished your meal? " +
-                            "If yes, say 'finish' and I will record what you eat");
-                    }
-                    publisher.publish(fmt);
-                    noReplyFutures.remove(userId);
-                }
-            },
-            new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));
-        log.info("Register new no reply callback for user {}", userId);
-    }
-    /* ------------------------ LOGIC END ------------------------ */
-
-    static String createUri(String path) {
-        return ServletUriComponentsBuilder.fromCurrentContextPath()
-            .path(path).build().toUriString();
-    }
-
-    private static DownloadedContent saveContent(String ext,
-        MessageContentResponse responseBody) {
-
-        log.info("Got content-type: {}", responseBody);
-
-        DownloadedContent tempFile = createTempFile(ext);
-        try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
-            ByteStreams.copy(responseBody.getStream(), outputStream);
-            log.info("Saved {}: {}", ext, tempFile);
-            return tempFile;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private static DownloadedContent createTempFile(String ext) {
-        String fileName = LocalDateTime.now().toString() + '-'
-            + UUID.randomUUID().toString() + '.' + ext;
-        Path tempFile = DietingChatbotApplication.downloadedContentDir
-            .resolve(fileName);
-        tempFile.toFile().deleteOnExit();
-        return new DownloadedContent(tempFile, createUri("/downloaded/"
-            + tempFile.getFileName()));
-    }
-
-    @Value
-    public static class DownloadedContent {
-        Path path;
-        String uri;
     }
 }
