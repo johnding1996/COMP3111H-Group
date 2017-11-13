@@ -14,7 +14,7 @@ import com.linecorp.bot.model.message.Message;
 import com.linecorp.bot.model.message.TextMessage;
 import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
-
+import database.keeper.StateKeeper;
 import agent.IntentionClassifier;
 
 import java.util.ArrayList;
@@ -48,8 +48,6 @@ import javax.annotation.PostConstruct;
 public class ChatbotController
     implements Consumer<reactor.bus.Event<
         FormatterMessageJSON>> {
-
-    private HashMap<String, State> states = new HashMap<>();
 
     private HashMap<String, ScheduledFuture<?>> noReplyFutures = new HashMap<>();
 
@@ -140,11 +138,6 @@ public class ChatbotController
 
         log.info("textContent: {}", textContent);
 
-        // construct user state
-        if (!states.containsKey(userId)) {
-            states.put(userId, State.IDLE);
-        }
-
         // cancel session?
         if (textContent.equals("CANCEL")) {
             log.info("Session cancelled by user {}", userId);
@@ -179,44 +172,50 @@ public class ChatbotController
      *         is no record for this user
      */
     public State getUserState(String userId) {
-        return states.getOrDefault(userId, State.INVALID);
+        StateKeeper keeper = new StateKeeper();
+        String stateName = keeper.get(userId);
+        keeper.close();
+        return State.getStateByName(stateName);
     }
 
     /**
      * Set state of a user, register timeout callback, and publish the transition.
      * @param userId String of user Id.
      * @param newState New state for the user.
-     * @return A boolean indicating whether set state succeed.
+     * @return Whether state transition succeeds.
      */
     public boolean setUserState(String userId, State newState) {
-        if (states.containsKey(userId)) {
-            State currentState = states.get(userId);
-            if (currentState == newState) {
-                log.info("State will not change for user {}", userId);
-                return false;
-            }
-            log.info("State of user {} changed to {}", userId, newState.toString());
-            try {
-                // prevent race condition
-                // Message handled by one agent module will not be handled by another
-                Thread.sleep(600);
-            } catch (Exception e) {
-                log.info(e.toString());
-            }
-            states.put(userId, newState);
-            ParserMessageJSON psr = new ParserMessageJSON(userId, "transition");
-            // prevent null value
-            psr.set("textContent", "")
-               .set("messageId", "");
-            publisher.publish(psr);
+        State currentState = getUserState(userId);
+        if (currentState == newState) {
+            log.info("State will not change for user {}", userId);
+            return false;
+        }
+        log.info("State of user {} changed to {}", userId, newState.toString());
+        try {
+            // prevent race condition
+            // Message handled by one agent module will not be handled by another
+            Thread.sleep(600);
+        } catch (Exception e) {
+            log.info(e.toString());
+        }
+        StateKeeper keeper = new StateKeeper();
+        keeper.set(userId, newState.toString());
+        keeper.close();
+
+        // publish state transition
+        ParserMessageJSON psr = new ParserMessageJSON(userId, "transition");
+        // prevent null value
+        psr.set("textContent", "")
+            .set("messageId", "");
+        publisher.publish(psr);
+
+        // timeout callback if new state is not IDLE
+        if (newState != State.IDLE) {
             taskScheduler.schedule(getTimeoutCallback(userId,
                 newState, newState==State.RECOMMEND?State.RECORD_MEAL:State.IDLE),
                 State.getTimeoutDate());
-            return true;
-        } else {
-            log.info("No such user {}", userId);
-            return false;
         }
+        return true;
     }
 
     /**
@@ -234,12 +233,7 @@ public class ChatbotController
             public void run() {
                 State state = getUserState(userId);
                 if (currentState != state) return;
-                if (nextState == State.INVALID) {
-                    states.remove(userId);
-                    log.info("Remove state of user {}", userId);
-                } else {
-                    setUserState(userId, nextState);
-                }
+                setUserState(userId, nextState);
             }
         };
     }

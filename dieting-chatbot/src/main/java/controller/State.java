@@ -116,6 +116,20 @@ public enum State {
     }
 
     /**
+     * Return corresponding state for a string.
+     * @param name String of state name.
+     * @return Corresponding state.
+     */
+    public static State getStateByName(String name) {
+        for (State state : State.values()) {
+            if (state.name.equals(name)) {
+                return state;
+            }
+        }
+        return State.INVALID;
+    }
+
+    /**
      * Return Date object for time that is TIMEOUT_PERIOD sec later.
      * @return A Date object as described.
      */
