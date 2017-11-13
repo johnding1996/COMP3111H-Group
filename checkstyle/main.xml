@@ -1,239 +1,89 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <checkstyle version="7.6.1">
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/agent/ConfirmFood.java">
-<error line="0" severity="error" message="Missing package-info.java file." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocPackageCheck"/>
-<error line="34" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="44" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="59" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="71" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="75" column="60" severity="error" message="Expected @param tag for &apos;userId&apos;." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="76" column="20" severity="error" message="Expected @throws tag for &apos;NumberFormatException&apos;." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="106" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="132" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/agent/FoodRecommender.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/agent/FoodRecommender.java">
-<error line="40" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="71" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="94" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="121" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="153" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="166" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="182" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="194" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="221" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="241" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="262" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/agent/IntentionClassifier.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/agent/MealAsker.java">
-<error line="29" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="45" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="53" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="61" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="71" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="81" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="102" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="152" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="168" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="190" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="219" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="256" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/agent/MealAsker.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/agent/MenuParser.java">
-<error line="32" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="49" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="60" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="96" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="164" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="174" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/agent/MealRecorder.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/agent/TextMenuParser.java">
-<error line="14" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="18" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/agent/MenuParser.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/agent/UrlMenuParser.java">
-<error line="16" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="34" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="40" column="16" severity="error" message="Expected @throws tag for &apos;IOException&apos;." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="40" column="29" severity="error" message="Expected @throws tag for &apos;JSONException&apos;." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="54" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="82" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/agent/TextMenuParser.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/controller/ChatbotController.java">
-<error line="105" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="129" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocVariableCheck"/>
-<error line="133" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocVariableCheck"/>
-<error line="136" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="147" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="161" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="187" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="244" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="273" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="281" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="296" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="306" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="321" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="371" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="375" severity="error" message="Expected an @return tag." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="392" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="396" severity="error" message="Expected an @return tag." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="412" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="416" severity="error" message="Expected an @return tag." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="430" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="433" severity="error" message="Expected an @return tag." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="433" column="47" severity="error" message="Expected @param tag for &apos;msg&apos;." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="447" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="472" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="551" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/agent/UrlMenuParser.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/controller/DebugReceiver.java">
-<error line="18" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="28" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocVariableCheck"/>
-<error line="29" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocVariableCheck"/>
-<error line="30" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="41" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/agent/package-info.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/controller/DietingChatbotApplication.java">
-<error line="33" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="55" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/controller/ChatbotController.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/controller/Formatter.java">
-<error line="52" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="82" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/controller/DebugReceiver.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/controller/FormatterMessageJSON.java">
-<error line="22" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="63" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="84" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="100" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="113" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="130" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/controller/DietingChatbotApplication.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/controller/KitchenSinkWebMvcConfigurer.java">
-<error line="30" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/controller/KitchenSinkWebMvcConfigurer.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/controller/MessageJSON.java">
-<error line="3" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="4" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/controller/Publisher.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/controller/ParserMessageJSON.java">
-<error line="12" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="49" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="64" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="80" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="95" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="108" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="123" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="139" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="155" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/controller/State.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/controller/Publisher.java">
-<error line="10" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="20" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="24" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="28" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/controller/package-info.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/controller/State.java">
-<error line="6" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="12" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocVariableCheck"/>
-<error line="26" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="30" column="25" severity="error" message="Expected @param tag for &apos;stateName&apos;." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="30" column="43" severity="error" message="Expected @throws tag for &apos;Exception&apos;." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="42" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="48" column="25" severity="error" message="Expected @param tag for &apos;stateName&apos;." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="48" column="77" severity="error" message="Expected @throws tag for &apos;Exception&apos;." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="64" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="68" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="76" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="84" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="92" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/connection/RedisPool.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/controller/StateMachine.java">
-<error line="16" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="110" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="119" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="126" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="134" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="142" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="155" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="159" severity="error" message="Expected an @return tag." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="163" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="171" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="180" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/connection/RedisPoolFactory.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/controller/StateTransitionLogJSON.java">
-<error line="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="13" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="16" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="19" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="22" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="26" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="29" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="32" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="35" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/connection/SQLPool.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/controller/package-info.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/connection/SQLPoolFactory.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/connection/RedisPool.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/connection/package-info.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/connection/RedisPoolFactory.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/HistKeeper.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/connection/SQLPool.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/Keeper.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/connection/SQLPoolFactory.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/LogKeeper.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/connection/package-info.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/MenuKeeper.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/HistKeeper.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/SerializeKeeper.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/Keeper.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/StateKeeper.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/LogKeeper.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/package-info.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/MenuKeeper.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/package-info.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/SerializeKeeper.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/querier/FoodQuerier.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/StateKeeper.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/querier/FuzzyFoodQuerier.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/keeper/package-info.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/querier/PartialFoodQuerier.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/package-info.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/querier/Querier.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/querier/FoodQuerier.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/querier/UserQuerier.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/querier/FuzzyFoodQuerier.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/database/querier/package-info.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/querier/PartialFoodQuerier.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/misc/InitialInputRecorder.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/querier/Querier.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/misc/package-info.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/querier/UserQuerier.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/utility/FormatterMessageJSON.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/database/querier/package-info.java">
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/utility/JsonUtility.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/misc/UserInitialInputRecord.java">
-<error line="0" severity="error" message="Missing package-info.java file." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocPackageCheck"/>
-<error line="32" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="43" column="5" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="55" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="99" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="102" column="46" severity="error" message="Expected @param tag for &apos;u&apos;." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck"/>
-<error line="121" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="229" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="245" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="255" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/utility/MessageJSON.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/utility/TextProcessor.java">
-<error line="0" severity="error" message="Missing package-info.java file." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocPackageCheck"/>
-<error line="7" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/utility/ParserMessageJSON.java">
 </file>
-<file name="/home/mcding/johnding1996/COMP3111H-Group/dieting-chatbot/src/main/java/utility/Validator.java">
-<error line="11" severity="error" message="Missing a Javadoc comment." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTypeCheck"/>
-<error line="13" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="27" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="46" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="55" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="64" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
-<error line="73" severity="error" message="First sentence should end with a period." source="com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocStyleCheck"/>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/utility/TextProcessor.java">
+</file>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/utility/Validator.java">
+</file>
+<file name="/Users/Thomas/Documents/HKUST/academic/17-18 Fall/3111H COMP/workspace/COMP3111H-Group/dieting-chatbot/src/main/java/utility/package-info.java">
 </file>
 </checkstyle>
