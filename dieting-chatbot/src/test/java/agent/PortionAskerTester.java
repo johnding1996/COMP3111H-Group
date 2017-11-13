@@ -154,4 +154,82 @@ public class PortionAskerTester {
         }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
         asker.accept(ev);
     }
+
+    @Test
+    public void testInternalState1Other() {
+        ParserMessageJSON psr = new ParserMessageJSON();
+        psr.set("userId", "xiaoxigua")
+                .set("state", "AskPortion")
+                .set("replyToken", "token")
+                .setTextMessage("1234", "thomaszhou");
+        asker.changeUserState(psr.get("userId"), 1);
+        Event<ParserMessageJSON> ev =
+                new Event<ParserMessageJSON>(null, psr);
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                    throws Throwable {
+                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
+                        FormatterMessageJSON.class);
+                assert fmt.get("userId").equals("xiaoxigua");
+                JSONArray messages = (JSONArray)fmt.get("messages");
+                String text1 = (String) messages.getJSONObject(0).get("textContent");
+                assert text1.startsWith("Sorry, I'm not sure");
+                return null;
+            }
+        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
+        asker.accept(ev);
+    }
+
+    @Test
+    public void testInternalState2Leave() {
+        ParserMessageJSON psr = new ParserMessageJSON();
+        psr.set("userId", "xiaoxigua")
+                .set("state", "AskPortion")
+                .set("replyToken", "token")
+                .setTextMessage("1234", "leave");
+        asker.changeUserState(psr.get("userId"), 2);
+        Event<ParserMessageJSON> ev =
+                new Event<ParserMessageJSON>(null, psr);
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                    throws Throwable {
+                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
+                        FormatterMessageJSON.class);
+                assert fmt.get("userId").equals("xiaoxigua");
+                JSONArray messages = (JSONArray)fmt.get("messages");
+                String text1 = (String) messages.getJSONObject(0).get("textContent");
+                assert text1.startsWith("Alright, we are going to");
+                return null;
+            }
+        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
+        asker.accept(ev);
+    }
+
+    @Test
+    public void testInternalState2Incorrect() {
+        ParserMessageJSON psr = new ParserMessageJSON();
+        psr.set("userId", "xiaoxigua")
+                .set("state", "AskPortion")
+                .set("replyToken", "token")
+                .setTextMessage("1234", "thomaszhou");
+        asker.changeUserState(psr.get("userId"), 2);
+        Event<ParserMessageJSON> ev =
+                new Event<ParserMessageJSON>(null, psr);
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                    throws Throwable {
+                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
+                        FormatterMessageJSON.class);
+                assert fmt.get("userId").equals("xiaoxigua");
+                JSONArray messages = (JSONArray)fmt.get("messages");
+                String text1 = (String) messages.getJSONObject(0).get("textContent");
+                assert text1.startsWith("Plz enter in this format");
+                return null;
+            }
+        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
+        asker.accept(ev);
+    }
 }
