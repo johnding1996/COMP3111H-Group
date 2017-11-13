@@ -39,6 +39,8 @@ public class UrlMenuParser {
      * Parse JSON object from url.
      * @param url URL string to use.
      * @return A JSON array.
+     * @throws IOException if error occurs in stream input.
+     * @throws JSONException if error occurs in building JSONArray.
      */
     public static JSONArray readJsonFromUrl(String url)
         throws IOException, JSONException {

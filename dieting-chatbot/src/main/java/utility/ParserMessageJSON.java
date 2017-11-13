@@ -46,8 +46,9 @@ public class ParserMessageJSON extends MessageJSON {
 
     /**
      * Set key-value pair for ParserMessageJSON.
-     * @param key Name of the key to set
-     * @param value Value to set
+     * @param key Name of the key to set.
+     * @param value Value to set.
+     * @return this object.
      */
     public ParserMessageJSON set(String key, Object value) {
         if (!keySet.contains(key)) {

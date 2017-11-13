@@ -109,8 +109,9 @@ public class InitialInputRecorder
     
     /**
      * Add userInfo to database if everything is correct.
+     * @param u state variable for the user.
      */
-    public void addDatabase(UserInitialState u) {
+    private void addDatabase(UserInitialState u) {
         JSONObject userJSON = new JSONObject();
         userJSON.put("id", u.id);
         userJSON.put("age", u.age);

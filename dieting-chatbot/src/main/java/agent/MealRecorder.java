@@ -69,9 +69,9 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
     /**
      * add userInfo to history if everything is correct.
      * @param idxs list of indices.
+     * @param userId String of userId.
      */
-    public void updateDatabase (List<Integer> idxs, String userId)
-            throws NumberFormatException {
+    public void updateDatabase (List<Integer> idxs, String userId) {
         List<String> foodNames = new ArrayList<>();
         MenuKeeper menuKeeper = new MenuKeeper();
         HistKeeper histKeeper = new HistKeeper();

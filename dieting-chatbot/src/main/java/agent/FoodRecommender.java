@@ -74,7 +74,7 @@ public class FoodRecommender
         }
     }
 
-    /*
+    /**
      * Helper function for building a JSON object representing a config for nutrient.
      * @return A JSONObject containing config info for a nutrient type.
      */

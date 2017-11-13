@@ -19,7 +19,7 @@ import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * DebugReceiver: listen to MessageJSON event and log the message
+ * DebugReceiver: listen to MessageJSON event and log the message.
  * @author szhouan
  * @version v2.0.0
  */
@@ -29,7 +29,13 @@ public class DebugReceiver implements Consumer<Event<MessageJSON>> {
     @Autowired
     private EventBus eventBus;
 
+    /**
+     * FormatterMessageJSON object for debug usage.
+     */
     public FormatterMessageJSON formatterMessageJSON = null;
+    /**
+     * ParserMessageJSON object for debug usage.
+     */
     public ParserMessageJSON parserMessageJSON = null;
 
     /**

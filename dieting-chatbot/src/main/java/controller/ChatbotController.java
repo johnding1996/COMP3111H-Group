@@ -68,6 +68,8 @@ public class ChatbotController
     @Autowired(required = false)
     private IntentionClassifier classifier;
 
+	private Object Map;
+
     private static final int NO_REPLY_TIMEOUT = 1;
  
     /**
@@ -126,8 +128,7 @@ public class ChatbotController
      * @param event LINE text message event
      */
     @EventMapping
-    public void handleTextMessageEvent(MessageEvent<TextMessageContent> event)
-        throws Exception {
+    public void handleTextMessageEvent(MessageEvent<TextMessageContent> event) {
 
         String userId = event.getSource().getUserId();
         String textContent = event.getMessage().getText();
@@ -178,11 +179,7 @@ public class ChatbotController
      *         is no record for this user
      */
     public State getUserState(String userId) {
-        if (states.containsKey(userId)) {
-            return states.get(userId);
-        } else {
-            return State.INVALID;
-        }
+        return states.getOrDefault(userId, State.INVALID);
     }
 
     /**

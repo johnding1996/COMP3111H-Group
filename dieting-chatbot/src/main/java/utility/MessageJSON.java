@@ -11,7 +11,7 @@ public abstract class MessageJSON {
     JSONObject json = new JSONObject();
 
     /**
-     * Get pretty formatted String for MessageJSON
+     * Get pretty formatted String for MessageJSON.
      */
     @Override
     public String toString() {
@@ -19,16 +19,16 @@ public abstract class MessageJSON {
     }
 
     /**
-     * Get user Id of MessageJSON
-     * @return String of user Id
+     * Get user Id of MessageJSON.
+     * @return String of user Id.
      */
     public String getUserId() {
         return json.getString("userId");
     }
 
     /**
-     * Get type of MessageJSON
-     * @return String of message type
+     * Get type of MessageJSON.
+     * @return String of message type.
      */
     public String getType() {
         return json.getString("type");
