@@ -92,9 +92,13 @@ public class ImageMenuParser{
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-        
+            log.info("matches containing rule match: {}", matches);
             int offset = 0;
             for (RuleMatch match : matches) {
+                if(match.getSuggestedReplacements().isEmpty()) {
+                    log.info("Suggested Replacement is empty");
+                    continue;
+                }
                 correctSentence.replace(match.getFromPos() - offset
                 , match.getToPos() - offset
                 , match.getSuggestedReplacements().get(0));
