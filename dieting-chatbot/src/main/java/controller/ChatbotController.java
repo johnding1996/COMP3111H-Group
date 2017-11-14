@@ -14,11 +14,6 @@ import com.linecorp.bot.model.message.Message;
 import com.linecorp.bot.model.message.TextMessage;
 import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
-<<<<<<< HEAD
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-=======
 import database.keeper.StateKeeper;
 import agent.IntentionClassifier;
 
@@ -28,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
->>>>>>> develop
 import utility.Validator;
 import utility.FormatterMessageJSON;
 import utility.ParserMessageJSON;

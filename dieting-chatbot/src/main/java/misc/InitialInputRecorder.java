@@ -109,10 +109,7 @@ public class InitialInputRecorder
     
     /**
      * Add userInfo to database if everything is correct.
-<<<<<<< HEAD:dieting-chatbot/src/main/java/misc/InitialInputRecorder.java
-=======
      * @param u state variable for the user.
->>>>>>> develop:dieting-chatbot/src/main/java/misc/InitialInputRecorder.java
      */
     private void addDatabase(UserInitialState u) {
         JSONObject userJSON = new JSONObject();
@@ -140,16 +137,7 @@ public class InitialInputRecorder
 
         // Is it my duty?
         String userId = psr.getUserId();
-<<<<<<< HEAD:dieting-chatbot/src/main/java/misc/InitialInputRecorder.java
-        State globalState = controller==null?
-            State.INVALID:controller.getUserState(userId);
-        if (globalState != State.INITIAL_INPUT ||
-            psr.getType() == "transition") {
-            // not my duty, clean up if needed
-            if (states.containsKey(userId)) {
-                log.info("Clear user {}", userId);
-                states.remove(userId);
-=======
+
         State globalState = controller==null ?
             State.INVALID : controller.getUserState(userId);
         if (globalState != State.INITIAL_INPUT) {
@@ -157,7 +145,7 @@ public class InitialInputRecorder
             if (states.containsKey(userId)) {
                 states.remove(userId);
                 log.info("Clear user {}", userId);
->>>>>>> develop:dieting-chatbot/src/main/java/misc/InitialInputRecorder.java
+
             }
             return;
         }
@@ -167,13 +155,10 @@ public class InitialInputRecorder
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         publisher.publish(fmt);
 
-<<<<<<< HEAD:dieting-chatbot/src/main/java/misc/InitialInputRecorder.java
-        // if the input is not text
-        if(!psr.getType().equals("text")) {
-=======
+
         // if the input is image
         if(psr.getType().equals("image")) {
->>>>>>> develop:dieting-chatbot/src/main/java/misc/InitialInputRecorder.java
+
             FormatterMessageJSON response = new FormatterMessageJSON(userId);
             response.appendTextMessage(
                         "Please input some text at this moment ~");
@@ -242,10 +227,8 @@ public class InitialInputRecorder
 
                     // remove user, and notify state transition
                     states.remove(userId);
-<<<<<<< HEAD:dieting-chatbot/src/main/java/misc/InitialInputRecorder.java
-=======
                     log.info("Internal state for user {} removed", userId);
->>>>>>> develop:dieting-chatbot/src/main/java/misc/InitialInputRecorder.java
+
                     if (controller != null)
                         controller.setUserState(userId, State.IDLE);
                     break;

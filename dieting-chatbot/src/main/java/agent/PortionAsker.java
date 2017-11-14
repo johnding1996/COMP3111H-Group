@@ -1,33 +1,33 @@
 package agent;
 
 import database.keeper.MenuKeeper;
-
-import java.util.*;
-import java.lang.Integer;
-
-import org.json.JSONException;
 import org.json.JSONObject;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import controller.ParserMessageJSON;
-import controller.Publisher;
-import controller.FormatterMessageJSON;
-import controller.ChatbotController;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-import static reactor.bus.selector.Selectors.$;
-import reactor.fn.Consumer;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
+import static reactor.bus.selector.Selectors.$;
+import reactor.fn.Consumer;
+import utility.FormatterMessageJSON;
+import utility.ParserMessageJSON;
+import utility.TextProcessor;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import controller.Publisher;
+import controller.State;
+import controller.ChatbotController;
+import database.querier.FoodQuerier;
+import database.querier.FuzzyFoodQuerier;
+import database.querier.UserQuerier;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import javax.annotation.PostConstruct;
-
-import utility.Validator;
-
 import lombok.extern.slf4j.Slf4j;
+import utility.Validator;
 
 @Slf4j
 @Component
@@ -37,6 +37,9 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
 
     @Autowired
     private Publisher publisher;
+
+    @Autowired(required = false)
+    private ChatbotController controller;
 
     @PostConstruct
     public void init() {
@@ -120,9 +123,11 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
         ParserMessageJSON psr = ev.getData();
 
         // only handle message if state is `AskPortion`
-        String userId = psr.get("userId");
-        String currentState = psr.get("state");
-        if (!currentState.equals("AskPortion")) {
+        String userId = psr.getUserId();
+        State state = controller==null ?
+                State.INVALID : controller.getUserState(userId);
+        //This need to be changed, state should be ask portion
+        if (state != State.RECOMMEND) {
             if (userStates.containsKey(userId))
                 userStates.remove(userId);
             if (menuCount.containsKey(userId))
@@ -130,15 +135,16 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
             return;
         }
 
-        log.info("Entering user meal portion-asker handler");
+        // Acknowledge that the psr is handled
+        log.info("Entering PortionAsker");
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        publisher.publish(fmt);
 
-        // if the input is not text
-        if(!psr.getMessageType().equals("text")) {
-            FormatterMessageJSON response = new FormatterMessageJSON();
-            response.set("userId", userId)
-                    .set("type", "push")
-                    .appendTextMessage(
-                            "Please input some text at this moment.");
+        FormatterMessageJSON response = new FormatterMessageJSON(userId);
+        // if the input is image
+        if(psr.getType().equals("image")) {
+            response.appendTextMessage(
+                    "I am sorry that I can't understand this image");
             publisher.publish(response);
             log.info("Cannot handle image message");
             return;
@@ -149,51 +155,51 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
             log.info("register new user {}", userId);
             userStates.put(userId, 0);
         }
-        FormatterMessageJSON response = new FormatterMessageJSON();
-        response.set("userId", userId)
-                .set("type", "push");
-        log.info(psr.toString());
 
-        int state = userStates.get(userId).intValue();
-        if (state == 0) {
+        int userState = userStates.get(userId).intValue();
+        if (userState == 0) {
             log.info("ASK PORTION: conversation initiated");
             response.appendTextMessage("Okay, this is what you just ate:");
             response.appendTextMessage(getMenu(userId));
             response.appendTextMessage("Would you like to update me with how much you just enjoy?" +
                     " key in 'Yes' or 'No'");
-            userStates.put(userId, state + 1);
+            userStates.put(userId, userState + 1);
         }
-        else if (state == 1) {
-            String update = psr.getTextContent().toLowerCase();
+        else if (userState == 1) {
+            String update = psr.get("textContent").toLowerCase();
             if(update.equals("yes")){
                 response.appendTextMessage("Okay, so give me about your update in this format: " +
                         "'dish index':'portion in gram', such as 1:100");
                 response.appendTextMessage("Typically, an apple is around 100g");
                 response.appendTextMessage("Note that if you finish all updates you desired, " +
                         "you just need to type 'leave' to end the session");
-                userStates.put(userId, state + 1);
+                userStates.put(userId, userState + 1);
             }
             else if(update.equals("no")){
                 userStates.remove(userId);
                 menuCount.remove(userId);
-                response.appendTextMessage("Alright, let's move on")
-                        .set("stateTransition", "confirmMeal");
+                response.appendTextMessage("Alright, let's move on");
+                if (controller != null) {
+                    controller.setUserState(userId, State.RECOMMEND);
+                }
             }
             else
                 response.appendTextMessage("Sorry, I'm not sure about this. " +
                         "Plz key in 'Yes' or 'No' at this moment");
         }
-        else if (state == 2){
-            String info = psr.getTextContent().toLowerCase();
+        else if (userState == 2){
+            String info = psr.get("textContent").toLowerCase();
             if (info.equals("leave")){
                 userStates.remove(userId);
                 menuCount.remove(userId);
-                response.appendTextMessage("Alright, we are going to process your update")
-                        .set("stateTransition", "confirmMeal");
+                response.appendTextMessage("Alright, we are going to process your update");
+                if (controller != null) {
+                    controller.setUserState(userId, State.RECOMMEND);
+                }
             }
             else{
                 int menuNum = menuCount.get(userId).intValue();
-                String[] portion = psr.getTextContent().split(";");
+                String[] portion = psr.get("textContent").split(";");
                 boolean done = true;
                 if (!Validator.isInteger(portion[0]))
                     done = false;

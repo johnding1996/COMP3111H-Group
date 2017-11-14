@@ -55,20 +55,7 @@ public class InitialInputRecorderTester {
         assert !InitialInputRecorder.validateInput("height", "3.14");
         assert !InitialInputRecorder.validateInput("goalDate", "3-4-1");
         assert !InitialInputRecorder.validateInput("invalidField", "foobar");
-<<<<<<< HEAD:dieting-chatbot/src/test/java/misc/InitialInputRecorderTester.java
-    }
 
-    @Test
-    public void testStateGetterSetter() {
-        String userId = "agong";
-        recorder.clearUserStates();
-        recorder.setUserState(userId, 2);
-        assert recorder.getUserState(userId) == null;
-        addUser(userId);
-        recorder.setUserState(userId, 2);
-        assert recorder.getUserState(userId).equals("gender");
-=======
->>>>>>> develop:dieting-chatbot/src/test/java/misc/InitialInputRecorderTester.java
     }
 
     @Test
