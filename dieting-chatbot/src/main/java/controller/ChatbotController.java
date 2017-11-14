@@ -53,7 +53,7 @@ public class ChatbotController
 
     private HashMap<String, ScheduledFuture<?>> noReplyFutures = new HashMap<>();
 
-    @Autowired(required = false)
+    @Autowired(required = true)
     private LineMessagingClient lineMessagingClient;
 
     @Autowired
@@ -67,8 +67,6 @@ public class ChatbotController
 
     @Autowired(required = false)
     private IntentionClassifier classifier;
-
-	private Object Map;
 
     private static final int NO_REPLY_TIMEOUT = 1;
  
@@ -226,9 +224,7 @@ public class ChatbotController
         } catch (Exception e) {
             log.info(e.toString());
         }
-        StateKeeper keeper = new StateKeeper();
-        keeper.set(userId, newState.toString());
-        keeper.close();
+        setKeeperState(userId, newState);
 
         // publish state transition
         ParserMessageJSON psr = new ParserMessageJSON(userId, "transition");
@@ -245,6 +241,17 @@ public class ChatbotController
                 State.getTimeoutDate());
         }
         return true;
+    }
+
+    /**
+     * Set global state using StateKeeper.
+     * @param userId String of user Id
+     * @param newState New state to set
+     */
+    protected void setKeeperState(String userId, State newState) {
+        StateKeeper keeper = new StateKeeper();
+        keeper.set(userId, newState.toString());
+        keeper.close();
     }
 
     /**

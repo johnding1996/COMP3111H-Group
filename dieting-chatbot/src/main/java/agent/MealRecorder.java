@@ -232,4 +232,13 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
         }
         publisher.publish(response);
     }
+
+    /**
+     * Set internal state of a user.
+     * @param userId String of userId
+     * @param newState New state to set
+     */
+    protected void setUserState(String userId, int newState) {
+        states.put(userId, newState);
+    }
 }
