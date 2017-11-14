@@ -132,7 +132,8 @@ public class InitialInputRecorderTester {
     private Event<ParserMessageJSON> getParserMessageJSONEvent(
         String userId, String text) {
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
-        psr.set("textContent", text);
+        psr.set("textContent", text)
+           .setState("Idle");
         return new Event<>(null, psr);
     }
 

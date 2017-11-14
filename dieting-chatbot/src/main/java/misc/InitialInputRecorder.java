@@ -137,8 +137,7 @@ public class InitialInputRecorder
 
         // Is it my duty?
         String userId = psr.getUserId();
-        State globalState = controller==null ?
-            State.INVALID : controller.getUserState(userId);
+        State globalState = psr.getState();
         if (globalState != State.INITIAL_INPUT) {
             // not my duty, clean up if needed
             if (states.containsKey(userId)) {
@@ -148,10 +147,11 @@ public class InitialInputRecorder
             return;
         }
 
+        log.info("INITIAL_INPUT:\n{}", psr.toString());
+
         // Acknowledge that the psr is handled
         log.info("Entering user initial input handler");
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        publisher.publish(fmt);
+        publisher.publish(new FormatterMessageJSON(userId));
 
         // if the input is image
         if(psr.getType().equals("image")) {
@@ -177,7 +177,7 @@ public class InitialInputRecorder
             switch(user.getState()) {
                 case "id":
                     response.appendTextMessage(
-                        "Hello ~ Would you mind tell me your age? " +
+                        "Would you please tell me your age? " +
                         "Give me an integer please ~");
                     break;
                 case "age":
