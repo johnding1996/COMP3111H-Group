@@ -220,7 +220,7 @@ public class ChatbotController
         log.info("Get png uri {}", png.getUri());
         ParserMessageJSON psr = new ParserMessageJSON(event.getSource().getUserId(), "image");
         psr.set("messageId", messageId)
-        .set("imageContext", png.getUri());
+        .set("imageContent", png.getUri());
         publisher.publish(psr);
     }
 
