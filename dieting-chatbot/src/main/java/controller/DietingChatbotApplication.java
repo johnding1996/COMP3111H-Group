@@ -30,6 +30,11 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import reactor.Environment;
 import reactor.bus.EventBus;
 
+/**
+ * Spring boot application wrapper for the system.
+ * @author szhouan
+ * @version v1.0.0
+ */
 @SpringBootApplication
 @EnableScheduling
 @ComponentScan(basePackages = {"controller", "agent", "misc", "database"})
@@ -50,8 +55,16 @@ public class DietingChatbotApplication {
         return new ThreadPoolTaskScheduler();
     }
 
+    /**
+     * Path to downloaded contents.
+     */
     static Path downloadedContentDir;
 
+    /**
+     * Entry point of the application.
+     * @param args String array of arguments.
+     * @throws IOException if error occurs in handling I/O.
+     */
     public static void main(String[] args) throws IOException {
         downloadedContentDir = Files.createTempDirectory("line-bot");
         SpringApplication.run(DietingChatbotApplication.class, args);

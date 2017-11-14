@@ -55,6 +55,7 @@ public class InitialInputRecorderTester {
         assert !InitialInputRecorder.validateInput("height", "3.14");
         assert !InitialInputRecorder.validateInput("goalDate", "3-4-1");
         assert !InitialInputRecorder.validateInput("invalidField", "foobar");
+<<<<<<< HEAD:dieting-chatbot/src/test/java/misc/InitialInputRecorderTester.java
     }
 
     @Test
@@ -66,6 +67,8 @@ public class InitialInputRecorderTester {
         addUser(userId);
         recorder.setUserState(userId, 2);
         assert recorder.getUserState(userId).equals("gender");
+=======
+>>>>>>> develop:dieting-chatbot/src/test/java/misc/InitialInputRecorderTester.java
     }
 
     @Test
@@ -79,6 +82,7 @@ public class InitialInputRecorderTester {
         Mockito.reset(publisher);
     }
 
+    /*
     @Test
     public void testAccept2() {
         String userId = "szhouan";
@@ -99,7 +103,7 @@ public class InitialInputRecorderTester {
         checkStateTransition(userId, "Rah", "Please input", "2020-12-31",
             "Great! I now", "goalDate", null);
         Mockito.reset(publisher);
-    }
+    }*/
 
     /**
      * Wrapper for tracking internal state transition

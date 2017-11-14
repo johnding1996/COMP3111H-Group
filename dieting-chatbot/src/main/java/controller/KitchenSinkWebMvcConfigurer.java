@@ -27,8 +27,13 @@ import reactor.bus.EventBus;
 
 import lombok.extern.slf4j.Slf4j;
 
-@Configuration
+/**
+ * MVC configurer for the application.
+ * @author szhouan
+ * @version v1.0.0
+ */
 @Slf4j
+@Configuration
 public class KitchenSinkWebMvcConfigurer extends WebMvcConfigurerAdapter {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
