@@ -21,8 +21,8 @@ import com.asprise.ocr.Ocr;
 public class ImageMenuParser{
 
     /**
-     * Parse JSON object from url
-     * @param url URL string to use
+     * Parse JSON object from Image uri 
+     * @param uri URL string to use
      * @return A JSON array
      */
     public static String readJsonFromImage(String uri)
