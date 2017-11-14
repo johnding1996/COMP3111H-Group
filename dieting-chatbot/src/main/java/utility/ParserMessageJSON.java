@@ -94,10 +94,12 @@ public class ParserMessageJSON extends MessageJSON {
     /**
      * Set state field of the JSON.
      * @param state Name of the state
+     * @return this object
      */
-    public void setState(String state) {
+    public ParserMessageJSON setState(String state) {
         if (State.validateStateName(state)) {
             json.put("state", state);
         }
+        return this;
     }
 }

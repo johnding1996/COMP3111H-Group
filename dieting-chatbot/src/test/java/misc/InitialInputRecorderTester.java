@@ -1,6 +1,8 @@
 package misc;
 
+import controller.ChatbotController;
 import controller.Publisher;
+import controller.State;
 import controller.TestConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -29,6 +31,9 @@ public class InitialInputRecorderTester {
 
     @Autowired
     private Publisher publisher;
+
+    @Autowired
+    private ChatbotController controller;
 
     @Test
     public void testConstruction() {
@@ -62,13 +67,12 @@ public class InitialInputRecorderTester {
         recorder.clearUserStates();
         Event<ParserMessageJSON> ev =
             getParserMessageJSONEvent("szhouan", "Hello");
-        Mockito.doAnswer(getFormatterMessageJSONAnswerObject("Hello"))
+        Mockito.doAnswer(getFormatterMessageJSONAnswerObject("Would"))
             .when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
         recorder.accept(ev);
         Mockito.reset(publisher);
     }
 
-    /*
     @Test
     public void testAccept2() {
         String userId = "szhouan";
@@ -89,7 +93,7 @@ public class InitialInputRecorderTester {
         checkStateTransition(userId, "Rah", "Please input", "2020-12-31",
             "Great! I now", "goalDate", null);
         Mockito.reset(publisher);
-    }*/
+    }
 
     /**
      * Wrapper for tracking internal state transition
@@ -111,6 +115,7 @@ public class InitialInputRecorderTester {
         recorder.accept(ev);
         if (nextState != null)
             assert recorder.getUserState(userId).equals(nextState);
+        Mockito.reset(publisher);
     }
 
     /**
@@ -118,6 +123,7 @@ public class InitialInputRecorderTester {
      * @param userId String of user Id
      */
     private void addUser(String userId) {
+        controller.setUserState(userId, State.INITIAL_INPUT);
         Event<ParserMessageJSON> ev =
             getParserMessageJSONEvent(userId, "hello");
         recorder.accept(ev);
@@ -133,7 +139,7 @@ public class InitialInputRecorderTester {
         String userId, String text) {
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.set("textContent", text)
-           .setState("Idle");
+           .setState("InitialInput");
         return new Event<>(null, psr);
     }
 
@@ -151,6 +157,7 @@ public class InitialInputRecorderTester {
                 FormatterMessageJSON fmt = invocation.getArgumentAt(0,
                     FormatterMessageJSON.class);
                 JSONArray messages = fmt.getMessageArray();
+                if (messages.length()==0) return null;
                 String text = (String) messages.getJSONObject(0)
                     .get("textContent");
                 log.info("Reply Message: {}", text);

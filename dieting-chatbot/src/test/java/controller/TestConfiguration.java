@@ -2,17 +2,12 @@ package controller;
 
 import java.util.HashMap;
 
-import javax.annotation.PostConstruct;
-
-import org.junit.AfterClass;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
@@ -21,7 +16,6 @@ import com.linecorp.bot.client.LineMessagingClient;
 import lombok.extern.slf4j.Slf4j;
 import reactor.Environment;
 import reactor.bus.EventBus;
-import utility.ParserMessageJSON;
 
 @Slf4j
 @Configuration
