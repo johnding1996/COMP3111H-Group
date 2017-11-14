@@ -127,7 +127,7 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
         State state = controller==null ?
                 State.INVALID : controller.getUserState(userId);
         //This need to be changed, state should be ask portion
-        if (state != State.RECOMMEND) {
+        if (state != State.ASKPORTION) {
             if (userStates.containsKey(userId))
                 userStates.remove(userId);
             if (menuCount.containsKey(userId))
