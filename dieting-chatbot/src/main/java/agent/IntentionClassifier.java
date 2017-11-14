@@ -91,6 +91,9 @@ public class IntentionClassifier
             if (initialInputKeywords.contains(word)) return State.INITIAL_INPUT;
             if (feedbackKeywords.contains(word)) return State.FEEDBACK;
         }
+        if (msg.toLowerCase().startsWith("friend")) return State.INVITE_FRIEND;
+        if (msg.toLowerCase().startsWith("code")) return State.CLAIM_COUPON;
+        if (msg.toLowerCase().startsWith("upload")) return State.UPLOAD_COUPON;
         return State.IDLE;
     }
     private static HashSet<String> recommendKeywords;

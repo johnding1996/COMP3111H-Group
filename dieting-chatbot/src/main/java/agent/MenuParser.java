@@ -79,6 +79,7 @@ public class MenuParser
         if(menuArray == null) {
             response.appendTextMessage("Looks like the menu is empty, " +
                 "please try again");
+            publisher.publish(response);
         }
         else {
             JSONObject queryJSON = new JSONObject();
@@ -95,6 +96,10 @@ public class MenuParser
             keeper.close();
 
             states.remove(userId);
+            publisher.publish(response);
+            if (controller != null) {
+                controller.setUserState(userId, State.ASK_MEAL);
+            }
         }
     }
     
@@ -153,10 +158,6 @@ public class MenuParser
                 menuArray = TextMenuParser.buildMenu(text);
             }
             checkAndReply(userId, response, menuArray);
-            publisher.publish(response);
-            if (controller != null) {
-                controller.setUserState(userId, State.ASK_MEAL);
-            }
         }
     }
 
