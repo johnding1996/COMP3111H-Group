@@ -33,13 +33,13 @@ public class ImageMenuParser{
      */
     public static String readJsonFromImage(String uri)
         throws IOException, JSONException {
+        log.info("Entering readJsonFromImage");
         URL url = null;
         // handle Exception
         try {
             url = new URL(uri);
         } catch (MalformedURLException e) {
-            System.out.println("The URL is not valid.");
-            System.out.println(e.getMessage());
+            log.info("The URL is not valid.");
         }
         Ocr.setUp(); // one time setup
         Ocr ocr = new Ocr(); // create a new OCR engine
@@ -64,6 +64,7 @@ public class ImageMenuParser{
         // this method cannot be called from a static method
         String text = "";
 		try {
+            log.info("Entering image menu parser build menu");
 			text = readJsonFromImage(uri);
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -74,10 +75,12 @@ public class ImageMenuParser{
         String[] lines = text.split("\n");
         
         for (String line : lines) {
+            log.info("this line has content: {}", line);
             // parse out special characters
             line = line.replaceAll("[^\\p{Alnum}]+", " ");
             // parse out numeric values, left only alpha characters
             line = line.replaceAll("[^A-Za-z]+", " ");  
+            log.info("after parse out number and special character: {}", line);
             if (line.equals("")) continue;
 
             StringBuffer correctSentence = new StringBuffer(line);
@@ -92,10 +95,16 @@ public class ImageMenuParser{
         
             int offset = 0;
             for (RuleMatch match : matches) {
-                correctSentence.replace(match.getFromPos() - offset, match.getToPos() - offset, match.getSuggestedReplacements().get(0));
-                offset += (match.getToPos() - match.getFromPos() - match.getSuggestedReplacements().get(0).length());
-        
+                correctSentence.replace(match.getFromPos() - offset
+                , match.getToPos() - offset
+                , match.getSuggestedReplacements().get(0));
+                offset += (match.getToPos() 
+                - match.getFromPos() 
+                - match.getSuggestedReplacements().get(0).length());
+
+                log.info("match: {}", match);
             }
+            log.info("corrected sentence: {}", correctSentence);
             JSONObject dish = new JSONObject();
             dish.put("name", correctSentence);
             arr.put(dish);

@@ -21,6 +21,7 @@ import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
 import database.keeper.StateKeeper;
 import agent.IntentionClassifier;
+import agent.ImageMenuParser;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -218,6 +219,7 @@ public class ChatbotController
 
         DownloadedContent png = saveContent("png", response);
         log.info("Get png uri {}", png.getUri());
+        ImageMenuParser.buildMenu(png.getUri());
         ParserMessageJSON psr = new ParserMessageJSON(event.getSource().getUserId(), "image");
         psr.set("messageId", messageId)
         .set("imageContent", png.getUri());

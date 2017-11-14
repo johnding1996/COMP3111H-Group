@@ -150,6 +150,7 @@ public class MenuParser
             JSONArray menuArray;
             if(psr.getType().equals("image")) {
                 String uri = psr.get("imageContent");
+                log.info("get imageContent with URI: " + uri);
                 menuArray = ImageMenuParser.buildMenu(uri); 
             }
             else {
