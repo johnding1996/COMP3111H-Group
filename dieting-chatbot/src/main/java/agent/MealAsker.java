@@ -101,8 +101,7 @@ public class MealAsker
 
         // only handle message if state is `AskMeal`
         String userId = psr.getUserId();
-        State state = controller==null ?
-            State.INVALID : controller.getUserState(userId);
+        State state = psr.getState();
         if (state != State.ASK_MEAL) {
             if (menus.containsKey(userId)) {
                 menus.remove(userId);

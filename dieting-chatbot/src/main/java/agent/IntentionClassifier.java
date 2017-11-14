@@ -59,8 +59,7 @@ public class IntentionClassifier
         ParserMessageJSON psr = ev.getData();
 
         String userId = psr.getUserId();
-        State globalState = controller==null?
-            State.INVALID:controller.getUserState(userId);
+        State globalState = psr.getState();
         if (globalState != State.IDLE ||
             psr.getType().equals("transition")) return;
 

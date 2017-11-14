@@ -107,8 +107,7 @@ public class MenuParser
 
         // only handle message if state is `ParseMenu`
         String userId = psr.getUserId();
-        State globalState = controller==null ?
-            State.INVALID : controller.getUserState(userId);
+        State globalState = psr.getState();
         if (globalState != State.PARSE_MENU) {
             if (states.containsKey(userId)) {
                 states.remove(userId);
