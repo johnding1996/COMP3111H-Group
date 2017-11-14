@@ -1,48 +1,50 @@
-/**
- * Recommend food based on a menu of following format
- * 
- * {
- *    "userId": "",
- *    "menu": [
- *        {
- *            "dishName": "0",
- *            "foodContent": [
- *                {"idx": 1, "portion": 0.8},
- *                {"idx": 2, "portion": 0.2}
- *            ]
- *        },
- *        {
- *            "dishName": "1",
- *            "foodContent": [
- *                {"idx": 3, "portion": 0.2},
- *                {"idx": 4, "portion": 0.5},
- *                {"idx": 5, "portion": 0.3}
- *            ]
- *        }
- *    ]
- * }
- */
 package agent;
 
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import reactor.bus.Event;
+import reactor.bus.EventBus;
+import static reactor.bus.selector.Selectors.$;
+import reactor.fn.Consumer;
+import utility.FormatterMessageJSON;
+import utility.ParserMessageJSON;
+import utility.TextProcessor;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import controller.Publisher;
+import controller.State;
 import controller.ChatbotController;
-import controller.FormatterMessageJSON;
 import database.querier.FoodQuerier;
 import database.querier.FuzzyFoodQuerier;
 import database.querier.UserQuerier;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
+import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * FoodRecommender: calculate scores for each dish and generate reasons for recommendation.
+ * @author agong, szhouan
+ * @version v1.1.0
+ */
 @Slf4j
 @Component
-public class FoodRecommender {
+public class FoodRecommender
+    implements Consumer<Event<ParserMessageJSON>> {
+
+    @Autowired
+    private EventBus eventBus;
+    
     @Autowired
     private Publisher publisher;
+
+    @Autowired(required = false)
+    private ChatbotController controller;
 
     private static JSONArray configuration;
     static {
@@ -61,6 +63,23 @@ public class FoodRecommender {
         Locale.setDefault(Locale.US);
     }
 
+    static private HashMap<String, JSONObject> menus = new HashMap<>();
+
+    /**
+     * Register on eventBus.
+     */
+    @PostConstruct
+    public void init() {
+        if (eventBus != null) {
+            eventBus.on($("ParserMessageJSON"), this);
+            log.info("FoodRecommender register on eventBus");
+        }
+    }
+
+    /**
+     * Helper function for building a JSON object representing a config for nutrient.
+     * @return A JSONObject containing config info for a nutrient type.
+     */
     private static JSONObject getConfigJSON(String name,
         double y, double proportion) {
         JSONObject json = new JSONObject();
@@ -71,21 +90,100 @@ public class FoodRecommender {
     }
 
     /**
-     * Wrapper for doing recommendation
-     * @param menuJSON A JSONObject of MenuJSON format
-     * @return Whether recommendation succeed
+     * Set MenuJSON for a user.
+     * @param json menuJSON to add.
+     */
+    public void setMenuJSON(JSONObject json) {
+        menus.put(json.getString("userId"), json);
+    }
+
+    /**
+     * Event handler for ParserMessageJSON.
+     * @param ev Event object.
+     */
+    public void accept(Event<ParserMessageJSON> ev) {
+        ParserMessageJSON psr = ev.getData();
+
+        // only handle message if state is `Recommend`
+        String userId = psr.getUserId();
+        State state = controller==null ?
+            State.INVALID : controller.getUserState(userId);
+        if (state != State.RECOMMEND) {
+            if (menus.containsKey(userId)) {
+                menus.remove(userId);
+                log.info("Remove menu of user {}", userId);
+            }
+            return;
+        }
+
+        log.info("Entering FoodRecommender");
+        publisher.publish(new FormatterMessageJSON(userId));
+
+        if (psr.getType().equals("transition")) {
+            if (menus.containsKey(userId)) {
+                doRecommendation(menus.get(userId));
+            } else {
+                FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+                fmt.appendTextMessage("Seems that I don't have your menu. " +
+                    "Session cancelled.");
+                publisher.publish(fmt);
+                if (controller != null) {
+                    controller.setUserState(userId, State.IDLE);
+                }
+            }
+        } else if (psr.getType().equals("text")) {
+            String msg = psr.get("textContent");
+            if (isMealFinished(msg)) {
+                menus.remove(userId);
+                if (controller != null) {
+                    controller.setUserState(userId, State.RECORD_MEAL);
+                }
+            } else {
+                FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+                fmt.appendTextMessage("Did you mean you have finished your meal? " +
+                    "If yes, please tell me and I will record what you have eaten.");
+                publisher.publish(fmt);
+            }
+        }
+    }
+
+    /**
+     * Helper function for deciding whether user means meal finished.
+     * @param msg User input sentence.
+     * @return Whether user means meal finished.
+     */
+    public boolean isMealFinished(String msg) {
+        for (String word : TextProcessor.sentenceToWords(msg)) {
+            if (finishMealKeywords.contains(word)) return true;
+        }
+        return false;
+    }
+    static private final HashSet<String> finishMealKeywords;
+    static {
+        finishMealKeywords = new HashSet<>(
+            Arrays.asList(
+                "finish", "finished", "done"
+            )
+        );
+    }
+
+    /**
+     * Wrapper for doing recommendation.
+     * @param menuJSON A JSONObject of MenuJSON format.
+     * @return Whether recommendation succeed.
      */
     public boolean doRecommendation(JSONObject menuJSON) {
         String userId = menuJSON.getString("userId");
         JSONObject userJSON = getUserJSON(userId);
         if (userJSON == null) {
-            FormatterMessageJSON fmt = new FormatterMessageJSON();
-            fmt.set("userId", userId)
-               .set("type", "push")
-               .appendTextMessage("Sorry, I don't have your personal " +
-               "information yet, please type 'CANCEL' to cancel this operation, " +
-               "and then say 'setting' to set your personal information");
+            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+            fmt.appendTextMessage("Sorry, I don't have your personal " +
+               "information yet, please set your personal information first. " +
+               "Session cancelled.");
             publisher.publish(fmt);
+            if (controller != null) {
+                controller.setUserState(userId, State.IDLE);
+            }
             return false;
         }
         JSONObject foodScoreJSON = getMenuScore(menuJSON);
@@ -94,9 +192,9 @@ public class FoodRecommender {
     }
 
     /**
-     * Give recommendation given a MenuJSON
-     * @param menuJSON A JSONObject of MenuJSON format
-     * @return A JSONObject of FoodScoreJSON format
+     * Give recommendation given a MenuJSON.
+     * @param menuJSON A JSONObject of MenuJSON format.
+     * @return A JSONObject of FoodScoreJSON format.
      */
     public JSONObject getMenuScore(JSONObject menuJSON) {
         JSONObject foodScoreJSON = new JSONObject();
@@ -121,8 +219,8 @@ public class FoodRecommender {
     }
 
     /**
-     * Generate recommendation based on FoodScoreJSON
-     * @param foodScoreJSON A JSONObject of FoodScoreJSON format
+     * Generate recommendation based on FoodScoreJSON.
+     * @param foodScoreJSON A JSONObject of FoodScoreJSON format.
      */
     public void generateRecommendation(JSONObject foodScoreJSON) {
         String userId = foodScoreJSON.getString("userId");
@@ -143,19 +241,17 @@ public class FoodRecommender {
         String replyText = generateReplyText(bestDish);
 
         // publish message
-        FormatterMessageJSON fmt = new FormatterMessageJSON();
-        fmt.set("userId", userId)
-           .set("type", "push")
-           .appendTextMessage(replyText)
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage(replyText)
            .appendTextMessage("And please tell me when you finish your meal :)");
         publisher.publish(fmt);
         return;
     }
 
     /**
-     * Generate reply text with reasons given the best dish result
-     * @param dishResult A JSONObject containing info of the best dish
-     * @return A String of reply text
+     * Generate reply text with reasons given the best dish result.
+     * @param dishResult A JSONObject containing info of the best dish.
+     * @return A String of reply text.
      */
     public String generateReplyText(JSONObject dishResult) {
         String dishName = dishResult.getString("dishName");
@@ -166,9 +262,9 @@ public class FoodRecommender {
     }
 
     /**
-     * Helper function for getting a JSONArray of FoodJSON given foodContent
-     * @param foodContent A JSONArray of food content
-     * @return A JSONArray of FoodJSON
+     * Helper function for getting a JSONArray of FoodJSON given foodContent.
+     * @param foodContent A JSONArray of food content.
+     * @return A JSONArray of FoodJSON.
      */
     public JSONArray getFoodJSON(JSONArray foodContent) {
         FoodQuerier foodQuerier = new FuzzyFoodQuerier();
@@ -182,9 +278,9 @@ public class FoodRecommender {
     }
 
     /**
-     * Helper function for getting a UserJSON given user Id
-     * @param userId String of user Id
-     * @return A UserJSON
+     * Helper function for getting a UserJSON given user Id.
+     * @param userId String of user Id.
+     * @return A UserJSON.
      */
     public JSONObject getUserJSON(String userId) {
         UserQuerier userQuerier = new UserQuerier();
@@ -194,10 +290,10 @@ public class FoodRecommender {
     }
 
     /**
-     * Calculate score given food content of a dish
-     * @param userId String of userId
-     * @param foodContent A JSONArray representing the content of a dish
-     * @return Score of the dish
+     * Calculate score given food content of a dish.
+     * @param userId String of userId.
+     * @param foodContent A JSONArray representing the content of a dish.
+     * @return Score of the dish.
      */
     public double calculateScore(String userId, JSONArray foodContent) {
         JSONArray foodList = getFoodJSON(foodContent);
@@ -221,10 +317,10 @@ public class FoodRecommender {
     }
 
     /**
-     * Calculate portion size given food content of a dish
-     * @param userId String of userId
-     * @param foodContent A JSONArray representing the content of a dish
-     * @return Recommended portion size in gram
+     * Calculate portion size given food content of a dish.
+     * @param userId String of userId.
+     * @param foodContent A JSONArray representing the content of a dish.
+     * @return Recommended portion size in gram.
      */
     public int calculatePortionSize(String userId, JSONArray foodContent) {
         JSONArray foodList = getFoodJSON(foodContent);
@@ -241,10 +337,10 @@ public class FoodRecommender {
     }
 
     /**
-     * Helper function for calculating average nutrient content
-     * @param list A JSONArray whose entries are FoodJSON
-     * @param nutrientName Name of nutrient in string
-     * @return The average amount of nutrient
+     * Helper function for calculating average nutrient content.
+     * @param list A JSONArray whose entries are FoodJSON.
+     * @param nutrientName Name of nutrient in string.
+     * @return The average amount of nutrient.
      */
     public double getAverageNutrient(JSONArray list, String nutrientName) {
         double sum = 0;
@@ -262,9 +358,9 @@ public class FoodRecommender {
     }
 
     /**
-     * Calculate BMR for a user
-     * @param userJSON JSONObject of UserJSON format
-     * @return BMR value
+     * Calculate BMR for a user.
+     * @param userJSON JSONObject of UserJSON format.
+     * @return BMR value.
      */
     public double getUserBMR(JSONObject userJSON) {
         String gender = userJSON.getString("gender");

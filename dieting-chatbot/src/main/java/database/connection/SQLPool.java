@@ -25,7 +25,7 @@ public class SQLPool {
     }
 
     /**
-     * Initialization
+     * Initialization.
      */
     public static void initialization() {
         try {
@@ -47,7 +47,7 @@ public class SQLPool {
     }
 
     /**
-     * Return a new SQL JDBC connection
+     * Return a new SQL JDBC connection.
      * @return connection SQL JDBC connection
      */
     public static Connection getConnection() {

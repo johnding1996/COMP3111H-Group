@@ -5,6 +5,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.google.common.io.ByteStreams;
 import com.linecorp.bot.client.LineMessagingClient;
 import com.linecorp.bot.client.MessageContentResponse;
@@ -25,10 +26,12 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
@@ -192,30 +195,33 @@ public class ChatbotController
             throw new RuntimeException(e);
         }
         //TEST: store the image I uploaded in a static url
-        if(event.getSource().getUserId().equals("U60ee860ae5e086599f9e2baff5efcf15")) {
-            log.info("Get image sent from Lucis");
+        // if(event.getSource().getUserId().equals("U60ee860ae5e086599f9e2baff5efcf15")) {
+        //     log.info("Get image sent from Lucis");
             
-            Path bgPath = DietingChatbotApplication.staticPath.resolve("pikachu.png");
-            DownloadedContent background = new DownloadedContent(bgPath
-            , createUri("/static/" + bgPath.getFileName()));
-            // Boolean bool = background.createNewFile;
-            // log.info("File created: " + bool);
-            try (OutputStream outputStream = Files.newOutputStream(background.path)) {
-                ByteStreams.copy(response.getStream(), outputStream);
-                log.info("Saved pikachu: {}", background);
-                List<Message> messages = new ArrayList<Message>();
-                messages.add(new ImageMessage(background.getUri(), background.getUri()));
-                lineMessagingClient.replyMessage(new ReplyMessage(replyToken, messages));
-            } catch(IOException e) {
-                throw new UncheckedIOException(e);
-            }
-            return;
-        }
+        //     Path bgPath = DietingChatbotApplication.staticPath.resolve("pikachu.png");
+        //     DownloadedContent background = new DownloadedContent(bgPath
+        //     , createUri("/static/" + bgPath.getFileName()));
+        //     // Boolean bool = background.createNewFile;
+        //     // log.info("File created: " + bool);
+        //     try (OutputStream outputStream = Files.newOutputStream(background.path)) {
+        //         ByteStreams.copy(response.getStream(), outputStream);
+        //         log.info("Saved pikachu: {}", background);
+        //         List<Message> messages = new ArrayList<Message>();
+        //         messages.add(new ImageMessage(background.getUri(), background.getUri()));
+        //         lineMessagingClient.replyMessage(new ReplyMessage(replyToken, messages));
+        //     } catch(IOException e) {
+        //         throw new UncheckedIOException(e);
+        //     }
+        //     return;
+        // }
 
 
         DownloadedContent png = saveContent("png", response);
         log.info("Get png uri {}", png.getUri());
-        handleImageContent(replyToken, event, png.getUri());
+        ParserMessageJSON psr = new ParserMessageJSON(event.getSource().getUserId(), "image");
+        psr.set("messageId", messageId)
+        .set("imageContext", png.getUri());
+        publisher.publish(psr);
     }
 
 
@@ -339,5 +345,43 @@ public class ChatbotController
             },
             new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));
         log.info("Register new no reply callback for user {}", userId);
+    }
+
+
+
+    static String createUri(String path) {
+        return ServletUriComponentsBuilder.fromCurrentContextPath()
+            .path(path).build().toUriString();
+    }
+
+    private static DownloadedContent saveContent(String ext,
+        MessageContentResponse responseBody) {
+
+        log.info("Got content-type: {}", responseBody);
+
+        DownloadedContent tempFile = createTempFile(ext);
+        try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
+            ByteStreams.copy(responseBody.getStream(), outputStream);
+            log.info("Saved {}: {}", ext, tempFile);
+            return tempFile;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static DownloadedContent createTempFile(String ext) {
+        String fileName = LocalDateTime.now().toString() + '-'
+            + UUID.randomUUID().toString() + '.' + ext;
+        Path tempFile = DietingChatbotApplication.downloadedContentDir
+            .resolve(fileName);
+        tempFile.toFile().deleteOnExit();
+        return new DownloadedContent(tempFile, createUri("/downloaded/"
+            + tempFile.getFileName()));
+    }
+
+    @Value
+    public static class DownloadedContent {
+        Path path;
+        String uri;
     }
 }
