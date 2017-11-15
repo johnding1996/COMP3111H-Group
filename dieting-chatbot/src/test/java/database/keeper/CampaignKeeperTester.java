@@ -28,14 +28,12 @@ public class CampaignKeeperTester {
     public static void setUpClass() {
         jedis = RedisPool.getConnection();
         campaignKeeper = new CampaignKeeper(jedis);
-
         goodCampaignJson = new JSONObject();
         goodCampaignJson.put("couponImg", "testImg");
         goodCampaignJson.put("couponCnt", 1);
-
         badCampaignJson = new JSONObject();
         badCampaignJson.put("couponImg", "testImg");
-        badCampaignJson.put("couponCnt", 1);
+        badCampaignJson.put("foo", "bar");
     }
 
     @AfterClass
@@ -71,8 +69,11 @@ public class CampaignKeeperTester {
         campaignKeeper.set(user_id, goodCampaignJson);
         campaignKeeper.set(user_id, goodCampaignJson);
         campaignKeeper.set(user_id, goodCampaignJson);
+        campaignKeeper.set(user_id, goodCampaignJson);
         JSONArray actual = campaignKeeper.get(user_id, 5);
         JSONArray expected  = new JSONArray();
+        expected.put(goodCampaignJson);
+        expected.put(goodCampaignJson);
         expected.put(goodCampaignJson);
         expected.put(goodCampaignJson);
         JSONAssert.assertEquals(expected, actual, false);
