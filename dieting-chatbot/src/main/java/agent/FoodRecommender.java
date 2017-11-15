@@ -29,8 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * FoodRecommender: calculate scores for each dish and generate reasons for recommendation.
- * @author agong, szhouan
- * @version v1.1.0
+ * @author mcding, agong, szhouan
+ * @version v2.0.0
  */
 @Slf4j
 @Component
@@ -168,7 +168,7 @@ public class FoodRecommender
                 boolean isValid = checkUserInfo(userId);
                 if (isValid) {
                     states.put(userId, 0);
-                    sleep(6);
+                    sleep(4);
                     askMealType(userId);
                 }
             } else {
@@ -187,7 +187,7 @@ public class FoodRecommender
                 if (isValid) {
                     states.put(userId, 1);
                     sleep(2);
-                    askExerciseRate(userId, msg);
+                    askExerciseRate(userId);
                 }
             } else if (states.get(userId) == 1) {
                 boolean isValid = parseExerciseRate(userId, msg);
@@ -199,7 +199,7 @@ public class FoodRecommender
                     JSONObject menuJSON = menus.get(userId);
                     JSONObject foodScoreJSON = getMenuScore(menuJSON);
                     generateRecommendation(foodScoreJSON);
-                    sleep(3);
+                    sleep(4);
                     closingWords(userId);
                 }
             } else if (states.get(userId) == 2) {
@@ -224,6 +224,10 @@ public class FoodRecommender
         }
     }
 
+    /**
+     * Ask user to for meal type.
+     * @param userId String of user id.
+     */
     public void askMealType(String userId) {
         LocalDateTime date = LocalDateTime.now();
         // Add 8 since our users are in UTC+8 time zone.
@@ -246,6 +250,12 @@ public class FoodRecommender
         publisher.publish(fmt);
     }
 
+    /**
+     * Parse the user input meal type.
+     * @param userId String of user id
+     * @param msg user input message
+     * @return whether parsing successfully or not
+     */
     public boolean parseMealType(String userId, String msg) {
         boolean isValid = false;
         if (isContaining(msg, new HashSet<>(Arrays.asList("confirm", "yes", "right", "true", "yep")))) isValid = true;
@@ -268,7 +278,11 @@ public class FoodRecommender
         return isValid;
     }
 
-    public void askExerciseRate(String userId, String msg) {
+    /**
+     * Ask user for exercise rate.
+     * @param userId String of user id.
+     */
+    public void askExerciseRate(String userId) {
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("Another question is about you exercise rate. " +
                 "Could you tell me how much physical exercises you are doing recently?");
@@ -276,6 +290,12 @@ public class FoodRecommender
         publisher.publish(fmt);
     }
 
+    /**
+     * Parse user input exercise rate.
+     * @param userId String of user id.
+     * @param msg user input message.
+     * @return whether parsing successfully or not.
+     */
     public boolean parseExerciseRate(String userId , String msg) {
         boolean isValid = false;
         for (String exerciseRate : exerciseRateToIntakeRatios.keySet()) {
@@ -298,6 +318,7 @@ public class FoodRecommender
     /**
      * Helper function for deciding whether input message contains one of the key words.
      * @param msg User input message.
+     * @param keyWord a single key word to check.
      * @return Whether user means meal finished.
      */
     public boolean isContaining(String msg, String keyWord) {
@@ -310,6 +331,7 @@ public class FoodRecommender
     /**
      * Helper function for deciding whether input message contains one of the key words.
      * @param msg User input message.
+     * @param keyWords a set of key words to check.
      * @return Whether user means meal finished.
      */
     public boolean isContaining(String msg, Set<String> keyWords) {
@@ -319,6 +341,11 @@ public class FoodRecommender
         return false;
     }
 
+    /**
+     * Wrapper function to check user has input the menu information or not.
+     * @param userId String of user id.
+     * @return whether check passed or not.
+     */
     public boolean checkUserInfo(String userId) {
         JSONObject userJSON = getUserJSON(userId);
         if (userJSON == null) {
@@ -460,6 +487,10 @@ public class FoodRecommender
         publisher.publish(fmt);
     }
 
+    /**
+     * Print opening words.
+     * @param userId String of user id.
+     */
     public void openingWords(String userId) {
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("That's all the information we want. Hold tight, " +
@@ -467,6 +498,10 @@ public class FoodRecommender
         publisher.publish(fmt);
     }
 
+    /**
+     * Print closing words.
+     * @param userId String of user id.
+     */
     public void closingWords(String userId) {
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("Above are all the recommendations we give. " +
@@ -477,6 +512,10 @@ public class FoodRecommender
         publisher.publish(fmt);
     }
 
+    /**
+     * Print reference words.
+     * @param userId String of user id.
+     */
     public void reference(String userId) {
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("Thanks a lot for your interests!");
@@ -516,6 +555,9 @@ public class FoodRecommender
     public JSONObject getUserJSON(String userId) {
         UserQuerier userQuerier = new UserQuerier();
         JSONObject userJSON = userQuerier.get(userId);
+        if (userJSON == null) {
+            log.error("Obtain a null userJSON from database.");
+        }
         userQuerier.close();
         return userJSON;
     }
@@ -620,11 +662,21 @@ public class FoodRecommender
         else return 0;
     }
 
+    /**
+     * Get the user recommended meal intake.
+     * @param userJSON String of user id.
+     * @return recommend meal intake of that user.
+     */
     public double getMealIntake(JSONObject userJSON) {
         String userId = userJSON.getString("id");
         return getUserBMR(userJSON) * exerciseIntakeRatios.get(userId) * mealPortions.get(userId);
     }
 
+    /**
+     * Get the user recommended daily intake.
+     * @param userJSON String of user id.
+     * @return recommend daily intake of that user.
+     */
     public double getDailyIntake(JSONObject userJSON) {
         String userId = userJSON.getString("id");
         return getUserBMR(userJSON) * exerciseIntakeRatios.get(userId);
@@ -651,6 +703,10 @@ public class FoodRecommender
         }
     }
 
+    /**
+     * Sleep for a few seconds, used for pursuing the order or messages.
+     * @param seconds the number of seconds to sleep.
+     */
     public void sleep(int seconds) {
         try {
             TimeUnit.SECONDS.sleep(seconds);
@@ -659,6 +715,11 @@ public class FoodRecommender
         }
     }
 
+    /**
+     * Helper function to get the index of a double array after it is ordered in descending order.
+     * @param array input double array.
+     * @return index array, note that it is double array.
+     */
     public double[] getIndex(double[] array) {
         int size = array.length;
         double temp;
@@ -684,5 +745,23 @@ public class FoodRecommender
         log.info("getIndex: input: " + Arrays.toString(array) +
                 "index:" + Arrays.toString(index));
         return index;
+    }
+
+    /**
+     * Helper function to modify internal exerciseIntakeRatios memory for testing.
+     * @param userId String of user id.
+     * @param ratio ratio.
+     */
+    public void addExerciseIntakeRatios(String userId, double ratio) {
+        exerciseIntakeRatios.put(userId, ratio);
+    }
+
+    /**
+     * Helper function to modify internal mealPortions memory for testing.
+     * @param userId String of user id.
+     * @param portion portion.
+     */
+    public void addMealPortions(String userId, double portion) {
+        mealPortions.put(userId, portion);
     }
 }

@@ -18,6 +18,11 @@ import reactor.fn.Consumer;
 import utility.FormatterMessageJSON;
 import utility.ParserMessageJSON;
 
+/**
+ * CampaignManager.
+ * @author szhouan
+ * @version unfinished
+ */
 @Slf4j
 @Component
 public class CampaignManager
