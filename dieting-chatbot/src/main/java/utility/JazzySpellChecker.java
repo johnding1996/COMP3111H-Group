@@ -60,6 +60,7 @@ public class JazzySpellChecker implements SpellCheckListener {
      * @return corrected input text
      */
     public String getCorrectedText(String text) {
+        text = text.toLowerCase();
         log.info("SPELL_CHECKER: {}", text);
         StringWordTokenizer tk = new StringWordTokenizer(text,
             new DefaultWordFinder());
