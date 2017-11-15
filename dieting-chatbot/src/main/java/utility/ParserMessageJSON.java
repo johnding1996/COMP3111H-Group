@@ -77,7 +77,8 @@ public class ParserMessageJSON extends MessageJSON {
      * @return String of value contained in the key
      */
     public String get(String key) {
-        if (!keySet.contains(key) || key.equals("imageContent")) {
+        // if (!keySet.contains(key) || key.equals("imageContent")) {
+        if (!keySet.contains(key)) {
             return null;
         }
         return json.getString(key);
