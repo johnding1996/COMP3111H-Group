@@ -82,7 +82,7 @@ public class ImageMenuParser{
             // parse out special characters
             line = line.replaceAll("[^\\p{Alnum}^\\p{Space}]+", "");
             // parse out numeric values, left only alpha characters
-            //line = line.replaceAll("[^A-Za-z]+", "");  
+            line = line.replaceAll("[^A-Za-z]+", " ");  
             log.info("after parse out number and special character: {}", line);
             if (line.equals("") || line.trim().length() <= 0) continue;
 

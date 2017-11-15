@@ -219,7 +219,7 @@ public class ChatbotController
 
         DownloadedContent png = saveContent("png", response);
         log.info("Get png uri {}", png.getUri());
-        ImageMenuParser.buildMenu(png.getUri());
+        //ImageMenuParser.buildMenu(png.getUri());
         ParserMessageJSON psr = new ParserMessageJSON(event.getSource().getUserId(), "image");
         psr.set("messageId", messageId)
         .set("imageContent", png.getUri());
