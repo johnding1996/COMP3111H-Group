@@ -48,9 +48,7 @@ public class ImageMenuParser{
         Ocr.setUp(); // one time setup
         Ocr ocr = new Ocr(); // create a new OCR engine
         ocr.startEngine("eng", Ocr.SPEED_FASTEST,
-        "PROP_PAGE_TYPE=single_block",
-        "PROP_IMG_PREPROCESS_TYPE=custom|PROP_IMG_PREPROCESS_CUSTOM_CMDS=scale(0.5);grayscale();",
-        "PROP_TABLE_SKIP_DETECTION=false");
+        "PROP_PAGE_TYPE=single_block|PROP_IMG_PREPROCESS_TYPE=custom|PROP_IMG_PREPROCESS_CUSTOM_CMDS=scale(0.5);grayscale();|PROP_TABLE_SKIP_DETECTION=false");
         String s = ocr.recognize(new URL[] {url}
         , Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT);
         log.info("Result: " + s);
@@ -86,7 +84,7 @@ public class ImageMenuParser{
             // parse out numeric values, left only alpha characters
             //line = line.replaceAll("[^A-Za-z]+", "");  
             log.info("after parse out number and special character: {}", line);
-            if (line.equals("")) continue;
+            if (line.equals("") || line.trim().length() <= 0) continue;
 
             StringBuffer correctSentence = new StringBuffer(line);
             
