@@ -148,8 +148,7 @@ public class FoodRecommender
 
         // only handle message if state is `Recommend`
         String userId = psr.getUserId();
-        State state = controller==null ?
-            State.INVALID : controller.getUserState(userId);
+        State state = psr.getState();
         if (state != State.RECOMMEND) {
             if (menus.containsKey(userId)) {
                 menus.remove(userId);
@@ -325,8 +324,9 @@ public class FoodRecommender
         if (userJSON == null) {
             FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
             fmt.appendTextMessage("Sorry, I don't have your personal " +
-                    "information yet, please set your personal information first. " +
-                    "Session cancelled.");
+               "information yet, so I could not give you recommendation. " +
+               "Please set your personal information first. " +
+               "Session cancelled.");
             publisher.publish(fmt);
             if (controller != null) {
                 controller.setUserState(userId, State.IDLE);

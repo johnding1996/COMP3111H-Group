@@ -7,7 +7,9 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import com.linecorp.bot.client.LineMessagingClient;
 import com.linecorp.bot.model.PushMessage;
+import com.linecorp.bot.model.event.FollowEvent;
 import com.linecorp.bot.model.event.MessageEvent;
+import com.linecorp.bot.model.event.UnfollowEvent;
 import com.linecorp.bot.model.event.message.TextMessageContent;
 import com.linecorp.bot.model.message.ImageMessage;
 import com.linecorp.bot.model.message.Message;
@@ -16,7 +18,7 @@ import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
 import database.keeper.StateKeeper;
 import agent.IntentionClassifier;
-
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -51,7 +53,7 @@ public class ChatbotController
 
     private HashMap<String, ScheduledFuture<?>> noReplyFutures = new HashMap<>();
 
-    @Autowired(required = false)
+    @Autowired(required = true)
     private LineMessagingClient lineMessagingClient;
 
     @Autowired
@@ -65,8 +67,6 @@ public class ChatbotController
 
     @Autowired(required = false)
     private IntentionClassifier classifier;
-
-	private Object Map;
 
     private static final int NO_REPLY_TIMEOUT = 1;
  
@@ -133,13 +133,12 @@ public class ChatbotController
         String messageId = event.getMessage().getId();
 
         // remove first letter 'U' from userId
-        int endIndex = userId.length();
-        userId = userId.substring(1, endIndex);
+        userId = userId.substring(1);
 
         log.info("textContent: {}", textContent);
 
         // cancel session?
-        if (textContent.equals("CANCEL")) {
+        if (textContent.trim().equals("CANCEL")) {
             log.info("Session cancelled by user {}", userId);
             setUserState(userId, State.IDLE);
 
@@ -152,7 +151,8 @@ public class ChatbotController
         // publish message
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.set("messageId", messageId)
-           .set("textContent", textContent);
+           .set("textContent", textContent)
+           .setState(getUserState(userId).toString());
         registerNoReplyCallback(userId);
         if (getUserState(userId) != State.IDLE) {
             publisher.publish(psr);
@@ -163,6 +163,32 @@ public class ChatbotController
                 classifier.accept(ev);
             }
         }
+    }
+
+    /**
+     * Event handler for LINE unfollow event.
+     * @param event LINE unfollow event.
+     */
+    @EventMapping
+    public void handleUnfollowEvent(UnfollowEvent event) {
+        String userId = event.getSource().getUserId();
+        userId = userId.substring(1);
+
+        log.info("Unfollowed by user userId {}", userId);
+        setUserState(userId, State.UNFOLLOWING);
+    }
+
+    /**
+     * Event handler for LINE follow event.
+     * @param event LINE follow event.
+     */
+    @EventMapping
+    public void handleFollowEvent(FollowEvent event) {
+        String userId = event.getSource().getUserId();
+        userId = userId.substring(1);
+
+        log.info("Followed by user {}", userId);
+        setUserState(userId, State.FOLLOWING);
     }
 
     /**
@@ -198,15 +224,14 @@ public class ChatbotController
         } catch (Exception e) {
             log.info(e.toString());
         }
-        StateKeeper keeper = new StateKeeper();
-        keeper.set(userId, newState.toString());
-        keeper.close();
+        setKeeperState(userId, newState);
 
         // publish state transition
         ParserMessageJSON psr = new ParserMessageJSON(userId, "transition");
         // prevent null value
         psr.set("textContent", "")
-            .set("messageId", "");
+           .set("messageId", "")
+           .setState(getUserState(userId).toString());
         publisher.publish(psr);
 
         // timeout callback if new state is not IDLE
@@ -216,6 +241,17 @@ public class ChatbotController
                 State.getTimeoutDate());
         }
         return true;
+    }
+
+    /**
+     * Set global state using StateKeeper.
+     * @param userId String of user Id
+     * @param newState New state to set
+     */
+    protected void setKeeperState(String userId, State newState) {
+        StateKeeper keeper = new StateKeeper();
+        keeper.set(userId, newState.toString());
+        keeper.close();
     }
 
     /**
