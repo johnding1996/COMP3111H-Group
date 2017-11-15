@@ -322,7 +322,7 @@ public class FoodRecommender
      * @return Whether user means meal finished.
      */
     public boolean isContaining(String msg, String keyWord) {
-        for (String word : TextProcessor.sentenceToWords(msg)) {
+        for (String word : TextProcessor.getTokens(msg)) {
             if (keyWord.equals(word)) return true;
         }
         return false;

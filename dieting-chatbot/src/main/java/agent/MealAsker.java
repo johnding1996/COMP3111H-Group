@@ -219,7 +219,7 @@ public class MealAsker
      */
     public static List<String> filterDishName(String dishName) {
         ArrayList<String> list = new ArrayList<>();
-        for (String word : TextProcessor.sentenceToWords(dishName)) {
+        for (String word : TextProcessor.getTokens(dishName)) {
             if (!discardWords.contains(word)) list.add(word);
         }
         return list;

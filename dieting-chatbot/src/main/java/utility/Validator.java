@@ -35,7 +35,7 @@ public class Validator {
      * @return whether the string is a gender.
      */
     public static boolean isGender(String str) {
-        List<String> words = TextProcessor.sentenceToWords(str);
+        List<String> words = TextProcessor.getTokens(str);
         for (String word : words) {
             switch (word) {
                 case "male": case "female":

@@ -86,7 +86,7 @@ public class IntentionClassifier
      * @return The state should change to given user's intention.
      */
     private State getUserIntention(String msg) {
-        for (String word : TextProcessor.sentenceToWords(msg)) {
+        for (String word : TextProcessor.getTokens(msg)) {
             if (recommendKeywords.contains(word)) return State.PARSE_MENU;
             if (initialInputKeywords.contains(word)) return State.INITIAL_INPUT;
             if (feedbackKeywords.contains(word)) return State.FEEDBACK;

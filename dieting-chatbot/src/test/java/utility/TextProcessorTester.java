@@ -48,4 +48,15 @@ public class TextProcessorTester {
         assert words.get(5).equals("long");
         assert words.get(6).equals("sentence");
     }
+
+    @Test
+    public void testGetTokens() {
+        String sentence =
+            "\"Oh, no,\" she's saying, \"our $400 blender can't handle something this hard!\";";
+        List<String> words = TextProcessor.getTokens(sentence);
+        for (String word : words) {
+            log.info(word);
+        }
+        assert words.size() == 18;
+    }
 }
