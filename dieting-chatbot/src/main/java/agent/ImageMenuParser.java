@@ -15,8 +15,11 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import lombok.extern.slf4j.Slf4j;
+import utility.JazzySpellChecker;
+
 import com.asprise.ocr.Ocr;
 import org.languagetool.JLanguageTool;
 import org.languagetool.Language;
@@ -28,15 +31,16 @@ import org.languagetool.rules.spelling.SpellingCheckRule;
 
 @Slf4j
 @Component
-public class ImageMenuParser{
+public class ImageMenuParser {
+    @Autowired
+    private JazzySpellChecker spellChecker;
 
     /**
-     * Parse JSON object from Image uri 
+     * Parse JSON object from Image uri.
      * @param uri URL string to use
      * @return A JSON array
      */
-    public static String readJsonFromImage(String uri)
-        throws IOException, JSONException {
+    public static String readJsonFromImage(String uri) throws IOException, JSONException {
         log.info("Entering readJsonFromImage");
         URL url = null;
         // handle Exception
@@ -47,15 +51,13 @@ public class ImageMenuParser{
         }
         Ocr.setUp(); // one time setup
         Ocr ocr = new Ocr(); // create a new OCR engine
-        ocr.startEngine("eng", Ocr.SPEED_FASTEST,
-        "PROP_PAGE_TYPE=single_block|PROP_IMG_PREPROCESS_TYPE=custom|PROP_IMG_PREPROCESS_CUSTOM_CMDS=scale(0.5);grayscale();|PROP_TABLE_SKIP_DETECTION=false");
-        String s = ocr.recognize(new URL[] {url}
-        , Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT);
+        ocr.startEngine("eng", Ocr.SPEED_FASTEST, "PROP_PAGE_TYPE=single_block|PROP_IMG_PREPROCESS_TYPE=custom|"
+                + "PROP_IMG_PREPROCESS_CUSTOM_CMDS=scale(0.5);grayscale();|PROP_TABLE_SKIP_DETECTION=false");
+        String s = ocr.recognize(new URL[] { url }, Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT);
         log.info("Result: " + s);
         // ocr more images here ...
         ocr.stopEngine();
         return s;
-        
     }
 
     /**
@@ -64,28 +66,31 @@ public class ImageMenuParser{
      * @return A JSON array; null if no dish is successfully parsed
      * @throws IOException
      */
-    public static JSONArray buildMenu(String uri) {
+    public JSONArray buildMenu(String uri) {
         String text = "";
-		try {
+        try {
             log.info("Entering image menu parser build menu");
-			text = readJsonFromImage(uri);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+            text = readJsonFromImage(uri);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         JSONArray arr = new JSONArray();
         String[] lines = text.split("\n");
-        
+
         for (String line : lines) {
             log.info("this line has content: {}", line);
             // parse out special characters
             line = line.replaceAll("[^\\p{Alnum}^\\p{Space}]+", "");
             // parse out numeric values, left only alpha characters
-            line = line.replaceAll("[^A-Za-z]+", " ");  
+            line = line.replaceAll("[^A-Za-z]+", " ");
             log.info("after parse out number and special character: {}", line);
-            if (line.equals("") || line.trim().length() <= 0) continue;
+            if (line.equals("") || line.trim().length() <= 0)
+                continue;
 
+            String correctedSentence = spellChecker.getCorrectedText(line);
+            /*
             StringBuffer correctSentence = new StringBuffer(line);
             
             JLanguageTool langTool = new JLanguageTool(new BritishEnglish());
@@ -98,11 +103,11 @@ public class ImageMenuParser{
             //     }
             // }
             List<RuleMatch> matches = new ArrayList<RuleMatch>();
-			try {
-				matches = langTool.check(line);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+            try {
+            	matches = langTool.check(line);
+            } catch (IOException e) {
+            	e.printStackTrace();
+            }
             log.info("matches containing rule match: {}", matches);
             int offset = 0;
             for (RuleMatch match : matches) {
@@ -111,19 +116,20 @@ public class ImageMenuParser{
                     continue;
                 }
                 correctSentence.replace(match.getFromPos() - offset
-                , match.getToPos() - offset
-                , match.getSuggestedReplacements().get(0));
+                        , match.getToPos() - offset
+                        , match.getSuggestedReplacements().get(0));
                 offset += (match.getToPos() 
-                - match.getFromPos() 
-                - match.getSuggestedReplacements().get(0).length());
-
+                        - match.getFromPos() 
+                        - match.getSuggestedReplacements().get(0).length());
+            
                 log.info("match: {}", match);
             }
             log.info("corrected sentence: {}", correctSentence);
+            */
             JSONObject dish = new JSONObject();
-            dish.put("name", correctSentence);
+            dish.put("name", correctedSentence);
             arr.put(dish);
         }
-        return arr.length()==0 ? null : arr;
+        return arr.length() == 0 ? null : arr;
     }
 }

@@ -18,11 +18,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import reactor.bus.Event;
 import utility.FormatterMessageJSON;
+import utility.JazzySpellChecker;
 import utility.ParserMessageJSON;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {MenuParser.class})
+@SpringBootTest(classes = {MenuParser.class, ImageMenuParser.class, JazzySpellChecker.class})
 @ContextConfiguration(classes = TestConfiguration.class)
 public class MenuParserTester {
     @Autowired

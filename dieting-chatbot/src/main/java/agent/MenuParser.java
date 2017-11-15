@@ -55,6 +55,9 @@ public class MenuParser
     @Autowired(required = false)
     private ChatbotController controller;
 
+    @Autowired
+    private ImageMenuParser imageMenuParser;
+
     /**
      * Register on eventBus.
      */
@@ -155,7 +158,7 @@ public class MenuParser
             if(psr.getType().equals("image")) {
                 String uri = psr.get("imageContent");
                 log.info("get imageContent with URI: " + uri);
-                menuArray = ImageMenuParser.buildMenu(uri); 
+                menuArray = imageMenuParser.buildMenu(uri); 
             }
             else {
                 String text = psr.get("textContent");

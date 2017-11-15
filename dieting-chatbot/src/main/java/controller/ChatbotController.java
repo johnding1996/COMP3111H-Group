@@ -59,9 +59,7 @@ import javax.annotation.PostConstruct;
 @Slf4j
 @Service
 @LineMessageHandler
-public class ChatbotController
-    implements Consumer<reactor.bus.Event<
-        FormatterMessageJSON>> {
+public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMessageJSON>> {
 
     private HashMap<String, ScheduledFuture<?>> noReplyFutures = new HashMap<>();
 
@@ -81,7 +79,7 @@ public class ChatbotController
     private IntentionClassifier classifier;
 
     private static final int NO_REPLY_TIMEOUT = 1;
- 
+
     /**
      * Register on eventBus.
      */
@@ -103,7 +101,8 @@ public class ChatbotController
         String userId = fmt.getUserId();
         if (noReplyFutures.containsKey(userId)) {
             ScheduledFuture<?> future = noReplyFutures.remove(userId);
-            if (future != null) future.cancel(false);
+            if (future != null)
+                future.cancel(false);
             log.info("No reply future cancelled for user {}", userId);
         }
 
@@ -113,22 +112,21 @@ public class ChatbotController
         if (arr.length() == 0) {
             return;
         }
-        for (int i=0; i<arr.length(); ++i) {
+        for (int i = 0; i < arr.length(); ++i) {
             JSONObject obj = arr.getJSONObject(i);
             switch (obj.getString("type")) {
-                case "text":
-                    messages.add(new TextMessage(obj.getString("textContent")));
-                    break;
-                case "image":
-                    messages.add(new ImageMessage(obj.getString("originalContentUrl"),
-                        obj.getString("previewContentUrl")));
-                    break;
-                default:
-                    log.info("Invalid message type {}", obj.getString("type"));
+            case "text":
+                messages.add(new TextMessage(obj.getString("textContent")));
+                break;
+            case "image":
+                messages.add(new ImageMessage(obj.getString("originalContentUrl"), obj.getString("previewContentUrl")));
+                break;
+            default:
+                log.info("Invalid message type {}", obj.getString("type"));
             }
         }
         log.info("CONTROLLER: Send push message");
-        PushMessage pushMessage = new PushMessage("U"+userId, messages);
+        PushMessage pushMessage = new PushMessage("U" + userId, messages);
         if (lineMessagingClient != null)
             lineMessagingClient.pushMessage(pushMessage);
     }
@@ -162,9 +160,7 @@ public class ChatbotController
 
         // publish message
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
-        psr.set("messageId", messageId)
-           .set("textContent", textContent)
-           .setState(getUserState(userId).toString());
+        psr.set("messageId", messageId).set("textContent", textContent).setState(getUserState(userId).toString());
         registerNoReplyCallback(userId);
         if (getUserState(userId) != State.IDLE) {
             publisher.publish(psr);
@@ -208,8 +204,7 @@ public class ChatbotController
      * @param event LINE image message event
      */
     @EventMapping
-    public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event)
-        throws IOException {
+    public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) throws IOException {
         log.info("Get IMAGE message from user: {} !!!!!!!!!!!!!!!!!!!!!!!!!!", event.getSource().getUserId());
         String messageId = event.getMessage().getId();
         String replyToken = event.getReplyToken();
@@ -223,7 +218,7 @@ public class ChatbotController
         //TEST: store the image I uploaded in a static url
         // if(event.getSource().getUserId().equals("U60ee860ae5e086599f9e2baff5efcf15")) {
         //     log.info("Get image sent from Lucis");
-            
+
         //     Path bgPath = DietingChatbotApplication.staticPath.resolve("pikachu.png");
         //     DownloadedContent background = new DownloadedContent(bgPath
         //     , createUri("/static/" + bgPath.getFileName()));
@@ -241,21 +236,15 @@ public class ChatbotController
         //     return;
         // }
 
-
         DownloadedContent png = saveContent("png", response);
         log.info("Get png uri {}", png.getUri());
         //ImageMenuParser.buildMenu(png.getUri());
         String userId = event.getSource().getUserId();
         userId = userId.substring(1);
         ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
-        psr.set("messageId", messageId)
-           .set("imageContent", png.getUri())
-           .setState(getUserState(userId).toString());
+        psr.set("messageId", messageId).set("imageContent", png.getUri()).setState(getUserState(userId).toString());
         publisher.publish(psr);
     }
-
-
-
 
     /**
      * Get state of a user.
@@ -295,16 +284,14 @@ public class ChatbotController
         // publish state transition
         ParserMessageJSON psr = new ParserMessageJSON(userId, "transition");
         // prevent null value
-        psr.set("textContent", "")
-           .set("messageId", "")
-           .setState(getUserState(userId).toString());
+        psr.set("textContent", "").set("messageId", "").setState(getUserState(userId).toString());
         publisher.publish(psr);
 
         // timeout callback if new state is not IDLE
         if (newState != State.IDLE) {
-            taskScheduler.schedule(getTimeoutCallback(userId,
-                newState, newState==State.RECOMMEND?State.RECORD_MEAL:State.IDLE),
-                State.getTimeoutDate());
+            taskScheduler.schedule(
+                    getTimeoutCallback(userId, newState, newState == State.RECOMMEND ? State.RECORD_MEAL : State.IDLE),
+                    State.getTimeoutDate());
         }
         return true;
     }
@@ -328,24 +315,22 @@ public class ChatbotController
      * @param nextState The next state of the user when timeout happens.
      * @return A runnable object as callback function.
      */
-    private Runnable getTimeoutCallback(String userId,
-        State currentState, State nextState) {
+    private Runnable getTimeoutCallback(String userId, State currentState, State nextState) {
         return new Runnable() {
             @Override
             public void run() {
                 State state = getUserState(userId);
-                if (currentState != state) return;
+                if (currentState != state)
+                    return;
                 setUserState(userId, nextState);
             }
         };
     }
 
-    private static final String[] replies = {
-        "Sorry, but I don't understand what you said.",
-        "Oops, that is complicated for me.",
-        "Well, that doesn't make sense to me.",
-        "Well, I really do not understand that."
-    };
+    private static final String[] replies = { "Sorry, but I don't understand what you said.",
+            "Oops, that is complicated for me.", "Well, that doesn't make sense to me.",
+            "Well, I really do not understand that." };
+
     /**
      * Register no-reply callback for user input.
      * If no agent module replies the user, the controller will reply default message.
@@ -355,47 +340,41 @@ public class ChatbotController
         // cancel previous callback
         if (noReplyFutures.containsKey(userId)) {
             ScheduledFuture<?> future = noReplyFutures.get(userId);
-            if (future != null) future.cancel(false);
+            if (future != null)
+                future.cancel(false);
             log.info("Cancel previous no reply callback for user {}", userId);
         }
-        noReplyFutures.put(userId, taskScheduler.schedule(
-            new Runnable() {
-                @Override
-                public void run() {
-                    FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-                    int randomNum = ThreadLocalRandom.current()
-                        .nextInt(0, replies.length);
-                    fmt.appendTextMessage(replies[randomNum]); // general reply
-                    State state = getUserState(userId);
-                    switch (state) {
-                        case IDLE:
-                        fmt.appendTextMessage("To set your personal info, " +
-                            "send 'setting'.\nIf you want to obtain recommendation, " +
-                            "please say 'recommendation'.\n" +
-                            "You can aways cancel an operation by saying 'CANCEL'");
-                        break;
+        noReplyFutures.put(userId, taskScheduler.schedule(new Runnable() {
+            @Override
+            public void run() {
+                FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+                int randomNum = ThreadLocalRandom.current().nextInt(0, replies.length);
+                fmt.appendTextMessage(replies[randomNum]); // general reply
+                State state = getUserState(userId);
+                switch (state) {
+                case IDLE:
+                    fmt.appendTextMessage(
+                            "To set your personal info, " + "send 'setting'.\nIf you want to obtain recommendation, "
+                                    + "please say 'recommendation'.\n"
+                                    + "You can aways cancel an operation by saying 'CANCEL'");
+                    break;
 
-                        default:
-                        fmt.appendTextMessage("You could cancel the session by saying CANCEL");
-                        break;
-                    }
-                    publisher.publish(fmt);
-                    noReplyFutures.remove(userId);
+                default:
+                    fmt.appendTextMessage("You could cancel the session by saying CANCEL");
+                    break;
                 }
-            },
-            new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));
+                publisher.publish(fmt);
+                noReplyFutures.remove(userId);
+            }
+        }, new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));
         log.info("Register new no reply callback for user {}", userId);
     }
 
-
-
     static String createUri(String path) {
-        return ServletUriComponentsBuilder.fromCurrentContextPath()
-            .path(path).build().toUriString();
+        return ServletUriComponentsBuilder.fromCurrentContextPath().path(path).build().toUriString();
     }
 
-    private static DownloadedContent saveContent(String ext,
-        MessageContentResponse responseBody) {
+    private static DownloadedContent saveContent(String ext, MessageContentResponse responseBody) {
 
         log.info("Got content-type: {}", responseBody);
 
@@ -410,13 +389,10 @@ public class ChatbotController
     }
 
     private static DownloadedContent createTempFile(String ext) {
-        String fileName = LocalDateTime.now().toString() + '-'
-            + UUID.randomUUID().toString() + '.' + ext;
-        Path tempFile = DietingChatbotApplication.downloadedContentDir
-            .resolve(fileName);
+        String fileName = LocalDateTime.now().toString() + '-' + UUID.randomUUID().toString() + '.' + ext;
+        Path tempFile = DietingChatbotApplication.downloadedContentDir.resolve(fileName);
         tempFile.toFile().deleteOnExit();
-        return new DownloadedContent(tempFile, createUri("/downloaded/"
-            + tempFile.getFileName()));
+        return new DownloadedContent(tempFile, createUri("/downloaded/" + tempFile.getFileName()));
     }
 
     @Value
