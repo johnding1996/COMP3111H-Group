@@ -150,7 +150,7 @@ public class FoodRecommender
      * @return Whether user means meal finished.
      */
     public boolean isMealFinished(String msg) {
-        for (String word : TextProcessor.sentenceToWords(msg)) {
+        for (String word : TextProcessor.getTokens(msg)) {
             if (finishMealKeywords.contains(word)) return true;
         }
         return false;

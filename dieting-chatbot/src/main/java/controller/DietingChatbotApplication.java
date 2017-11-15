@@ -37,7 +37,7 @@ import reactor.bus.EventBus;
  */
 @SpringBootApplication
 @EnableScheduling
-@ComponentScan(basePackages = {"controller", "agent", "misc", "database"})
+@ComponentScan(basePackages = {"controller", "agent", "misc", "database", "utility"})
 public class DietingChatbotApplication {
     @Bean
     Environment env() {
