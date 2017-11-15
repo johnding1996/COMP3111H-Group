@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -20,7 +21,10 @@ import com.asprise.ocr.Ocr;
 import org.languagetool.JLanguageTool;
 import org.languagetool.Language;
 import org.languagetool.language.AmericanEnglish;
+import org.languagetool.language.BritishEnglish;
+import org.languagetool.rules.Rule;
 import org.languagetool.rules.RuleMatch;
+import org.languagetool.rules.spelling.SpellingCheckRule;
 
 @Slf4j
 @Component
@@ -43,7 +47,10 @@ public class ImageMenuParser{
         }
         Ocr.setUp(); // one time setup
         Ocr ocr = new Ocr(); // create a new OCR engine
-        ocr.startEngine("eng", Ocr.SPEED_FASTEST); // English
+        ocr.startEngine("eng", Ocr.SPEED_FASTEST,
+        "PROP_PAGE_TYPE=single_block",
+        "PROP_IMG_PREPROCESS_TYPE=custom|PROP_IMG_PREPROCESS_CUSTOM_CMDS=scale(0.5);grayscale();",
+        "PROP_TABLE_SKIP_DETECTION=false");
         String s = ocr.recognize(new URL[] {url}
         , Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT);
         log.info("Result: " + s);
@@ -60,8 +67,6 @@ public class ImageMenuParser{
      * @throws IOException
      */
     public static JSONArray buildMenu(String uri) {
-        //langTool.activateDefaultPatternRules(); 
-        // this method cannot be called from a static method
         String text = "";
 		try {
             log.info("Entering image menu parser build menu");
@@ -77,15 +82,23 @@ public class ImageMenuParser{
         for (String line : lines) {
             log.info("this line has content: {}", line);
             // parse out special characters
-            line = line.replaceAll("[^\\p{Alnum}]+", " ");
+            line = line.replaceAll("[^\\p{Alnum}^\\p{Space}]+", "");
             // parse out numeric values, left only alpha characters
-            line = line.replaceAll("[^A-Za-z]+", " ");  
+            //line = line.replaceAll("[^A-Za-z]+", "");  
             log.info("after parse out number and special character: {}", line);
             if (line.equals("")) continue;
 
             StringBuffer correctSentence = new StringBuffer(line);
             
-            JLanguageTool langTool = new JLanguageTool(new AmericanEnglish());
+            JLanguageTool langTool = new JLanguageTool(new BritishEnglish());
+            //langTool.activateDefaultPatternRules(); 
+            // this method cannot be called from a static method
+            // for (Rule rule : langTool.getAllActiveRules()) {
+            //     if (rule instanceof SpellingCheckRule) {
+            //         List<String> wordsToIgnore = Arrays.asList("specialword", "myotherword");
+            //         ((SpellingCheckRule)rule).addIgnoreTokens(wordsToIgnore);
+            //     }
+            // }
             List<RuleMatch> matches = new ArrayList<RuleMatch>();
 			try {
 				matches = langTool.check(line);
