@@ -1,6 +1,8 @@
 package misc;
 
+import controller.ChatbotController;
 import controller.Publisher;
+import controller.State;
 import controller.TestConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -17,11 +19,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import reactor.bus.Event;
 import utility.FormatterMessageJSON;
+import utility.JazzySpellChecker;
 import utility.ParserMessageJSON;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {InitialInputRecorder.class})
+@SpringBootTest(classes = {InitialInputRecorder.class, JazzySpellChecker.class})
 @ContextConfiguration(classes = TestConfiguration.class)
 public class InitialInputRecorderTester {
     @Autowired
@@ -29,6 +32,9 @@ public class InitialInputRecorderTester {
 
     @Autowired
     private Publisher publisher;
+
+    @Autowired
+    private ChatbotController controller;
 
     @Test
     public void testConstruction() {
@@ -62,13 +68,12 @@ public class InitialInputRecorderTester {
         recorder.clearUserStates();
         Event<ParserMessageJSON> ev =
             getParserMessageJSONEvent("szhouan", "Hello");
-        Mockito.doAnswer(getFormatterMessageJSONAnswerObject("Hello"))
+        Mockito.doAnswer(getFormatterMessageJSONAnswerObject("Would"))
             .when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
         recorder.accept(ev);
         Mockito.reset(publisher);
     }
 
-    /*
     @Test
     public void testAccept2() {
         String userId = "szhouan";
@@ -78,7 +83,7 @@ public class InitialInputRecorderTester {
 
         checkStateTransition(userId, "Hey", "Please input", "20",
             "Tell me your", "age", "gender");
-        checkStateTransition(userId, "What?", "Please input", "male",
+        checkStateTransition(userId, "What?", "Please input", "maale",
             "Hey, what is", "gender", "weight");
         checkStateTransition(userId, "Foo", "Please input", "60",
             "How about the", "weight", "height");
@@ -88,8 +93,7 @@ public class InitialInputRecorderTester {
             "Alright, now tell", "desiredWeight", "goalDate");
         checkStateTransition(userId, "Rah", "Please input", "2020-12-31",
             "Great! I now", "goalDate", null);
-        Mockito.reset(publisher);
-    }*/
+    }
 
     /**
      * Wrapper for tracking internal state transition
@@ -111,6 +115,7 @@ public class InitialInputRecorderTester {
         recorder.accept(ev);
         if (nextState != null)
             assert recorder.getUserState(userId).equals(nextState);
+        Mockito.reset(publisher);
     }
 
     /**
@@ -118,6 +123,7 @@ public class InitialInputRecorderTester {
      * @param userId String of user Id
      */
     private void addUser(String userId) {
+        controller.setUserState(userId, State.INITIAL_INPUT);
         Event<ParserMessageJSON> ev =
             getParserMessageJSONEvent(userId, "hello");
         recorder.accept(ev);
@@ -132,7 +138,8 @@ public class InitialInputRecorderTester {
     private Event<ParserMessageJSON> getParserMessageJSONEvent(
         String userId, String text) {
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
-        psr.set("textContent", text);
+        psr.set("textContent", text)
+           .setState("InitialInput");
         return new Event<>(null, psr);
     }
 
@@ -150,8 +157,13 @@ public class InitialInputRecorderTester {
                 FormatterMessageJSON fmt = invocation.getArgumentAt(0,
                     FormatterMessageJSON.class);
                 JSONArray messages = fmt.getMessageArray();
-                String text = (String) messages.getJSONObject(0)
-                    .get("textContent");
+                if (messages.length()==0) return null;
+                String text = messages.getJSONObject(0)
+                    .getString("textContent");
+                if (text.startsWith("CORRECTED")) {
+                    text = messages.getJSONObject(1)
+                        .getString("textContent");
+                }
                 log.info("Reply Message: {}", text);
                 assert text.startsWith(prefix);
                 return null;

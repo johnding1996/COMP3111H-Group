@@ -101,8 +101,7 @@ public class MealAsker
 
         // only handle message if state is `AskMeal`
         String userId = psr.getUserId();
-        State state = controller==null ?
-            State.INVALID : controller.getUserState(userId);
+        State state = psr.getState();
         if (state != State.ASK_MEAL) {
             if (menus.containsKey(userId)) {
                 menus.remove(userId);
@@ -220,7 +219,7 @@ public class MealAsker
      */
     public static List<String> filterDishName(String dishName) {
         ArrayList<String> list = new ArrayList<>();
-        for (String word : TextProcessor.sentenceToWords(dishName)) {
+        for (String word : TextProcessor.getTokens(dishName)) {
             if (!discardWords.contains(word)) list.add(word);
         }
         return list;
