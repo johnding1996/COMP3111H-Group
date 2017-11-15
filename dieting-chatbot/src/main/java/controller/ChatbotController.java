@@ -178,6 +178,32 @@ public class ChatbotController
     }
 
     /**
+     * Event handler for LINE unfollow event.
+     * @param event LINE unfollow event.
+     */
+    @EventMapping
+    public void handleUnfollowEvent(UnfollowEvent event) {
+        String userId = event.getSource().getUserId();
+        userId = userId.substring(1);
+
+        log.info("Unfollowed by user userId {}", userId);
+        setUserState(userId, State.UNFOLLOWING);
+    }
+
+    /**
+     * Event handler for LINE follow event.
+     * @param event LINE follow event.
+     */
+    @EventMapping
+    public void handleFollowEvent(FollowEvent event) {
+        String userId = event.getSource().getUserId();
+        userId = userId.substring(1);
+
+        log.info("Followed by user {}", userId);
+        setUserState(userId, State.FOLLOWING);
+    }
+
+    /**
      * Event handler for LINE image message.
      * @param event LINE image message event
      */
