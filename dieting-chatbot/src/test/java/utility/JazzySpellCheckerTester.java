@@ -33,4 +33,12 @@ public class JazzySpellCheckerTester {
         assert spellChecker.getCorrectedText(text).toLowerCase()
             .equals("hello world\nnow of new.");
     }
+
+    @Test
+    public void testSpellChecking3() {
+        String text = "Helllo woorld\nnow of ne.";
+        spellChecker.getCorrectedText("Teesst Teesst Teest");
+        assert spellChecker.getCorrectedText(text).toLowerCase()
+            .equals("hello world\nnow of new.");
+    }
 }
