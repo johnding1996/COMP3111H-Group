@@ -61,19 +61,20 @@ public class ImageControl {
         else if(type.equals("DB")) {
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream(2000);
             try {
-                ByteStreams.copy(responseBody.getStream(), byteStream);
+                Integer numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), byteStream);
                 //String encodedContent = byteStream.toString(StandardCharsets.US_ASCII.name());
+                log.info("copied " + numOfCopiesInBytes + "bytes");
                 String encodedContent = byteStream.toString();
                 //log.info("************  encodedContent = " + encodedContent);
                 // store encodedContent to DB
                 
-                try {
+                //try {
                     //inputStream = new ByteArrayInputStream(encodedContent.getBytes(StandardCharsets.US_ASCII.name()));
 
-                    inputStream = new ByteArrayInputStream(encodedContent.getBytes());
-                } catch (UnsupportedEncodingException e) {
-                    log.info("Encounter UnsupportedEncodingException when decoding encodedContent from DB");
-                }
+                inputStream = new ByteArrayInputStream(encodedContent.getBytes());
+                // } catch (UnsupportedEncodingException e) {
+                //     log.info("Encounter UnsupportedEncodingException when decoding encodedContent from DB");
+                // }
                 String tempFileUri = inputToTempFile(extension, inputStream);
                 log.info("prepare to get tempFileUri");
                 return tempFileUri;
