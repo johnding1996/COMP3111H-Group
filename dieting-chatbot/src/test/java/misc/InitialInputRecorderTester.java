@@ -19,11 +19,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import reactor.bus.Event;
 import utility.FormatterMessageJSON;
+import utility.JazzySpellChecker;
 import utility.ParserMessageJSON;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {InitialInputRecorder.class})
+@SpringBootTest(classes = {InitialInputRecorder.class, JazzySpellChecker.class})
 @ContextConfiguration(classes = TestConfiguration.class)
 public class InitialInputRecorderTester {
     @Autowired
@@ -83,7 +84,7 @@ public class InitialInputRecorderTester {
 
         checkStateTransition(userId, "Hey", "Please input", "20",
             "Tell me your", "age", "gender");
-        checkStateTransition(userId, "What?", "Please input", "male",
+        checkStateTransition(userId, "What?", "Please input", "maale",
             "Hey, what is", "gender", "weight");
         checkStateTransition(userId, "Foo", "Please input", "60",
             "How about the", "weight", "height");
@@ -93,7 +94,6 @@ public class InitialInputRecorderTester {
             "Alright, now tell", "desiredWeight", "goalDate");
         checkStateTransition(userId, "Rah", "Please input", "2020-12-31",
             "Great! I now", "goalDate", null);
-        Mockito.reset(publisher);
     }
 
     /**
@@ -159,8 +159,12 @@ public class InitialInputRecorderTester {
                     FormatterMessageJSON.class);
                 JSONArray messages = fmt.getMessageArray();
                 if (messages.length()==0) return null;
-                String text = (String) messages.getJSONObject(0)
-                    .get("textContent");
+                String text = messages.getJSONObject(0)
+                    .getString("textContent");
+                if (text.startsWith("CORRECTED")) {
+                    text = messages.getJSONObject(1)
+                        .getString("textContent");
+                }
                 log.info("Reply Message: {}", text);
                 assert text.startsWith(prefix);
                 return null;

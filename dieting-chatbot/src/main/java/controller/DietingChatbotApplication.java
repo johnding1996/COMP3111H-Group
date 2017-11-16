@@ -27,6 +27,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.stereotype.Repository;
 import reactor.Environment;
 import reactor.bus.EventBus;
 
@@ -37,7 +38,7 @@ import reactor.bus.EventBus;
  */
 @SpringBootApplication
 @EnableScheduling
-@ComponentScan(basePackages = {"controller", "agent", "misc", "database"})
+@ComponentScan(basePackages = {"controller", "agent", "misc", "database", "utility"})
 public class DietingChatbotApplication {
     @Bean
     Environment env() {

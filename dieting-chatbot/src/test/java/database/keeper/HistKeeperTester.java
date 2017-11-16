@@ -22,7 +22,8 @@ public class HistKeeperTester {
     private static HistKeeper histKeeper;
     private static JSONObject goodHistJson;
     private static JSONObject badHistJson;
-    private static String user_id = "813f61a35fbb9cc3adc28da525abf1fe";
+    //private static String user_id = "813f61a35fbb9cc3adc28da525abf1fe";
+    private static String user_id = "111111a35fbb9cc3adc28da525abf1fe";
 
     @BeforeClass
     public static void setUpClass() {
@@ -37,6 +38,7 @@ public class HistKeeperTester {
         food.put(1);
         goodHistJson.put("food", food);
         goodHistJson.put("time_created", "2017-10-29T13:30:52.123Z");
+
         badHistJson = new JSONObject();
         badHistJson.put("date", "2017-10-29");
         badHistJson.put("number_of_meal", 2);

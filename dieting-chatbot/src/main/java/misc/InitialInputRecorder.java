@@ -18,6 +18,9 @@ import database.querier.UserQuerier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+
+import com.swabunga.spell.event.SpellChecker;
+
 import static reactor.bus.selector.Selectors.$;
 import reactor.fn.Consumer;
 import reactor.bus.Event;
@@ -25,6 +28,7 @@ import reactor.bus.EventBus;
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import utility.FormatterMessageJSON;
+import utility.JazzySpellChecker;
 import utility.ParserMessageJSON;
 import utility.TextProcessor;
 import utility.Validator;
@@ -44,6 +48,9 @@ public class InitialInputRecorder
 
     @Autowired
     private Publisher publisher;
+
+    @Autowired
+    private JazzySpellChecker spellChecker;
 
     @Autowired(required = false)
     private ChatbotController controller;
@@ -71,7 +78,7 @@ public class InitialInputRecorder
      * @param textContent String of user input
      * @return validation result
      */
-    static public boolean validateInput(String type, String textContent) {
+    public static boolean validateInput(String type, String textContent) {
         switch(type) {
             case "age":
                 if(!Validator.isInteger(textContent)) return false;
@@ -173,7 +180,14 @@ public class InitialInputRecorder
         }
         UserInitialState user = states.get(userId);
         FormatterMessageJSON response = new FormatterMessageJSON(userId);
-        if (!validateInput(user.getState(), psr.get("textContent"))) {
+        String textContent = psr.get("textContent");
+        String correctedTextContent = spellChecker.getCorrectedText(textContent);
+        if (!textContent.equals(correctedTextContent)) {
+            response.appendTextMessage("CORRECTED INPUT: " +
+                correctedTextContent);
+            textContent = correctedTextContent;
+        }
+        if (!validateInput(user.getState(), textContent)) {
             response.appendTextMessage(
                 "Please input a valid value according to instruction");
         } else {
@@ -184,13 +198,12 @@ public class InitialInputRecorder
                         "Give me an integer please ~");
                     break;
                 case "age":
-                    user.age = Integer.parseInt(psr.get("textContent"));
+                    user.age = Integer.parseInt(textContent);
                     response.appendTextMessage(
                         "Tell me your gender please, type in 'male' or 'female'");
                     break;
                 case "gender":
-                    List<String> words = TextProcessor.sentenceToWords(
-                        psr.get("textContent"));
+                    List<String> words = TextProcessor.getTokens(textContent);
                     boolean isMale = true;
                     for (String word : words) {
                         if (word.equals("female") || word.equals("woman")) {
@@ -203,23 +216,23 @@ public class InitialInputRecorder
                         "Just simply give me an integer (in terms of kg)");
                     break;
                 case "weight":
-                    user.weight = Integer.parseInt(psr.get("textContent"));
+                    user.weight = Integer.parseInt(textContent);
                     response.appendTextMessage("How about the height in cm?");
                     break;
                 case "height":
-                    user.height = Integer.parseInt(psr.get("textContent"));
+                    user.height = Integer.parseInt(textContent);
                     response.appendTextMessage(
                         "Emmm... What is your desired weight?" +
                         "(give an integer in terms of kg)");
                     break;
                 case "desiredWeight":
-                    user.desiredWeight = Integer.parseInt(psr.get("textContent"));
+                    user.desiredWeight = Integer.parseInt(textContent);
                     response.appendTextMessage(
                         "Alright, now tell when you want to finish this goal? " +
                         "(type in yyyy-mm-dd format)");
                     break;
                 case "goalDate":
-                    user.goalDate = psr.get("textContent");
+                    user.goalDate = textContent;
                     response.appendTextMessage(
                         "Great! I now understand what you need!");
                     addDatabase(user);

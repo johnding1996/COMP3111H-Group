@@ -36,6 +36,11 @@ public enum State {
      */
     ASK_MEAL("AskMeal"),
     /**
+     * Ask portion state.
+     * State for asking user portion size of each dish.
+     */
+    ASK_PORTION("AskPortion"),
+    /**
      * Recommend state.
      * State for giving recommendation.
      */

@@ -1,34 +1,35 @@
 package agent;
 
+import javax.annotation.PostConstruct;
+
 import database.keeper.MenuKeeper;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import controller.ChatbotController;
+import controller.Publisher;
+import controller.State;
+import lombok.extern.slf4j.Slf4j;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import static reactor.bus.selector.Selectors.$;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import reactor.fn.Consumer;
 import utility.FormatterMessageJSON;
 import utility.ParserMessageJSON;
-import utility.TextProcessor;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import controller.Publisher;
-import controller.State;
-import controller.ChatbotController;
-import database.querier.FoodQuerier;
-import database.querier.FuzzyFoodQuerier;
-import database.querier.UserQuerier;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import javax.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
 import utility.Validator;
 
+/**
+ * PortionAsker: ask portion size of each dish.
+ * @author cliubf, szhouan
+ * @version v1.0.0
+ */
 @Slf4j
 @Component
 public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
@@ -40,6 +41,9 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
 
     @Autowired(required = false)
     private ChatbotController controller;
+
+    @Autowired
+    private FoodRecommender recommender;
 
     @PostConstruct
     public void init() {
@@ -55,6 +59,12 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
      */
     private static Map<String, Integer> userStates = new HashMap<>();
     private static Map<String, Integer> menuCount = new HashMap<>();
+
+    /**
+     * User menus internal memory for food recommendation.
+     */
+    private HashMap<String, JSONObject> menus = new HashMap<>();
+
 
     /**
      * Change user state, for testing purpose
@@ -159,18 +169,19 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
         State state = controller == null ?
                 State.INVALID : controller.getUserState(userId);
         //This need to be changed, state should be ask portion
-        if (state != State.ASKPORTION) {
-            if (userStates.containsKey(userId))
+        if (state != State.ASK_PORTION) {
+            if (userStates.containsKey(userId)) {
                 userStates.remove(userId);
-            if (menuCount.containsKey(userId))
                 menuCount.remove(userId);
+                menus.remove(userId);
+                log.info("Clear user {}", userId);
+            }
             return;
         }
 
         // Acknowledge that the psr is handled
         log.info("Entering PortionAsker");
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        publisher.publish(fmt);
+        publisher.publish(new FormatterMessageJSON(userId));
 
         FormatterMessageJSON response = new FormatterMessageJSON(userId);
         // if the input is image
@@ -225,8 +236,11 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
                 userStates.remove(userId);
                 menuCount.remove(userId);
                 response.appendTextMessage("Alright, we are going to process your update");
+                recommender.setMenuJSON(menus.remove(userId));
                 if (controller != null) {
+                    publisher.publish(response);
                     controller.setUserState(userId, State.RECOMMEND);
+                    return;
                 }
             }
             else{
@@ -256,5 +270,13 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
             }
         }
         publisher.publish(response);
+    }
+
+    /**
+     * Set MenuJSON for a user.
+     * @param json menuJSON to add.
+     */
+    public void setMenuJSON(JSONObject json) {
+        menus.put(json.getString("userId"), json);
     }
 }
