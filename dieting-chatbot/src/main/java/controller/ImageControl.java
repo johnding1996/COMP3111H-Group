@@ -62,12 +62,12 @@ public class ImageControl {
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
             try {
                 ByteStreams.copy(responseBody.getStream(), byteStream);
-                String encodedContent = byteStream.toString(StandardCharsets.US_ASCII.name());
+                String encodedContent = byteStream.toString(StandardCharsets.UTF_16.name());
                 log.info("************  encodedContent = " + encodedContent);
                 // store encodedContent to DB
                 
                 try {
-                    inputStream = new ByteArrayInputStream(encodedContent.getBytes(StandardCharsets.US_ASCII.name()));
+                    inputStream = new ByteArrayInputStream(encodedContent.getBytes(StandardCharsets.UTF_16.name()));
                 } catch (UnsupportedEncodingException e) {
                     log.info("Encounter UnsupportedEncodingException when decoding encodedContent from DB");
                 }
