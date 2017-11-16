@@ -10,6 +10,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
@@ -51,9 +52,12 @@ public class ImageControl {
     public static String saveContent(MessageContentResponse responseBody, String type) {
         log.info("Got content-type: {}", responseBody);
         InputStream inputStream = responseBody.getStream();
+        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+        String encodingMethod = inputStreamReader.getEncoding();
         String mimeType = responseBody.getMimeType();
         String extension = mimeType.substring(6);   // image/jpeg or image/png
         log.info("extension: {}", extension);
+        log.info("Encoding method: {}", encodingMethod);
         if(type.equals("TempFile")) {
             return inputToTempFile(extension, inputStream);
             // return the uri of the downloaded image
@@ -65,14 +69,14 @@ public class ImageControl {
                 //String encodedContent = byteStream.toString(StandardCharsets.US_ASCII.name());
                 log.info("copied " + numOfCopiesInBytes + " bytes");
                 //log.info("byteStream: {}", byteStream);
-                String encodedContent = new String(byteStream.toByteArray());
+                String encodedContent = new String(byteStream.toString(encodingMethod));
                 log.info("************  encodedContent = " + encodedContent.substring(0, 100));
                 // store encodedContent to DB
                 
                 //try {
                     //inputStream = new ByteArrayInputStream(encodedContent.getBytes(StandardCharsets.US_ASCII.name()));
 
-                inputStream = new ByteArrayInputStream(encodedContent.getBytes(StandardCharsets.UTF_8.name()));
+                inputStream = new ByteArrayInputStream(encodedContent.getBytes(encodingMethod));
                 // } catch (UnsupportedEncodingException e) {
                 //     log.info("Encounter UnsupportedEncodingException when decoding encodedContent from DB");
                 // }
