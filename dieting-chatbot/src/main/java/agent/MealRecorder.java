@@ -134,8 +134,7 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
 
         // only handle message if state is `RecordMeal`
         String userId = psr.getUserId();
-        State globalState = controller == null ?
-            State.INVALID : controller.getUserState(userId);
+        State globalState = psr.getState();
         if (globalState != State.RECORD_MEAL) {
             if (states.containsKey(userId)) {
                 states.remove(userId);
@@ -232,5 +231,14 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
             }
         }
         publisher.publish(response);
+    }
+
+    /**
+     * Set internal state of a user.
+     * @param userId String of userId
+     * @param newState New state to set
+     */
+    protected void setUserState(String userId, int newState) {
+        states.put(userId, newState);
     }
 }

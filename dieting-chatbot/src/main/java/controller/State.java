@@ -69,7 +69,17 @@ public enum State {
      * Upload coupon state.
      * State for handling coupon image upload for admin user.
      */
-    UPLOAD_COUPON("UploadCoupon");
+    UPLOAD_COUPON("UploadCoupon"),
+    /**
+     * Following state.
+     * State when user follows the chatbot.
+     */
+    FOLLOWING("Following"),
+    /**
+     * Unfollowing state.
+     * State when user unfollows the chatbot.
+     */
+    UNFOLLOWING("Unfollowing");
 
     private final String name;
 

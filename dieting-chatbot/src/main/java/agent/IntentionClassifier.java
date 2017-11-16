@@ -59,8 +59,7 @@ public class IntentionClassifier
         ParserMessageJSON psr = ev.getData();
 
         String userId = psr.getUserId();
-        State globalState = controller==null?
-            State.INVALID:controller.getUserState(userId);
+        State globalState = psr.getState();
         if (globalState != State.IDLE ||
             psr.getType().equals("transition")) return;
 
@@ -92,6 +91,9 @@ public class IntentionClassifier
             if (initialInputKeywords.contains(word)) return State.INITIAL_INPUT;
             if (feedbackKeywords.contains(word)) return State.FEEDBACK;
         }
+        if (msg.toLowerCase().startsWith("friend")) return State.INVITE_FRIEND;
+        if (msg.toLowerCase().startsWith("code")) return State.CLAIM_COUPON;
+        if (msg.toLowerCase().startsWith("upload")) return State.UPLOAD_COUPON;
         return State.IDLE;
     }
     private static HashSet<String> recommendKeywords;

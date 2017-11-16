@@ -69,16 +69,38 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
     }
 
     /**
+     * get most recent QueryJSON from menuKeeper (the first one)
+     * @param userId
+     * @return a json object
+     */
+    public JSONObject getMenuKeeperJSON(String userId){
+        MenuKeeper menuKeeper = new MenuKeeper();
+        JSONObject menu = menuKeeper.get(userId, 1).getJSONObject(0);
+        menuKeeper.close();
+        return menu;
+    }
+
+    /**
+     * set the user menuKeeper with new JSON
+     * @param userId
+     * @param updatedJSON
+     */
+    public boolean setMenuKeeperJSON(String userId, JSONObject updatedJSON){
+        MenuKeeper menuKeeper = new MenuKeeper();
+        boolean success = menuKeeper.set(userId, updatedJSON);
+        menuKeeper.close();
+        return success;
+    }
+
+    /**
      * Get list of menu previously input by user
      * @param userId String of user Id
      * @return Menu list in String
      */
     public String getMenu(String userId) {
-        MenuKeeper keeper = new MenuKeeper();
         String reply = "";
         try {
-            JSONArray menu = keeper.get(userId, 1)
-                    .getJSONObject(0).getJSONArray("menu");
+            JSONArray menu = this.getMenuKeeperJSON(userId).getJSONArray("menu");
             for(int j = 0; j < menu.length(); j++){
                 JSONObject food = menu.getJSONObject(j);
                 reply += String.format("%d - %s\n", j + 1,
@@ -97,14 +119,13 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
      * @param dishIndex the index of dish in menu, started by 1
      * @param portion portion of the dish, default portion unit as gram
      */
-    public void updateDatabase (int dishIndex, double portion, String userId) {
-        MenuKeeper menuKeeper = new MenuKeeper();
+    public void updateDatabase(int dishIndex, double portion, String userId) {
         try {
-            JSONObject queryJSON = menuKeeper.get(userId, 1).getJSONObject(0);
+            JSONObject queryJSON = this.getMenuKeeperJSON(userId);
             JSONObject dish = queryJSON.getJSONArray("menu").getJSONObject(dishIndex - 1);
             dish.put("portionSize", portion);
             queryJSON.getJSONArray("menu").put(dishIndex - 1, dish);
-            boolean success = menuKeeper.set(userId, queryJSON);
+            boolean success = this.setMenuKeeperJSON(userId, queryJSON);
             if(success)
                 log.info(String.format("Updated portion size in menu of user %s in to the caches.", userId));
             else
@@ -112,7 +133,6 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
         } catch (JSONException e){
             log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
         }
-        menuKeeper.close();
     }
 
     /**

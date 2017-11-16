@@ -1,9 +1,12 @@
 package agent;
 
 import controller.Publisher;
+import controller.State;
 import controller.TestConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
+import org.json.JSONObject;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
@@ -18,16 +21,44 @@ import reactor.bus.Event;
 import utility.FormatterMessageJSON;
 import utility.ParserMessageJSON;
 
+import java.util.HashMap;
+
 @Slf4j
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {PortionAsker.class})
 @ContextConfiguration(classes = TestConfiguration.class)
 public class PortionAskerTester {
+
     @Autowired
     private PortionAsker asker;
 
     @Autowired
     private Publisher publisher;
+
+    private static HashMap<String, JSONObject> userMenuJSON = new HashMap<>();
+
+    public PortionAskerTester(){
+        PortionAsker asker = Mockito.spy(PortionAsker.class);
+        Mockito.doAnswer(new Answer<State>() {
+            @Override
+            public JSONObject answer(InvocationOnMock invocation) {
+                String userId = invocation.getArgumentAt(0, String.class);
+                return userMenuJSON.get(userId);
+            }
+        }).when(asker).getMenuKeeperJSON(Matchers.anyString());
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) {
+                String userId = invocation.getArgumentAt(0, String.class);
+                JSONObject newMenuJSON = invocation.getArgumentAt(1, JSONObject.class);
+                userMenuJSON.put(userId, newMenuJSON);
+                return null;
+            }
+        }).when(asker).setMenuKeeperJSON(Matchers.anyString(),
+                Matchers.any(JSONObject.class));
+
+        this.asker = asker;
+    }
 
     @Test
     public void testAcceptImageMessage() {
@@ -99,6 +130,10 @@ public class PortionAskerTester {
         }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
         asker.accept(ev);
     }
+
+
+
+
 
     @Test
     public void testState1a() {

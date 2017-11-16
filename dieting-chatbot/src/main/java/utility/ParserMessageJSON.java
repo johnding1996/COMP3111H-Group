@@ -2,6 +2,7 @@ package utility;
 
 import org.json.JSONObject;
 
+import controller.State;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
@@ -19,7 +20,7 @@ public class ParserMessageJSON extends MessageJSON {
     static {
         keySet = new HashSet<>(
             Arrays.asList(
-                "userId", "type",
+                "userId", "type", "state",
                 "messageId", "textContent", "imageContent"
             )
         );
@@ -85,5 +86,25 @@ public class ParserMessageJSON extends MessageJSON {
             return null;
         }
         return json.getString(key);
+    }
+
+    /**
+     * Get state object corresponding to the JSON.
+     * @return State object
+     */
+    public State getState() {
+        return State.getStateByName(json.getString("state"));
+    }
+
+    /**
+     * Set state field of the JSON.
+     * @param state Name of the state
+     * @return this object
+     */
+    public ParserMessageJSON setState(String state) {
+        if (State.validateStateName(state)) {
+            json.put("state", state);
+        }
+        return this;
     }
 }

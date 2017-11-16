@@ -47,9 +47,11 @@ public class DebugReceiver implements Consumer<Event<MessageJSON>> {
     public void accept(Event<MessageJSON> ev) {
         MessageJSON json = ev.getData();
         if (json instanceof FormatterMessageJSON) {
+            log.info("\nDEBUGGER:\n FormatterMessageJSON");
             formatterMessageJSON = (FormatterMessageJSON)json;
         }
         if (json instanceof ParserMessageJSON) {
+            log.info("\nDEBUGGER:\n ParserMessageJSON");
             parserMessageJSON = (ParserMessageJSON)json;
         }
         log.info("\nDEBUGGER:\n" + json.toString());
