@@ -63,26 +63,33 @@ public class ImageControl {
             // return the uri of the downloaded image
         }
         else if(type.equals("DB")) {
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream(2000);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try {
-                long numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), byteStream);
-                //String encodedContent = byteStream.toString(StandardCharsets.US_ASCII.name());
+                long numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), bos);
+                //String encodedContent = bos.toString(StandardCharsets.US_ASCII.name());
                 log.info("copied " + numOfCopiesInBytes + " bytes");
-                //log.info("byteStream: {}", byteStream);
-                String encodedContent = new String(byteStream.toString(encodingMethod));
-                log.info("************  encodedContent = " + encodedContent.substring(0, 100));
+                //log.info("byteStream: {}", bos);
+                String decodedContent = new String(bos.toString(StandardCharsets.UTF_8.name()));
+                log.info("************  decodedContent = " + decodedContent.substring(0, 100));
                 // store encodedContent to DB
                 
                 //try {
                     //inputStream = new ByteArrayInputStream(encodedContent.getBytes(StandardCharsets.US_ASCII.name()));
 
-                inputStream = new ByteArrayInputStream(encodedContent.getBytes(encodingMethod));
+                inputStream = new ByteArrayInputStream(decodedContent.getBytes(StandardCharsets.UTF_8.name()));
                 // } catch (UnsupportedEncodingException e) {
                 //     log.info("Encounter UnsupportedEncodingException when decoding encodedContent from DB");
                 // }
-                String tempFileUri = inputToTempFile(extension, inputStream);
+                DownloadedContent tempFile = createTempFile(extension);
+                try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
+                    bos.writeTo(outputStream); 
+                    log.info("Saved {}: {}", extension, tempFile);
+                    return tempFile.getUri();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
                 log.info("prepare to get tempFileUri");
-                return tempFileUri;
+                return tempFile.getUri();
             }
             catch (IOException e) {
                 log.info("Caught IOException when testing DB part");
