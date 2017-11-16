@@ -1,5 +1,8 @@
 package utility;
 
+import java.util.Locale;
+
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 public class JazzySpellCheckerTester {
     @Autowired
     private JazzySpellChecker spellChecker;
+
+    @Before
+    public void init() {
+        Locale.setDefault(Locale.US);
+    }
 
     @Test
     public void testConstruct() {
@@ -32,5 +40,12 @@ public class JazzySpellCheckerTester {
         String text = "Helllo woorld\nnow of ne.";
         assert spellChecker.getCorrectedText(text).toLowerCase()
             .equals("hello world\nnow of new.");
+    }
+
+    @Test
+    public void testFood() {
+        String text = "Spicy Bean Curd wllh Mlnced Pork served wllh RICe";
+        assert spellChecker.getCorrectedText(text).toLowerCase()
+            .equals("spicy bean curd with minced pork served with rice");
     }
 }

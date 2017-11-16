@@ -13,6 +13,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {ImageMenuParser.class, JazzySpellChecker.class})
 public class ImageMenuParserTester {
+
+    private static final String sampleMenuPath = "/static/sample_menu_1.png";
+
     @Autowired
     private ImageMenuParser imageMenuParser;
 
@@ -20,4 +23,14 @@ public class ImageMenuParserTester {
     public void test() {
         assert imageMenuParser != null;
     }
+
+    // @Test
+    // public void buildMenuTester() {
+    //     imageMenuParser.buildMenu();
+
+    // }
+
+
+
+    
 }

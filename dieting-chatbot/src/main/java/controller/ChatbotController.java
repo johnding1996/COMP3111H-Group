@@ -235,15 +235,20 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
         //     }
         //     return;
         // }
-
-        DownloadedContent png = saveContent("png", response);
-        log.info("Get png uri {}", png.getUri());
-        //ImageMenuParser.buildMenu(png.getUri());
         String userId = event.getSource().getUserId();
         userId = userId.substring(1);
+        //TODO: check null
+        String uri = ImageControl.saveContent(response, "TempFile");
+        String tempFileUri = ImageControl.saveContent(response, "DB");
+        log.info("Stored with uri: {}", uri);
+        log.info("Get tempFileUri: {}", tempFileUri);
+        //log.info("Get encodedContent inside ChatbotController with: {}", encodedContent);
+        //ImageMenuParser.buildMenu(png.getUri());
         ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
-        psr.set("messageId", messageId).set("imageContent", png.getUri()).setState(getUserState(userId).toString());
+        psr.set("messageId", messageId).set("imageContent", uri).setState(getUserState(userId).toString());
         publisher.publish(psr);
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId).appendImageMessage(tempFileUri, tempFileUri);
+        publisher.publish(fmt);
     }
 
     /**
@@ -368,36 +373,5 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
             }
         }, new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));
         log.info("Register new no reply callback for user {}", userId);
-    }
-
-    static String createUri(String path) {
-        return ServletUriComponentsBuilder.fromCurrentContextPath().path(path).build().toUriString();
-    }
-
-    private static DownloadedContent saveContent(String ext, MessageContentResponse responseBody) {
-
-        log.info("Got content-type: {}", responseBody);
-
-        DownloadedContent tempFile = createTempFile(ext);
-        try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
-            ByteStreams.copy(responseBody.getStream(), outputStream);
-            log.info("Saved {}: {}", ext, tempFile);
-            return tempFile;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private static DownloadedContent createTempFile(String ext) {
-        String fileName = LocalDateTime.now().toString() + '-' + UUID.randomUUID().toString() + '.' + ext;
-        Path tempFile = DietingChatbotApplication.downloadedContentDir.resolve(fileName);
-        tempFile.toFile().deleteOnExit();
-        return new DownloadedContent(tempFile, createUri("/downloaded/" + tempFile.getFileName()));
-    }
-
-    @Value
-    public static class DownloadedContent {
-        Path path;
-        String uri;
     }
 }
