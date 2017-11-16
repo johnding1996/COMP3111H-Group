@@ -119,20 +119,32 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
      * @param dishIndex the index of dish in menu, started by 1
      * @param portion portion of the dish, default portion unit as gram
      */
-    public void updateDatabase(int dishIndex, double portion, String userId) {
+    public String updateDatabase(int dishIndex, double portion, String userId) {
+        String reply = "";
         try {
             JSONObject queryJSON = this.getMenuKeeperJSON(userId);
             JSONObject dish = queryJSON.getJSONArray("menu").getJSONObject(dishIndex - 1);
             dish.put("portionSize", portion);
             queryJSON.getJSONArray("menu").put(dishIndex - 1, dish);
             boolean success = this.setMenuKeeperJSON(userId, queryJSON);
-            if(success)
+            if(success){
+                String name = this.getMenuKeeperJSON(userId)
+                        .getJSONArray("menu")
+                        .getJSONObject(dishIndex - 1)
+                        .getString("name");
+                int port = this.getMenuKeeperJSON(userId)
+                        .getJSONArray("menu")
+                        .getJSONObject(dishIndex - 1)
+                        .getInt("portionSize");
+                reply = "Roger, " + port + " gram " + name;
                 log.info(String.format("Updated portion size in menu of user %s in to the caches.", userId));
+            }
             else
                 log.warn(String.format("Set error occurs, for user %s.", userId));
         } catch (JSONException e){
             log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
         }
+        return reply;
     }
 
     /**
@@ -144,7 +156,7 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
 
         // only handle message if state is `AskPortion`
         String userId = psr.getUserId();
-        State state = controller==null ?
+        State state = controller == null ?
                 State.INVALID : controller.getUserState(userId);
         //This need to be changed, state should be ask portion
         if (state != State.ASKPORTION) {
@@ -239,8 +251,7 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
                             "Or type 'leave' if no more update desired.");
                 }
                 else{
-                    updateDatabase(index, port, userId);
-                    response.appendTextMessage("Roger this ~");
+                    response.appendTextMessage(updateDatabase(index, port, userId));
                 }
             }
         }

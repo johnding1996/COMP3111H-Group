@@ -35,8 +35,40 @@ public class PortionAskerTester {
     @Autowired
     private Publisher publisher;
 
+    //Used to save mocked user menu json record
     private static HashMap<String, JSONObject> userMenuJSON = new HashMap<>();
 
+    /**
+     * This method would initialize userMenuJSON with a record QueryJSON
+     * with the user as "cluibf", and all dishes named with "xiaoxigua"
+     * @param numOfDish, number of "xiaoxigua" & "laoxigua" in menu
+     */
+    private void setMockDatabase(int numOfDish){
+        this.userMenuJSON.clear();
+
+        JSONObject queryJSON = new JSONObject();
+        JSONArray menu = new JSONArray();
+
+        for(int i = 0; i < numOfDish; i++){
+            JSONObject dish = new JSONObject();
+            dish.put("name", "xiaoxigua");
+            menu.put(dish);
+        }
+
+        for(int i = 0; i < numOfDish; i++){
+            JSONObject dish = new JSONObject();
+            dish.put("name", "laoxigua");
+            menu.put(dish);
+        }
+
+        queryJSON.put("userId", "cliubf");
+        queryJSON.put("menu", menu);
+        this.userMenuJSON.put("cliubf", queryJSON);
+    }
+
+    /**
+     * Constructor for test class, initialized asker with a mocked one
+     */
     public PortionAskerTester(){
         PortionAsker asker = Mockito.spy(PortionAsker.class);
         Mockito.doAnswer(new Answer<State>() {
@@ -62,7 +94,8 @@ public class PortionAskerTester {
 
     @Test
     public void testAcceptImageMessage() {
-        String userId = "xiaoxigua";
+        String userId = "cliubf";
+        this.setMockDatabase(1);
         ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
         psr.setState("AskPortion");
         Event<ParserMessageJSON> ev =
@@ -88,7 +121,8 @@ public class PortionAskerTester {
 
     @Test
     public void testAnotherState() {
-        String userId = "blahblah";
+        String userId = "cliubf";
+        this.setMockDatabase(1);
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("RecordMeal")
                 .set("textContent", "hello");
@@ -109,6 +143,7 @@ public class PortionAskerTester {
     @Test
     public void testState0() {
         String userId = "cliubf";
+        this.setMockDatabase(1);
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "hello");
@@ -125,19 +160,20 @@ public class PortionAskerTester {
                 JSONArray messages = (JSONArray)fmt.getMessageArray();
                 String text1 = (String) messages.getJSONObject(0).get("textContent");
                 assert text1.startsWith("Okay, this is");
+                String text2 = (String) messages.getJSONObject(1).get("textContent");
+                assert text2.startsWith("1 - xiaoxigua");
+                String text3 = (String) messages.getJSONObject(2).get("textContent");
+                assert text3.startsWith("Would you like to update");
                 return null;
             }
         }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
         asker.accept(ev);
     }
 
-
-
-
-
     @Test
     public void testState1a() {
         String userId = "cliubf";
+        this.setMockDatabase(1);
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "Yes");
@@ -163,6 +199,7 @@ public class PortionAskerTester {
     @Test
     public void testState1b() {
         String userId = "cliubf";
+        this.setMockDatabase(1);
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "No");
@@ -188,6 +225,7 @@ public class PortionAskerTester {
     @Test
     public void testState1c() {
         String userId = "cliubf";
+        this.setMockDatabase(1);
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "skdhfkjdsfh");
@@ -213,6 +251,7 @@ public class PortionAskerTester {
     @Test
     public void testState2a() {
         String userId = "cliubf";
+        this.setMockDatabase(1);
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "leave");
@@ -238,6 +277,7 @@ public class PortionAskerTester {
     @Test
     public void testState2b1() {
         String userId = "cliubf";
+        this.setMockDatabase(10);
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "100:100");
@@ -260,5 +300,29 @@ public class PortionAskerTester {
         asker.accept(ev);
     }
 
-
+    @Test
+    public void testState2b2() {
+        String userId = "cliubf";
+        this.setMockDatabase(10);
+        ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
+        psr.setState("AskPortion")
+                .set("textContent", "15:100");
+        asker.changeUserState(psr.get("userId"), 2);
+        Event<ParserMessageJSON> ev =
+                new Event<ParserMessageJSON>(null, psr);
+        Mockito.doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                    throws Throwable {
+                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
+                        FormatterMessageJSON.class);
+                assert fmt.getUserId().equals(userId);
+                JSONArray messages = (JSONArray)fmt.getMessageArray();
+                String text1 = (String) messages.getJSONObject(0).get("textContent");
+                assert text1.startsWith("Roger, 100 gram laoxigua");
+                return null;
+            }
+        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
+        asker.accept(ev);
+    }
 }
