@@ -51,7 +51,7 @@ public class MenuKeeper extends SerializeKeeper {
             return null;
         }
         if (!checkValidity(jsonArray, fields)) {
-            log.error("Failed to load user meal history due to wrongly formatted LogJSON.");
+            log.error("Failed to load user log history due to wrongly formatted LogJSON.");
             return null;
         }
         return jsonArray;

@@ -69,27 +69,11 @@ public class FoodRecommenderTester {
     }
 
     @Test
-    public void testGetUserJSON() {
-        JSONObject userJSON = recommender.getUserJSON(szhouanId);
-        log.info(userJSON.toString(4));
-        assert userJSON.getString("name").equals("szhouan");
-        assert userJSON.getInt("weight") == 57;
-    }
-
-    @Test
     public void testGetFoodJSON() {
         JSONArray foodList = recommender.getFoodJSON(
             dish1.getJSONArray("foodContent"));
         log.info(foodList.toString(4));
         assert foodList.length() == dish1.getJSONArray("foodContent").length();
-    }
-
-    @Test
-    public void testGetUserBMR() {
-        JSONObject userJSON = recommender.getUserJSON(szhouanId);
-        double bmr = recommender.getUserBMR(userJSON);
-        assert Math.abs(bmr - 1611.37) < 1;
-        log.info("UserBMR: " + bmr);
     }
 
     @Test
