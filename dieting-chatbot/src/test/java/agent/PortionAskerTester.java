@@ -1,12 +1,10 @@
 package agent;
 
 import controller.Publisher;
-import controller.State;
 import controller.TestConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
@@ -25,7 +23,7 @@ import java.util.HashMap;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {PortionAsker.class})
+@SpringBootTest(classes = {FoodRecommender.class, PortionAsker.class})
 @ContextConfiguration(classes = TestConfiguration.class)
 public class PortionAskerTester {
 
@@ -71,7 +69,7 @@ public class PortionAskerTester {
      */
     public PortionAskerTester(){
         PortionAsker asker = Mockito.spy(PortionAsker.class);
-        Mockito.doAnswer(new Answer<State>() {
+        Mockito.doAnswer(new Answer<JSONObject>() {
             @Override
             public JSONObject answer(InvocationOnMock invocation) {
                 String userId = invocation.getArgumentAt(0, String.class);
