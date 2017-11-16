@@ -73,23 +73,19 @@ public class ImageControl {
                 log.info("************  decodedContent = " + decodedContent.substring(0, 100));
                 // store encodedContent to DB
                 
-                //try {
-                    //inputStream = new ByteArrayInputStream(encodedContent.getBytes(StandardCharsets.US_ASCII.name()));
-
                 inputStream = new ByteArrayInputStream(decodedContent.getBytes(StandardCharsets.UTF_8.name()));
-                // } catch (UnsupportedEncodingException e) {
-                //     log.info("Encounter UnsupportedEncodingException when decoding encodedContent from DB");
+                String tempFileUri = inputToTempFile(extension, inputStream);
+                log.info("prepare to get tempFileUri");
+                return tempFileUri;
+                // DownloadedContent tempFile = createTempFile(extension);
+                // try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
+                //     bos.writeTo(outputStream); 
+                //     log.info("Saved {}: {}", extension, tempFile);
+                //     return tempFile.getUri();
+                // } catch (IOException e) {
+                //     throw new UncheckedIOException(e);
                 // }
-                DownloadedContent tempFile = createTempFile(extension);
-                try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
-                    bos.writeTo(outputStream); 
-                    log.info("Saved {}: {}", extension, tempFile);
-                    return tempFile.getUri();
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-                // log.info("prepare to get tempFileUri");
-                // return tempFile.getUri();
+                
             }
             catch (IOException e) {
                 log.info("Caught IOException when testing DB part");
