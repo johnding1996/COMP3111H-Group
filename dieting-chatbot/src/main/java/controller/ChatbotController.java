@@ -238,15 +238,15 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
         String userId = event.getSource().getUserId();
         userId = userId.substring(1);
         //TODO: check null
-        String uri = ImageControl.saveContent(response, "TempFile");
+        //String uri = ImageControl.saveContent(response, "TempFile");
         String tempFileUri = ImageControl.saveContent(response, "DB");
-        log.info("Stored with uri: {}", uri);
+        //log.info("Stored with uri: {}", uri);
         log.info("Get tempFileUri: {}", tempFileUri);
         //log.info("Get encodedContent inside ChatbotController with: {}", encodedContent);
         //ImageMenuParser.buildMenu(png.getUri());
-        ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
-        psr.set("messageId", messageId).set("imageContent", uri).setState(getUserState(userId).toString());
-        publisher.publish(psr);
+        // ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
+        // psr.set("messageId", messageId).set("imageContent", uri).setState(getUserState(userId).toString());
+        // publisher.publish(psr);
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId).appendImageMessage(tempFileUri, tempFileUri);
         publisher.publish(fmt);
     }
