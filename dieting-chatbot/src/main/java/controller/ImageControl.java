@@ -90,15 +90,15 @@ public class ImageControl {
                 // catch (IOException e) {
                 //     log.info("Caught IOException when testing DB part");
                 // }
-                
+                log.info("before reading ......");
                 StringBuilder contents = new StringBuilder();
                 int len = inputStreamReader.read();
-                char[] buffer = new char[500000];
+                char[] buffer = new char[10000];
                 while (len >= 0) {
                     contents.append(buffer, 0, len);
                 }
                 String decodedContent = buffer.toString();
-
+                log.info("decodedContent: {}", decodedContent.substring(0,100));
 
                 DownloadedContent tempFile = createTempFile(extension);
                 
