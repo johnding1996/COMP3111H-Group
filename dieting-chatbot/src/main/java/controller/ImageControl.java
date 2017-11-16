@@ -53,25 +53,28 @@ public class ImageControl {
         InputStream inputStream = responseBody.getStream();
         String mimeType = responseBody.getMimeType();
         String extension = mimeType.substring(6);   // image/jpeg or image/png
-        
+        log.info("extension: {}", extension);
         if(type.equals("TempFile")) {
             return inputToTempFile(extension, inputStream);
             // return the uri of the downloaded image
         }
         else if(type.equals("DB")) {
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream(2000);
             try {
                 ByteStreams.copy(responseBody.getStream(), byteStream);
-                String encodedContent = byteStream.toString(StandardCharsets.UTF_16.name());
-                log.info("************  encodedContent = " + encodedContent);
+                //String encodedContent = byteStream.toString(StandardCharsets.US_ASCII.name());
+                String encodedContent = byteStream.toString();
+                //log.info("************  encodedContent = " + encodedContent);
                 // store encodedContent to DB
                 
                 try {
-                    inputStream = new ByteArrayInputStream(encodedContent.getBytes(StandardCharsets.UTF_16.name()));
+                    //inputStream = new ByteArrayInputStream(encodedContent.getBytes(StandardCharsets.US_ASCII.name()));
+
+                    inputStream = new ByteArrayInputStream(encodedContent.getBytes());
                 } catch (UnsupportedEncodingException e) {
                     log.info("Encounter UnsupportedEncodingException when decoding encodedContent from DB");
                 }
-                String tempFileUri = inputToTempFile("png", inputStream);
+                String tempFileUri = inputToTempFile(extension, inputStream);
                 log.info("prepare to get tempFileUri");
                 return tempFileUri;
             }
