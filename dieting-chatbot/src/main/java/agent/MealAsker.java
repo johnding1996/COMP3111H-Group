@@ -46,7 +46,7 @@ public class MealAsker
     private Publisher publisher;
 
     @Autowired
-    private FoodRecommender recommender;
+    private PortionAsker portionAsker;
 
     @Autowired(required = false)
     private ChatbotController controller;
@@ -111,8 +111,7 @@ public class MealAsker
         }
 
         log.info("Entering MealAsker");
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        publisher.publish(fmt);
+        publisher.publish(new FormatterMessageJSON(userId));
 
         FormatterMessageJSON response = new FormatterMessageJSON(userId);
         // if the input is image
@@ -134,9 +133,9 @@ public class MealAsker
             menus.remove(userId);
             JSONObject menuJSON = queryJSONtoMenuJSON(queryJSON);
             log.info("MenuJSON:\n{}", menuJSON.toString(4));
-            recommender.setMenuJSON(menuJSON);
+            portionAsker.setMenuJSON(menuJSON);
             if (controller != null) {
-                controller.setUserState(userId, State.RECOMMEND);
+                controller.setUserState(userId, State.ASK_PORTION);
             }
         } else {
             response.appendTextMessage(
