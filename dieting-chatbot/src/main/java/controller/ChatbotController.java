@@ -41,7 +41,6 @@ import utility.Validator;
 import utility.FormatterMessageJSON;
 import utility.ParserMessageJSON;
 import utility.TextProcessor;
-import controller.ImageControl;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
