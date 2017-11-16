@@ -64,15 +64,15 @@ public class ImageControl {
                 long numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), byteStream);
                 //String encodedContent = byteStream.toString(StandardCharsets.US_ASCII.name());
                 log.info("copied " + numOfCopiesInBytes + " bytes");
-                log.info("byteStream: {}", byteStream);
-                String encodedContent = byteStream.toString();
-                //log.info("************  encodedContent = " + encodedContent);
+                //log.info("byteStream: {}", byteStream);
+                String encodedContent = new String(byteStream.toByteArray());
+                log.info("************  encodedContent = " + encodedContent.substring(0, 100));
                 // store encodedContent to DB
                 
                 //try {
                     //inputStream = new ByteArrayInputStream(encodedContent.getBytes(StandardCharsets.US_ASCII.name()));
 
-                inputStream = new ByteArrayInputStream(encodedContent.getBytes());
+                inputStream = new ByteArrayInputStream(encodedContent.getBytes(StandardCharsets.UTF_8.name()));
                 // } catch (UnsupportedEncodingException e) {
                 //     log.info("Encounter UnsupportedEncodingException when decoding encodedContent from DB");
                 // }
