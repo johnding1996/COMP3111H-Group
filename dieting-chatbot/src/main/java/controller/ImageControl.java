@@ -112,6 +112,7 @@ public class ImageControl {
         } catch (Exception e) {
             log.info("Do not support this kind of edcoding");
         }
+        return null;
     }
         
         
