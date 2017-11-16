@@ -88,8 +88,8 @@ public class ImageControl {
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
-                log.info("prepare to get tempFileUri");
-                return tempFile.getUri();
+                // log.info("prepare to get tempFileUri");
+                // return tempFile.getUri();
             }
             catch (IOException e) {
                 log.info("Caught IOException when testing DB part");
