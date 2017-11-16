@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg height="490" version="1.1" width="783" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#00ff" height="46" rx="16" ry="16" stroke="#00ff" stroke-width="1" width="114" x="102" y="14"/>
+<rect fill="#ffffff" height="46" rx="16" ry="16" stroke="#000000" stroke-width="1" width="114" x="102" y="14"/>
+<rect fill="#ffffff" height="44" rx="16" ry="16" stroke="#ffffff" stroke-width="1" width="112" x="103" y="15"/>
+<text font-family="Lucida Grande" font-size="13" x="125" y="28">
+ParseMenu</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="102" x2="215" y1="38" y2="38"/>
+<rect fill="#00ff" height="80" rx="16" ry="16" stroke="#00ff" stroke-width="1" width="112" x="342" y="14"/>
+<rect fill="#ffffff" height="80" rx="16" ry="16" stroke="#000000" stroke-width="1" width="112" x="342" y="14"/>
+<rect fill="#ffffff" height="78" rx="16" ry="16" stroke="#ffffff" stroke-width="1" width="110" x="343" y="15"/>
+<text font-family="Lucida Grande" font-size="13" x="371" y="28">
+AskMeal</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="342" x2="453" y1="38" y2="38"/>
+<text font-family="Lucida Grande" font-size="13" x="344" y="51">
+- Retrieve food</text>
+<text font-family="Lucida Grande" font-size="13" x="344" y="67">
+- Confirm food</text>
+<text font-family="Lucida Grande" font-size="13" x="344" y="83">
+- Create food</text>
+<polyline fill="none" points="215,46 342,46" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="330" x2="342" y1="53" y2="46"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="330" x2="342" y1="39" y2="46"/>
+<text font-family="Lucida Grande" font-size="13" x="234" y="41">
+menuMessage</text>
+<rect fill="#00ff" height="88" rx="16" ry="16" stroke="#00ff" stroke-width="1" width="125" x="638" y="94"/>
+<rect fill="#ffffff" height="88" rx="16" ry="16" stroke="#000000" stroke-width="1" width="125" x="638" y="94"/>
+<rect fill="#ffffff" height="86" rx="16" ry="16" stroke="#ffffff" stroke-width="1" width="123" x="639" y="95"/>
+<text font-family="Lucida Grande" font-size="13" x="662" y="108">
+Recommend</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="638" x2="762" y1="118" y2="118"/>
+<text font-family="Lucida Grande" font-size="13" x="640" y="131">
+- FoodNutrition</text>
+<text font-family="Lucida Grande" font-size="13" x="640" y="147">
+- UserInfo</text>
+<text font-family="Lucida Grande" font-size="13" x="640" y="163">
+- Recommendation</text>
+<rect fill="#00ff" height="78" rx="16" ry="16" stroke="#00ff" stroke-width="1" width="100" x="646" y="238"/>
+<rect fill="#ffffff" height="78" rx="16" ry="16" stroke="#000000" stroke-width="1" width="100" x="646" y="238"/>
+<rect fill="#ffffff" height="76" rx="16" ry="16" stroke="#ffffff" stroke-width="1" width="98" x="647" y="239"/>
+<text font-family="Lucida Grande" font-size="13" x="660" y="252">
+RecordMeal</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="646" x2="745" y1="262" y2="262"/>
+<text font-family="Lucida Grande" font-size="13" x="648" y="275">
+- Retrieve food</text>
+<text font-family="Lucida Grande" font-size="13" x="648" y="291">
+- Confirm food</text>
+<text font-family="Lucida Grande" font-size="13" x="648" y="307">
+- Ask size</text>
+<polyline fill="none" points="694,181 694,238" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="687" x2="694" y1="226" y2="238"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="701" x2="694" y1="226" y2="238"/>
+<text font-family="Lucida Grande" font-size="13" x="696" y="214">
+finishMeal</text>
+<rect fill="#00ff" height="46" rx="16" ry="16" stroke="#00ff" stroke-width="1" width="81" x="374" y="430"/>
+<rect fill="#ffffff" height="46" rx="16" ry="16" stroke="#000000" stroke-width="1" width="81" x="374" y="430"/>
+<rect fill="#ffffff" height="44" rx="16" ry="16" stroke="#ffffff" stroke-width="1" width="79" x="375" y="431"/>
+<text font-family="Lucida Grande" font-size="13" x="380" y="444">
+InitialInput</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="374" x2="454" y1="454" y2="454"/>
+<polyline fill="none" points="406,430 406,283" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="413" x2="406" y1="295" y2="283"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="399" x2="406" y1="295" y2="283"/>
+<text font-family="Lucida Grande" font-size="13" x="308" y="362">
+userInitialInput</text>
+<rect fill="#00ff" height="72" rx="16" ry="16" stroke="#00ff" stroke-width="1" width="164" x="14" y="278"/>
+<rect fill="#ffffff" height="72" rx="16" ry="16" stroke="#000000" stroke-width="1" width="164" x="14" y="278"/>
+<rect fill="#ffffff" height="70" rx="16" ry="16" stroke="#ffffff" stroke-width="1" width="162" x="15" y="279"/>
+<text font-family="Lucida Grande" font-size="13" x="66" y="292">
+Feedback</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="14" x2="177" y1="302" y2="302"/>
+<text font-family="Lucida Grande" font-size="13" x="16" y="315">
+- Ask for which feedback</text>
+<text font-family="Lucida Grande" font-size="13" x="16" y="331">
+- Generate feedback</text>
+<polyline fill="none" points="406,283 177,283" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="189" x2="177" y1="276" y2="283"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="189" x2="177" y1="290" y2="283"/>
+<text font-family="Lucida Grande" font-size="13" x="217" y="277">
+feedbackRequest</text>
+<polyline fill="none" points="646,262 492,262" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="504" x2="492" y1="255" y2="262"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="504" x2="492" y1="269" y2="262"/>
+<text font-family="Lucida Grande" font-size="13" x="530" y="257">
+confirmMeal</text>
+<rect fill="#00ff" height="62" rx="16" ry="16" stroke="#00ff" stroke-width="1" width="87" x="406" y="222"/>
+<rect fill="#ffffff" height="62" rx="16" ry="16" stroke="#000000" stroke-width="1" width="87" x="406" y="222"/>
+<rect fill="#ffffff" height="60" rx="16" ry="16" stroke="#ffffff" stroke-width="1" width="85" x="407" y="223"/>
+<text font-family="Lucida Grande" font-size="13" x="438" y="236">
+Idle</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="406" x2="492" y1="246" y2="246"/>
+<text font-family="Lucida Grande" font-size="13" x="408" y="259">
+- Initial state</text>
+<text font-family="Lucida Grande" font-size="13" x="408" y="275">
+- End state</text>
+<polyline fill="none" points="446,283 446,430" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="439" x2="446" y1="418" y2="430"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="453" x2="446" y1="418" y2="430"/>
+<text font-family="Lucida Grande" font-size="13" x="453" y="347">
+InitialInputRequest</text>
+<polyline fill="none" points="406,222 215,59" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="228" x2="215" y1="61" y2="59"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="219" x2="215" y1="72" y2="59"/>
+<text font-family="Lucida Grande" font-size="13" x="145" y="147">
+recommendationRequest</text>
+<polyline fill="none" points="177,342 334,342 406,283" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="401" x2="406" y1="296" y2="283"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="392" x2="406" y1="285" y2="283"/>
+<text font-family="Lucida Grande" font-size="13" x="225" y="335">
+sendFeedback</text>
+<rect fill="#00ff" height="46" rx="16" ry="16" stroke="#00ff" stroke-width="1" width="114" x="566" y="430"/>
+<rect fill="#ffffff" height="46" rx="16" ry="16" stroke="#000000" stroke-width="1" width="114" x="566" y="430"/>
+<rect fill="#ffffff" height="44" rx="16" ry="16" stroke="#ffffff" stroke-width="1" width="112" x="567" y="431"/>
+<text font-family="Lucida Grande" font-size="13" x="592" y="444">
+Following</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="566" x2="679" y1="454" y2="454"/>
+<polyline fill="none" points="492,283 646,350 646,430" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="639" x2="646" y1="418" y2="430"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="653" x2="646" y1="418" y2="430"/>
+<text font-family="Lucida Grande" font-size="13" x="665" y="378">
+followEvent</text>
+<polyline fill="none" points="566,454 454,454" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="466" x2="454" y1="447" y2="454"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="466" x2="454" y1="461" y2="454"/>
+<text font-family="Lucida Grande" font-size="13" x="469" y="449">
+sendGreeting</text>
+<rect fill="#00ff" height="48" rx="16" ry="16" stroke="#00ff" stroke-width="1" width="88" x="550" y="14"/>
+<rect fill="#ffffff" height="48" rx="16" ry="16" stroke="#000000" stroke-width="1" width="88" x="550" y="14"/>
+<rect fill="#ffffff" height="46" rx="16" ry="16" stroke="#ffffff" stroke-width="1" width="86" x="551" y="15"/>
+<text font-family="Lucida Grande" font-size="13" x="559" y="28">
+AskPortion</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="550" x2="637" y1="38" y2="38"/>
+<polyline fill="none" points="453,46 550,46" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="538" x2="550" y1="53" y2="46"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="538" x2="550" y1="39" y2="46"/>
+<text font-family="Lucida Grande" font-size="13" x="462" y="41">
+confirmMeal</text>
+<polyline fill="none" points="637,61 694,70 694,94" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="687" x2="694" y1="82" y2="94"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="701" x2="694" y1="82" y2="94"/>
+<text font-family="Lucida Grande" font-size="13" x="674" y="61">
+confirmPortion</text>
+<rect fill="#00ff" height="46" rx="16" ry="16" stroke="#00ff" stroke-width="1" width="88" x="166" y="190"/>
+<rect fill="#ffffff" height="46" rx="16" ry="16" stroke="#000000" stroke-width="1" width="88" x="166" y="190"/>
+<rect fill="#ffffff" height="44" rx="16" ry="16" stroke="#ffffff" stroke-width="1" width="86" x="167" y="191"/>
+<text font-family="Lucida Grande" font-size="13" x="172" y="204">
+Unfollowing</text>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="166" x2="253" y1="214" y2="214"/>
+<polyline fill="none" points="253,206 342,206 406,222" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="392" x2="406" y1="225" y2="222"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="396" x2="406" y1="212" y2="222"/>
+<text font-family="Lucida Grande" font-size="13" x="297" y="200">
+deleteUser</text>
+<polyline fill="none" points="406,235 253,235" stroke="#000000" stroke-width="1"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="265" x2="253" y1="228" y2="235"/>
+<line fill="#000000" stroke="#000000" stroke-width="1" x1="265" x2="253" y1="242" y2="235"/>
+<text font-family="Lucida Grande" font-size="13" x="286" y="230">
+unfollowEvent</text>
+</svg>
