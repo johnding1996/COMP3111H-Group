@@ -63,7 +63,8 @@ public class ImageControl {
             try {
                 long numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), byteStream);
                 //String encodedContent = byteStream.toString(StandardCharsets.US_ASCII.name());
-                log.info("copied " + numOfCopiesInBytes + "bytes");
+                log.info("copied " + numOfCopiesInBytes + " bytes");
+                log.info("byteStream: {}", byteStream);
                 String encodedContent = byteStream.toString();
                 //log.info("************  encodedContent = " + encodedContent);
                 // store encodedContent to DB
