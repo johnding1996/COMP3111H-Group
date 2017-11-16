@@ -55,45 +55,42 @@ public class ImageControl {
         InputStream inputStream = responseBody.getStream();
         try {
             InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            log.info("Do not support this kind of edcoding");
-        }
-        String encodingMethod = inputStreamReader.getEncoding();
-        String mimeType = responseBody.getMimeType();
-        String extension = mimeType.substring(6);   // image/jpeg or image/png
-        log.info("extension: {}", extension);
-        log.info("Encoding method: {}", encodingMethod);
-        if(type.equals("TempFile")) {
-            return inputToTempFile(extension, inputStream);
-            // return the uri of the downloaded image
-        }
-        else if(type.equals("DB")) {
-            // ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            // try {
-            //     long numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), bos);
-            //     log.info("copied " + numOfCopiesInBytes + " bytes");
-            //     String decodedContent = new String(bos.toString(StandardCharsets.UTF_8.name()));
-            //     log.info("************  decodedContent = " + decodedContent.substring(0, 100));
-            //     // store encodedContent to DB
+            String encodingMethod = inputStreamReader.getEncoding();
+            String mimeType = responseBody.getMimeType();
+            String extension = mimeType.substring(6);   // image/jpeg or image/png
+            log.info("extension: {}", extension);
+            log.info("Encoding method: {}", encodingMethod);
+            if(type.equals("TempFile")) {
+                return inputToTempFile(extension, inputStream);
+                // return the uri of the downloaded image
+            }
+            else if(type.equals("DB")) {
+                // ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                // try {
+                //     long numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), bos);
+                //     log.info("copied " + numOfCopiesInBytes + " bytes");
+                //     String decodedContent = new String(bos.toString(StandardCharsets.UTF_8.name()));
+                //     log.info("************  decodedContent = " + decodedContent.substring(0, 100));
+                //     // store encodedContent to DB
+                    
+                //     inputStream = new ByteArrayInputStream(decodedContent.getBytes(StandardCharsets.UTF_8.name()));
+                //     String tempFileUri = inputToTempFile(extension, inputStream);
+                //     log.info("prepare to get tempFileUri");
+                //     return tempFileUri;
+                //     // DownloadedContent tempFile = createTempFile(extension);
+                //     // try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
+                //     //     bos.writeTo(outputStream); 
+                //     //     log.info("Saved {}: {}", extension, tempFile);
+                //     //     return tempFile.getUri();
+                //     // } catch (IOException e) {
+                //     //     throw new UncheckedIOException(e);
+                //     // }
+                    
+                // }
+                // catch (IOException e) {
+                //     log.info("Caught IOException when testing DB part");
+                // }
                 
-            //     inputStream = new ByteArrayInputStream(decodedContent.getBytes(StandardCharsets.UTF_8.name()));
-            //     String tempFileUri = inputToTempFile(extension, inputStream);
-            //     log.info("prepare to get tempFileUri");
-            //     return tempFileUri;
-            //     // DownloadedContent tempFile = createTempFile(extension);
-            //     // try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
-            //     //     bos.writeTo(outputStream); 
-            //     //     log.info("Saved {}: {}", extension, tempFile);
-            //     //     return tempFile.getUri();
-            //     // } catch (IOException e) {
-            //     //     throw new UncheckedIOException(e);
-            //     // }
-                
-            // }
-            // catch (IOException e) {
-            //     log.info("Caught IOException when testing DB part");
-            // }
-            try {
                 StringBuilder contents = new StringBuilder();
                 int len = inputStreamReader.read();
                 char[] buffer = new char[500000];
@@ -104,21 +101,20 @@ public class ImageControl {
 
 
                 DownloadedContent tempFile = createTempFile(extension);
-                try {
-                    OutputStream outputStream = Files.newOutputStream(tempFile.path); 
-                    OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, "UTF-8");
-                    outputStreamWriter.write(decodedContent);
-                    log.info("Saved {}: {}", extension, tempFile);
-                    return tempFile.getUri();
-                } catch (Exception e) {
-                    log.info("Exception caught when encoding");
-                }
-            } catch (IOException e) {
-                log.info("IOException caught when decoding");
-            }
+                
+                OutputStream outputStream = Files.newOutputStream(tempFile.path); 
+                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, "UTF-8");
+                outputStreamWriter.write(decodedContent);
+                log.info("Saved {}: {}", extension, tempFile);
+                return tempFile.getUri();
+            }    
+                
+        } catch (Exception e) {
+            log.info("Do not support this kind of edcoding");
         }
-        return null;
     }
+        
+        
     
     static String createUri(String path) {
         return ServletUriComponentsBuilder.fromCurrentContextPath().path(path).build().toString();
