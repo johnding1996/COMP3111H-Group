@@ -1,9 +1,4 @@
 package database.keeper;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import java.util.Arrays;
-import java.util.List;
-
 import lombok.extern.slf4j.Slf4j;
 import redis.clients.jedis.Jedis;
 
@@ -22,7 +17,6 @@ public class CampaignKeeper extends Keeper {
     private static final String KEY_PREFIX = "campaign";
     private static final String KEY_IMG = "image";
     private static final String KEY_CNT = "count";
-    private static final String KEY_CODE = "code";
     private static final String KEY_PARENT = "parent";
 
     /**
@@ -38,7 +32,6 @@ public class CampaignKeeper extends Keeper {
 
     /**
      * Get the coupon image.
-     *
      * @return couponImg string
      */
     public String getCouponImg() {
@@ -48,7 +41,6 @@ public class CampaignKeeper extends Keeper {
 
     /**
      * Set the coupon image according to the dumped image.
-     *
      * @param key key string
      * @return whether set successfully or not
      */
@@ -59,7 +51,6 @@ public class CampaignKeeper extends Keeper {
 
     /**
      * Get the coupon count.
-     *
      * @return couponCnt int
      */
     public String getCouponCnt() {
@@ -69,17 +60,15 @@ public class CampaignKeeper extends Keeper {
 
     /**
      * Reset the coupon count to 1.
-     *
      * @return whether reset successfully or not
      */
     public Boolean resetCouponCnt() {
-        String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_CNT, "1");
+        String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_CNT, "0");
         return statusCodeReply.equals("OK");
     }
 
     /**
      * Increment the coupon count by 1.
-     *
      * @return the new coupon count Long
      */
     public Long incrCouponCnt() {
@@ -88,82 +77,26 @@ public class CampaignKeeper extends Keeper {
     }
 
     /**
-     * Set the sharingCode according to userid and the code.
-     *
-     * @param key  userid
-     * @param code sharing code
-     * @return whether set successfully or not
-     */
-    public Boolean setSharingCode(String key, String code) {
-        String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_CODE + ":" + key, code);
-        return statusCodeReply.equals("OK");
-    }
-
-    /**
-     * Get the sharingCode according to userid and the code.
-     *
-     * @param key userid
-     * @return the sharing code
-     */
-    public String getSharingCode(String key) {
-
-        return jedis.get(KEY_PREFIX + ":" + KEY_CODE + ":" + key);
-    }
-
-    /**
      * Set the parentUserId according to new user id and parent user id.
-     *
-     * @param key          userid
+     * @param key sharing code
      * @param parentUserId parent User Id
      * @return whether set successfully or not
      */
     public Boolean setParentUserId(String key, String parentUserId) {
+        if (!(checkValidityCode(key) && checkValidityUserId(parentUserId))) return false;
         String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_PARENT + ":" + key, parentUserId);
         return statusCodeReply.equals("OK");
     }
 
     /**
      * Get the parentUserId according to new user id and parent user id.
-     *
-     * @param key userid
+     * @param key sharing code
      * @return the parent user id
      */
     public String getParentUserId(String key) {
-
+        if (!checkValidityCode(key)) return null;
         return jedis.get(KEY_PREFIX + ":" + KEY_PARENT + ":" + key);
     }
 
-//    /**
-//     * Get the latest rows of campaign actions.
-//     * @param key key string
-//     * @param number number of latest result to return
-//     * @return JSONArray array of recent JSONObjects
-//     */
-//    @Override
-//    public JSONArray get(String key, int number) {
-//        JSONArray jsonArray = rangeList(prefix, key, number);
-//        if (jsonArray.length() == 0) {
-//            log.error("Attempting to search campaign action that does not exist.");
-//            return null;
-//        }
-//        if (!checkValidity(jsonArray, fields)) {
-//            log.error("Failed to load campaign action due to wrongly formatted CampaignJSON.");
-//            return null;
-//        }
-//        return jsonArray;
-//    }
-//
-//    /**
-//     * Add new campaign action to cache.
-//     * @param key key string
-//     * @param queryJson new row to add to the redis cache
-//     * @return whether appending operation is successful or not
-//     */
-//    public boolean set(String key, JSONObject queryJson) {
-//        if (!checkValitidy(queryJson, fields)) {
-//            log.error("Invalid formatted CampaignJSON.");
-//            return false;
-//        }
-//        return appendList(prefix, key, queryJson);
-//    }
+
 }
