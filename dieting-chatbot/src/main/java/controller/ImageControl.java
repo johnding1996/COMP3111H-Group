@@ -61,7 +61,7 @@ public class ImageControl {
         else if(type.equals("DB")) {
             ByteArrayOutputStream byteStream = new ByteArrayOutputStream(2000);
             try {
-                Integer numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), byteStream);
+                long numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), byteStream);
                 //String encodedContent = byteStream.toString(StandardCharsets.US_ASCII.name());
                 log.info("copied " + numOfCopiesInBytes + "bytes");
                 String encodedContent = byteStream.toString();
