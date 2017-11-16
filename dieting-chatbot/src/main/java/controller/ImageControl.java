@@ -53,7 +53,11 @@ public class ImageControl {
     public static String saveContent(MessageContentResponse responseBody, String type) {
         log.info("Got content-type: {}", responseBody);
         InputStream inputStream = responseBody.getStream();
-        InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "UTF-8");
+        try {
+            InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            log.info("Do not support this kind of edcoding");
+        }
         String encodingMethod = inputStreamReader.getEncoding();
         String mimeType = responseBody.getMimeType();
         String extension = mimeType.substring(6);   // image/jpeg or image/png
@@ -100,13 +104,14 @@ public class ImageControl {
 
 
                 DownloadedContent tempFile = createTempFile(extension);
-                try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
+                try {
+                    OutputStream outputStream = Files.newOutputStream(tempFile.path); 
                     OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, "UTF-8");
                     outputStreamWriter.write(decodedContent);
                     log.info("Saved {}: {}", extension, tempFile);
                     return tempFile.getUri();
-                } catch (IOException e) {
-                    log.info("IOException caught when encoding");
+                } catch (Exception e) {
+                    log.info("Exception caught when encoding");
                 }
             } catch (IOException e) {
                 log.info("IOException caught when decoding");
