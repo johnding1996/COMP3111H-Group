@@ -66,7 +66,7 @@ public class FoodRecommender
         mealTypeToPortions.put("breakfast", 0.2);
         mealTypeToPortions.put("brunch", 0.35);
         mealTypeToPortions.put("lunch", 0.4);
-        mealTypeToPortions.put("tea", 0.15);
+        mealTypeToPortions.put("afternoon tea", 0.15);
         mealTypeToPortions.put("dinner", 0.4);
         mealTypeToPortions.put("supper", 0.15);
     }
@@ -84,7 +84,7 @@ public class FoodRecommender
     /**
      * User menus internal memory for food recommendation.
      */
-    private static Map<String, JSONObject> menus = new HashMap<>();
+    private HashMap<String, JSONObject> menus = new HashMap<>();
 
     /**
      * User states tracking for interaction.
@@ -233,20 +233,26 @@ public class FoodRecommender
         // Add 8 since our users are in UTC+8 time zone.
         double hours = (double)(date.toLocalTime().toSecondOfDay()) / 60.0 / 60.0 + 8.0;
         String mealType;
+        // Should be careful these literals are exactly the key set of mealTypeToPortions
         if (hours > 4.5 && hours < 9.5) mealType = "breakfast";
-        else if (hours > 9 && hours < 11) mealType = "breakfast or brunch";
+        else if (hours > 9 && hours < 11) mealType = "brunch";
         else if (hours > 10.5 && hours < 14.5) mealType = "lunch";
         else if (hours > 14 && hours < 17 ) mealType = "afternoon tea";
         else if (hours > 16.5 && hours < 20.5) mealType = "dinner";
         else mealType = "supper";
         // Store default meal portion at first
         mealPortions.put(userId, mealTypeToPortions.get(mealType));
+        // Assemble the valid options
+        List<String> validOptions = new ArrayList<>();
+        for (String validMealType: mealTypeToPortions.keySet()) {
+            validOptions.add("\'" + validMealType + "\'");
+        }
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("Ok, let us analyze what you should eat for this meal. " +
                 "Before that, could you tell me which meal you are eating?");
         fmt.appendTextMessage(String.format("According to the time, I guess you are eating %s. Is that correct?", mealType));
         fmt.appendTextMessage("Please confirm that or tell me which meal you are eating directly. " +
-                "The valid options are \'breakfast\', \'brunch\', \'lunch\', \'afternoon tea\', \'dinner\' and \'supper\'.");
+                "The valid options are " + String.join(", ", validOptions) + ".");
         publisher.publish(fmt);
     }
 
@@ -283,10 +289,14 @@ public class FoodRecommender
      * @param userId String of user id.
      */
     public void askExerciseRate(String userId) {
+        List<String> validOptions = new ArrayList<>();
+        for (String validExerciseRate: exerciseRateToIntakeRatios.keySet()) {
+            validOptions.add("\'" + validExerciseRate + "\'");
+        }
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("Another question is about you exercise rate. " +
                 "Could you tell me how much physical exercises you are doing recently?");
-        fmt.appendTextMessage("Valid options include \'little\', \'light\', \'moderate\', \'active\', \'intensive\'.");
+        fmt.appendTextMessage("Valid options include " + String.join(", ", validOptions) + ".");
         publisher.publish(fmt);
     }
 
@@ -318,12 +328,15 @@ public class FoodRecommender
     /**
      * Helper function for deciding whether input message contains one of the key words.
      * @param msg User input message.
-     * @param keyWord a single key word to check.
+     * @param keyWordInput single key word to check.
      * @return Whether user means meal finished.
      */
-    public boolean isContaining(String msg, String keyWord) {
-        for (String word : TextProcessor.getTokens(msg)) {
-            if (keyWord.equals(word)) return true;
+    public boolean isContaining(String msg, String keyWordInput) {
+        Set<String> keyWords = new HashSet<>(Arrays.asList(keyWordInput.split(" ")));
+        for (String keyWord: keyWords) {
+            for (String word : TextProcessor.getTokens(msg)) {
+                if (keyWord.equals(word)) return true;
+            }
         }
         return false;
     }
@@ -331,12 +344,12 @@ public class FoodRecommender
     /**
      * Helper function for deciding whether input message contains one of the key words.
      * @param msg User input message.
-     * @param keyWords a set of key words to check.
+     * @param keyWordInputs a set of key words to check.
      * @return Whether user means meal finished.
      */
-    public boolean isContaining(String msg, Set<String> keyWords) {
-        for (String word : TextProcessor.sentenceToWords(msg)) {
-            if (keyWords.contains(word)) return true;
+    public boolean isContaining(String msg, Set<String> keyWordInputs) {
+        for (String keyWord : keyWordInputs) {
+            if (isContaining(msg, keyWord)) return true;
         }
         return false;
     }
@@ -377,9 +390,9 @@ public class FoodRecommender
         for (int i=0; i<menu.length(); ++i) {
             JSONObject dish = menu.getJSONObject(i);
             JSONObject dishResult = new JSONObject();
-            String dishName = dish.getString("dishName");
+            String name = dish.getString("name");
             JSONArray foodContent = dish.getJSONArray("foodContent");
-            dishResult.put("dishName", dishName);
+            dishResult.put("name", name);
             dishResult.put("score", calculateScore(userId, foodContent));
             dishResult.put("energy", calculateEnergyIntakes(userId, foodContent));
             dishResult.put("nutrient", calculateNutrientIntakes(userId, foodContent));
@@ -422,7 +435,7 @@ public class FoodRecommender
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         // Suggestion
         JSONObject bestDish = results.getJSONObject((int)totalIndex[0]);
-        String bestDishName = bestDish.getString("dishName");
+        String bestDishName = bestDish.getString("name");
         int bestDishPortionSize = (int)Math.round(bestDish.getJSONObject("energy").getDouble("portionSize")/5)*5;
         fmt.appendTextMessage(String.format("We suggest you to eat this dish: %s\n" +
                         "And the recommended portion size is %d gram", bestDishName, bestDishPortionSize));
@@ -464,7 +477,7 @@ public class FoodRecommender
             return;
         }
         JSONObject worstDish = results.getJSONObject((int)totalIndex[totalIndex.length-1]);
-        String worstDishName = worstDish.getString("dishName");
+        String worstDishName = worstDish.getString("name");
         List<String> worstReasons = new ArrayList<>();
         for (int k=0; k<verboseConfig; k++) {
             String nutrient = nutrientDailyIntakes.getJSONObject((int)nutrientIndex[(int)totalIndex[totalIndex.length-1]][nNutrients-k-1]).getString("name");
@@ -669,6 +682,10 @@ public class FoodRecommender
      */
     public double getMealIntake(JSONObject userJSON) {
         String userId = userJSON.getString("id");
+        log.info(userJSON.toString(4));
+        log.info("BMR: " + getUserBMR(userJSON));
+        log.info("ex ration: " + exerciseIntakeRatios.get(userId));
+        log.info("meal portion: " + mealPortions.get(userId));
         return getUserBMR(userJSON) * exerciseIntakeRatios.get(userId) * mealPortions.get(userId);
     }
 

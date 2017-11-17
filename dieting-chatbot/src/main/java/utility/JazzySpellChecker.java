@@ -19,6 +19,11 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JazzySpellChecker: check spelling using jazzy.
+ * @author szhouan
+ * @version v1.0.0
+ */
 @Slf4j
 @Component
 public class JazzySpellChecker implements SpellCheckListener {
@@ -34,8 +39,7 @@ public class JazzySpellChecker implements SpellCheckListener {
         InputStreamReader isr = null;
         BufferedReader br = null;
         try {
-            isr = new InputStreamReader(this.getClass()
-                .getResourceAsStream(dictPath));
+            isr = new InputStreamReader(this.getClass().getResourceAsStream(dictPath));
             br = new BufferedReader(isr);
             dictionaryHashMap = new SpellDictionaryHashMap(br);
         } catch (FileNotFoundException e) {
@@ -44,11 +48,13 @@ public class JazzySpellChecker implements SpellCheckListener {
             log.info(e.toString());
         } finally {
             try {
-                if (br != null) br.close();
-                if (isr != null) isr.close();
+                if (br != null)
+                    br.close();
+                if (isr != null)
+                    isr.close();
             } catch (IOException e) {
                 log.info("IOException while closing file: {}", e.toString());
-			}
+            }
         }
         spellChecker = new SpellChecker(dictionaryHashMap);
         spellChecker.addSpellCheckListener(this);
@@ -61,18 +67,20 @@ public class JazzySpellChecker implements SpellCheckListener {
      */
     public String getCorrectedText(String text) {
         log.info("SPELL_CHECKER: {}", text);
-        StringWordTokenizer tk = new StringWordTokenizer(text,
-            new DefaultWordFinder());
+        spellChecker.reset();
+        misspelledWords.clear();
+        StringWordTokenizer tk = new StringWordTokenizer(text, new DefaultWordFinder());
         spellChecker.checkSpelling(tk);
 
         for (String word : misspelledWords) {
+            log.info("Misspelt {}", word);
             List<String> suggestions = getSuggestions(word);
             if (suggestions.size() == 0) {
                 log.info("No suggestion for misspelled word {}", word);
                 continue;
             }
             String bestSuggestion = suggestions.get(0);
-            text = text.replace(word, bestSuggestion);
+            text = text.replaceAll("\\b"+word+"\\b", bestSuggestion);
         }
         log.info("SPELL_CHECKER: {}", text);
         return text;

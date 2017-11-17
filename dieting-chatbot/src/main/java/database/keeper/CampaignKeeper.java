@@ -3,7 +3,7 @@ import lombok.extern.slf4j.Slf4j;
 import redis.clients.jedis.Jedis;
 
 /**
- * Campaign Keeper to store coupon image, extension and count already claimed in the redis cache.
+ * Campaign Keeper to store coupon image and number of coupon already claimed in the redis cache.
  * Campaign Keeper to store the sharing Code and Parent User Id
  * @author wguoaa
  * @version 1.3.1
@@ -50,8 +50,8 @@ public class CampaignKeeper extends Keeper {
     }
 
     /**
-     * Get the coupon image extension.
-     * @return couponImg string
+     * Get the coupon extension.
+     * @return couponExt string
      */
     public String getCouponExt() {
         String couponExt = jedis.get(KEY_PREFIX + ":" + KEY_EXT);

@@ -33,11 +33,11 @@ public abstract class Keeper {
     }
 
     /**
-     * Check if the input user id is in the valid format
-     * @param userId Input user id String
-     * @return
+     * Check if the input user id is in the valid format.
+     * @param userId String of user Id
+     * @return whether user Id is valid
      */
-    public Boolean checkValidityUserId(String userId){
+    public boolean checkValidityUserId(String userId){
         if(userId.length() == 32){
             return true;
         }
@@ -48,11 +48,11 @@ public abstract class Keeper {
     }
 
     /**
-     * Check if the input code is in the valid format
+     * Check if the input code is in the valid format.
      * @param code Input code String
-     * @return
+     * @return whether coupon code is valid
      */
-    public Boolean checkValidityCode(String code){
+    public boolean checkValidityCode(String code){
         if(code.length() == 6){
             return true;
         }

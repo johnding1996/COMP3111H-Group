@@ -82,17 +82,17 @@ public class MenuParser
             publisher.publish(response);
         }
         else {
-            JSONObject queryJSON = new JSONObject();
-            queryJSON.put("userId", userId)
-                     .put("menu", menuArray);
+            JSONObject menuJSON = new JSONObject();
+            menuJSON.put("userId", userId)
+                    .put("menu", menuArray);
             // set queryJSON for meal asker
             if (mealAsker != null) {
-                mealAsker.setQueryJSON(queryJSON);
+                mealAsker.setMenuJSON(menuJSON);
             }
 
             // keep menu in redis
             MenuKeeper keeper = new MenuKeeper();
-            keeper.set(userId, queryJSON);
+            keeper.set(userId, menuJSON);
             keeper.close();
 
             states.remove(userId);
@@ -122,8 +122,7 @@ public class MenuParser
         }
 
         log.info("Entering MenuParser");
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        publisher.publish(fmt);
+        publisher.publish(new FormatterMessageJSON(userId));
 
         // do not handle image for now
         if(psr.getType().equals("image")) {
