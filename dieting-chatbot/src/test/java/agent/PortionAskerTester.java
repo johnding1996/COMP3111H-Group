@@ -291,6 +291,21 @@ public class PortionAskerTester {
     }
 
     @Test
+    public void testState2b1e() {
+        this.setMockDatabase(10);
+
+        ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
+        psr.setState("AskPortion")
+                .set("textContent", "1:1:1");
+        asker.changeUserState(psr.get("userId"), 2);
+
+        List<String> prefixList = new ArrayList<>();
+        prefixList.add("Plz enter in this format");
+        log.info(psr.toString());
+        assertReplyContent(prefixList, psr);
+    }
+
+    @Test
     public void testState2b2() {
         this.setMockDatabase(10);
 

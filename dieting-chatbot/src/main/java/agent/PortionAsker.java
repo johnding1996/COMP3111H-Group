@@ -267,6 +267,8 @@ public class PortionAsker
                     done = false;
                 else if (!Validator.isInteger(portion[1]))
                     done = false;
+                else if (portion.length != 2)
+                    done = false;
                 else {
                     index = Integer.parseInt(portion[0]);
                     port = Integer.parseInt(portion[1]);
