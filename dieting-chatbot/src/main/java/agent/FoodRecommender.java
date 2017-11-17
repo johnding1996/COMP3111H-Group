@@ -29,49 +29,59 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * FoodRecommender: calculate scores for each dish and generate reasons for recommendation.
+ * 
+ * State mapping:
+ *      0 - ask meal type
+ *      1 - ask exercise rate
+ *      2 - publish recommendation
+ * 
  * @author mcding, agong, szhouan
- * @version v2.0.0
+ * @version v2.1.0
  */
 @Slf4j
 @Component
-public class FoodRecommender
-    implements Consumer<Event<ParserMessageJSON>> {
+public class FoodRecommender extends Agent {
 
     @Autowired
-    private EventBus eventBus;
+    private MenuManager menuManager;
+
+    @Autowired
+    private UserManager userManager;
     
-    @Autowired
-    private Publisher publisher;
-
-    @Autowired(required = false)
-    private ChatbotController controller;
-
     private static JSONArray nutrientDailyIntakes;
     static {
         nutrientDailyIntakes = new JSONArray();
-        nutrientDailyIntakes.put(packSingleIntakeJSON("lipid_tot", 70, 15, "g", "fat"))
-                     .put(packSingleIntakeJSON("carbohydrt", 260, 15, "g", "carbohydrate"))
-                     .put(packSingleIntakeJSON("sugar_tot", 90, 15, "g", "sugar"))
-                     .put(packSingleIntakeJSON("protein", 50, 15, "g", "protein"))
-                     .put(packSingleIntakeJSON("fiber_td", 30, 5, "g", "dietary fiber"))
-                     .put(packSingleIntakeJSON("vit_c", 35, 10, "mg", "vitamin C"))
-                     .put(packSingleIntakeJSON("sodium", 1600, 10, "mg", "sodium"))
-                     .put(packSingleIntakeJSON("potassium", 2000, 5, "mg", "potassium"))
-                     .put(packSingleIntakeJSON("calcium", 800, 5, "mg", "calcium"));
+        nutrientDailyIntakes
+            .put(packSingleIntakeJSON("lipid_tot", 70, 15, "g", "fat"))
+            .put(packSingleIntakeJSON("carbohydrt", 260, 15, "g", "carbohydrate"))
+            .put(packSingleIntakeJSON("sugar_tot", 90, 15, "g", "sugar"))
+            .put(packSingleIntakeJSON("protein", 50, 15, "g", "protein"))
+            .put(packSingleIntakeJSON("fiber_td", 30, 5, "g", "dietary fiber"))
+            .put(packSingleIntakeJSON("vit_c", 35, 10, "mg", "vitamin C"))
+            .put(packSingleIntakeJSON("sodium", 1600, 10, "mg", "sodium"))
+            .put(packSingleIntakeJSON("potassium", 2000, 5, "mg", "potassium"))
+            .put(packSingleIntakeJSON("calcium", 800, 5, "mg", "calcium"));
     }
 
     private static Map<String, Double> mealTypeToPortions;
+    private static String VALID_MEAL_TYPES;
     static {
         mealTypeToPortions = new LinkedHashMap<>();
         mealTypeToPortions.put("breakfast", 0.2);
         mealTypeToPortions.put("brunch", 0.35);
         mealTypeToPortions.put("lunch", 0.4);
-        mealTypeToPortions.put("afternoon tea", 0.15);
+        // mealTypeToPortions.put("afternoon tea", 0.15);
         mealTypeToPortions.put("dinner", 0.4);
         mealTypeToPortions.put("supper", 0.15);
+        List<String> tmp = new ArrayList<>();
+        for (String mealType : mealTypeToPortions.keySet()) {
+            tmp.add("\"" + mealType + "\"");
+        }
+        VALID_MEAL_TYPES = String.join(", ", tmp);
     }
 
     private static Map<String, Double> exerciseRateToIntakeRatios;
+    private static String VALID_EXERCISE_RATE;
     static {
         exerciseRateToIntakeRatios = new LinkedHashMap<>();
         exerciseRateToIntakeRatios.put("little", 1.2);
@@ -79,42 +89,233 @@ public class FoodRecommender
         exerciseRateToIntakeRatios.put("moderate", 1.55);
         exerciseRateToIntakeRatios.put("active", 1.725);
         exerciseRateToIntakeRatios.put("intensive", 1.9);
+        List<String> tmp = new ArrayList<>();
+        for (String exerciseRate : exerciseRateToIntakeRatios.keySet()) {
+            tmp.add("\"" + exerciseRate + "\"");
+        }
+        VALID_EXERCISE_RATE = String.join(", ", tmp);
     }
 
     /**
-     * User menus internal memory for food recommendation.
+     * Initialize food recommender agent.
      */
-    private HashMap<String, JSONObject> menus = new HashMap<>();
-
-    /**
-     * User states tracking for interaction.
-     * 0 stands for just entering and asked meal type
-     * 1 stands for collected meal type and asked exercise rate
-     * 2 stands for collected exercise rate and published recommendation and reasons
-     */
-    private static Map<String, Integer> states = new HashMap<>();
-
-    /**
-     * Number of meals internal memory for food recommendation.
-     * Storing a portion standing for the portion of nutrients should get from this meal.
-     */
-    private static Map<String, Double> mealPortions = new HashMap<>();
-
-    /**
-     * Exercise rates internal memory for food recommendation.
-     * Storing a ratio standing for the daily intake over BMR for the day.
-     */
-    private static Map<String, Double> exerciseIntakeRatios = new HashMap<>();
-
-    /**
-     * Register on eventBus.
-     */
-    @PostConstruct
+    @Override
     public void init() {
-        if (eventBus != null) {
-            eventBus.on($("ParserMessageJSON"), this);
-            log.info("FoodRecommender register on eventBus");
+        agentName = "FoodRecommender";
+        agentStates = new HashSet<>(
+            Arrays.asList(State.RECOMMEND)
+        );
+        handleImage = false;
+        useSpellChecker = false;
+        this.addHandler(0, (psr) -> askMealType(psr))
+            .addHandler(1, (psr) -> askExerciseRate(psr))
+            .addHandler(2, (psr) -> giveRecommendation(psr))
+            .addHandler(3, (psr) -> explainAlgorithm(psr));
+    }
+
+    /**
+     * Handler for asking meal type.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askMealType(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+
+        // Is menu empty?
+        JSONObject menuJSON = menuManager.getMenuJSON(userId);
+        if (menuJSON == null) {
+            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+            fmt.appendTextMessage("Seems that I don't have your menu yet. " +
+                "Session cancelled.");
+            publisher.publish(fmt);
+            controller.setUserState(userId, State.IDLE);
+            return END_STATE;
         }
+        states.get(userId).put("menuJSON", menuJSON);
+
+        // Is user info available?
+        JSONObject userJSON = userManager.getUserJSON(userId);
+        if (userJSON == null) {
+            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+            fmt.appendTextMessage("Sorry, I don't have your personal " +
+               "information yet, so I could not give you recommendation. " +
+               "Please set your personal information first. " +
+               "Session cancelled.");
+            publisher.publish(fmt);
+            controller.setUserState(userId, State.IDLE);
+            return END_STATE;
+        }
+        states.get(userId).put("userJSON", userJSON);
+
+        // set default meal type
+        states.get(userId).put("mealPortion",
+            mealTypeToPortions.get(getDefaultMealType()));
+
+        // ask meal type
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage("Ok, let us analyze what you should eat for this meal. " +
+                "Before that, could you tell me which meal you are eating?")
+           .appendTextMessage(String.format("According to the time, " +
+            "I guess you are eating %s. Is that correct?", getDefaultMealType()))
+           .appendTextMessage("Please CONFIRM that or tell me which meal you are eating directly. " +
+                "The valid options are " + VALID_MEAL_TYPES + ".");
+        publisher.publish(fmt);
+        sleep();
+
+        return 1;
+    }
+
+    /**
+     * Handler for asking exercise rate
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askExerciseRate(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+        String text = psr.get("textContent");
+
+        // validate meal type
+        boolean valid = false;
+        if (getMatch(TextProcessor.getTokens(text),
+            Arrays.asList("confirm", "yes", "right", "true", "yep")) != null) {
+            valid = true;
+        } else {
+            String mealType = getMatch(TextProcessor.getTokens(text),
+                mealTypeToPortions.keySet());
+            if (mealType != null) {
+                states.get(userId).put("mealPortion",
+                    mealTypeToPortions.get(mealType));
+                valid = true;
+            }
+        }
+        if (!valid) {
+            rejectUserInput(psr, "This is not a meal type..");
+            return 1;
+        }
+
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage("Great, I've recorded your meal type!")
+           .appendTextMessage("Another question is about you exercise rate. " +
+                "Could you tell me how much physical exercises you are doing recently?")
+           .appendTextMessage("Valid options include " + VALID_EXERCISE_RATE + ".");
+        publisher.publish(fmt);
+        sleep();
+
+        return 2;
+    }
+
+    /**
+     * Handler for giving recommendation.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int giveRecommendation(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+        String text = psr.get("textContent");
+
+        // validate exercise rate
+        String exerciseRate = getMatch(TextProcessor.getTokens(text),
+            exerciseRateToIntakeRatios.keySet());
+        if (exerciseRate == null) {
+            rejectUserInput(psr, "This is not a valid exercise rate..");
+            return 2;
+        }
+        states.get(userId).put("intakeRatio", exerciseRateToIntakeRatios.get(exerciseRate));
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage("Thanks a lot, I've recorded your exercise rate!")
+           .appendTextMessage("That's all the information we want. Hold tight, " +
+                "we are generating a personalized recommendation for you!\n... ... ...");
+        publisher.publish(fmt);
+        sleep();
+
+        generateRecommendation(getMenuScore(
+            menuManager.getMenuJSON(userId)
+        ));
+        sleep();
+
+        fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage("Above are all the recommendations I give. " +
+                "Please tell me when you finish your meal so that I can record it for later analysis.")
+           .appendTextMessage("If you are curious about how I generate this recommendation, and the mechanism behind, " +
+                "feel free to let me know!")
+           .appendTextMessage("Wish you have a good meal!");
+        publisher.publish(fmt);
+        sleep();
+
+        return 3;
+    }
+
+    /**
+     * Handler for explaining recommendation algorithm.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int explainAlgorithm(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+        String text = psr.get("textContent");
+
+        // finish meal?
+        if (getMatch(TextProcessor.getTokens(text),
+            Arrays.asList("yes", "right", "true", "yep",
+            "finished", "finish", "done"))!= null) {
+            controller.setUserState(userId, State.RECORD_MEAL);
+            return END_STATE;
+        }
+
+        // want to know algorithm?
+        if (getMatch(TextProcessor.getTokens(text),
+            Arrays.asList("reference", "how", "why")) != null) {
+
+            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+            fmt.appendTextMessage("Thanks a lot for your interests!");
+            fmt.appendTextMessage("We generate recommendation by assigning each dish with a score and order them.");
+            fmt.appendTextMessage("The score of each dish is calculated based on the well-known formula basal metabolic rate (BMR) " +
+                    "(which makes use of the your age, recent weight, and height), " +
+                    "and the recommended daily intake of 9 nutrients " +
+                    "(fat, carbohydrate, sugar, protein, dietary fiber, vitamin C, and 3 kinds of minerals).");
+            fmt.appendTextMessage("To give more personalized recommendation, we also takes your exercise rate and current meal type in to consideration, " +
+                    "to calculate your expected meal energy intake.");
+            fmt.appendTextMessage("Generally, the higher the score a dish has, the more nutrients it supplies meet our recommended value. " +
+                    "We also carefully analyze 9 sub-scores for each dish you input, and generate persuasive reasons based on them.");
+            publisher.publish(fmt);
+            return 3;
+        }
+
+        // don't know what user wants
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage("Did you mean you have finished your meal? " +
+                "If yes, please tell me and I will record what you have eaten.");
+        publisher.publish(fmt);
+        return 3;
+    }
+
+    /**
+     * Helper function for getting default meal type.
+     * @return String of default meal type
+     */
+    String getDefaultMealType() {
+        LocalDateTime date = LocalDateTime.now();
+        // Add 8 since our users are in UTC+8 time zone.
+        double hours = (double)(date.toLocalTime().toSecondOfDay()) / 60.0 / 60.0 + 8.0;
+        if (hours > 4.5 && hours < 9.5) return "breakfast";
+        else if (hours > 9 && hours < 11) return "brunch";
+        else if (hours > 10.5 && hours < 14.5) return "lunch";
+        else if (hours > 14 && hours < 17 ) return "afternoon tea";
+        else if (hours > 16.5 && hours < 20.5) return "dinner";
+        else return "supper";
+    }
+
+    /**
+     * Helper function for deciding whether two iterable has one match.
+     * @param it1 Input that needs to be matched
+     * @param it2 Template that input matched against
+     * @return matched item in it2, or null if no match found
+     */
+    String getMatch(Iterable<String> it1, Iterable<String> it2) {
+        for (String s1 : it1) for (String s2 : it2) {
+            if (s1.equals(s2)) return s2;
+        }
+        return null;
     }
 
     /**
@@ -129,251 +330,6 @@ public class FoodRecommender
             .put("unit", unit)
             .put("desc", desc);
         return json;
-    }
-
-    /**
-     * Set MenuJSON for a user.
-     * @param json menuJSON to add.
-     */
-    public void setMenuJSON(JSONObject json) {
-        menus.put(json.getString("userId"), json);
-    }
-
-    /**
-     * Event handler for ParserMessageJSON.
-     * @param ev Event object.
-     */
-    public void accept(Event<ParserMessageJSON> ev) {
-        ParserMessageJSON psr = ev.getData();
-
-        // only handle message if state is `Recommend`
-        String userId = psr.getUserId();
-        State state = psr.getState();
-        if (state != State.RECOMMEND) {
-            if (menus.containsKey(userId)) {
-                menus.remove(userId);
-                states.remove(userId);
-                mealPortions.remove(userId);
-                exerciseIntakeRatios.remove(userId);
-                log.info("Remove menu and internal states and memory of user {}", userId);
-            }
-            return;
-        }
-
-        log.info("Entering FoodRecommender");
-        publisher.publish(new FormatterMessageJSON(userId));
-
-        if (psr.getType().equals("transition") || !states.containsKey(userId)) {
-            if (menus.containsKey(userId)) {
-                boolean isValid = checkUserInfo(userId);
-                if (isValid) {
-                    states.put(userId, 0);
-                    sleep(4);
-                    askMealType(userId);
-                }
-            } else {
-                FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-                fmt.appendTextMessage("Seems that I don't have your menu yet. " +
-                    "Session cancelled.");
-                publisher.publish(fmt);
-                if (controller != null) {
-                    controller.setUserState(userId, State.IDLE);
-                }
-            }
-        } else if (psr.getType().equals("text")) {
-            String msg = psr.get("textContent");
-            if (states.get(userId) == 0) {
-                boolean isValid = parseMealType(userId, msg);
-                if (isValid) {
-                    states.put(userId, 1);
-                    sleep(2);
-                    askExerciseRate(userId);
-                }
-            } else if (states.get(userId) == 1) {
-                boolean isValid = parseExerciseRate(userId, msg);
-                if (isValid) {
-                    states.put(userId, 2);
-                    sleep(2);
-                    openingWords(userId);
-                    sleep(3);
-                    JSONObject menuJSON = menus.get(userId);
-                    JSONObject foodScoreJSON = getMenuScore(menuJSON);
-                    generateRecommendation(foodScoreJSON);
-                    sleep(4);
-                    closingWords(userId);
-                }
-            } else if (states.get(userId) == 2) {
-                if (isContaining(msg, new HashSet<>(Arrays.asList("yes", "right", "true", "yep", "finished", "finish", "done")))) {
-                    // No need to clear internal states and memory here
-                    if (controller != null) {
-                        controller.setUserState(userId, State.RECORD_MEAL);
-                    }
-                } else if (isContaining(msg, new HashSet<>(Arrays.asList("reference", "how", "why")))){
-                    reference(userId);
-                } else {
-                    FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-                    fmt.appendTextMessage("Did you mean you have finished your meal? " +
-                            "If yes, please tell me and I will record what you have eaten.");
-                    publisher.publish(fmt);
-                }
-            } else {
-                log.error(String.format("Invalid internal state %d of user %s encountered in FoodRecommender.",
-                        states.get(userId), userId));
-
-            }
-        }
-    }
-
-    /**
-     * Ask user to for meal type.
-     * @param userId String of user id.
-     */
-    public void askMealType(String userId) {
-        LocalDateTime date = LocalDateTime.now();
-        // Add 8 since our users are in UTC+8 time zone.
-        double hours = (double)(date.toLocalTime().toSecondOfDay()) / 60.0 / 60.0 + 8.0;
-        String mealType;
-        // Should be careful these literals are exactly the key set of mealTypeToPortions
-        if (hours > 4.5 && hours < 9.5) mealType = "breakfast";
-        else if (hours > 9 && hours < 11) mealType = "brunch";
-        else if (hours > 10.5 && hours < 14.5) mealType = "lunch";
-        else if (hours > 14 && hours < 17 ) mealType = "afternoon tea";
-        else if (hours > 16.5 && hours < 20.5) mealType = "dinner";
-        else mealType = "supper";
-        // Store default meal portion at first
-        mealPortions.put(userId, mealTypeToPortions.get(mealType));
-        // Assemble the valid options
-        List<String> validOptions = new ArrayList<>();
-        for (String validMealType: mealTypeToPortions.keySet()) {
-            validOptions.add("\'" + validMealType + "\'");
-        }
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("Ok, let us analyze what you should eat for this meal. " +
-                "Before that, could you tell me which meal you are eating?");
-        fmt.appendTextMessage(String.format("According to the time, I guess you are eating %s. Is that correct?", mealType));
-        fmt.appendTextMessage("Please confirm that or tell me which meal you are eating directly. " +
-                "The valid options are " + String.join(", ", validOptions) + ".");
-        publisher.publish(fmt);
-    }
-
-    /**
-     * Parse the user input meal type.
-     * @param userId String of user id
-     * @param msg user input message
-     * @return whether parsing successfully or not
-     */
-    public boolean parseMealType(String userId, String msg) {
-        boolean isValid = false;
-        if (isContaining(msg, new HashSet<>(Arrays.asList("confirm", "yes", "right", "true", "yep")))) isValid = true;
-        else {
-            for (String mealType : mealTypeToPortions.keySet()) {
-                if(isContaining(msg, mealType)) {
-                    mealPortions.put(userId, mealTypeToPortions.get(mealType));
-                    isValid = true;
-                    break;
-                }
-            }
-        }
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        if (isValid) {
-            fmt.appendTextMessage("Great, I've recorded your meal type!");
-        } else {
-            fmt.appendTextMessage("Sorry, I don't understand what you are saying. Tell me a valid meal type please.");
-        }
-        publisher.publish(fmt);
-        return isValid;
-    }
-
-    /**
-     * Ask user for exercise rate.
-     * @param userId String of user id.
-     */
-    public void askExerciseRate(String userId) {
-        List<String> validOptions = new ArrayList<>();
-        for (String validExerciseRate: exerciseRateToIntakeRatios.keySet()) {
-            validOptions.add("\'" + validExerciseRate + "\'");
-        }
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("Another question is about you exercise rate. " +
-                "Could you tell me how much physical exercises you are doing recently?");
-        fmt.appendTextMessage("Valid options include " + String.join(", ", validOptions) + ".");
-        publisher.publish(fmt);
-    }
-
-    /**
-     * Parse user input exercise rate.
-     * @param userId String of user id.
-     * @param msg user input message.
-     * @return whether parsing successfully or not.
-     */
-    public boolean parseExerciseRate(String userId , String msg) {
-        boolean isValid = false;
-        for (String exerciseRate : exerciseRateToIntakeRatios.keySet()) {
-            if(isContaining(msg, exerciseRate)) {
-                exerciseIntakeRatios.put(userId, exerciseRateToIntakeRatios.get(exerciseRate));
-                isValid = true;
-                break;
-            }
-        }
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        if (isValid) {
-            fmt.appendTextMessage("Thanks a lot, I've recorded your exercise rate!");
-        } else {
-            fmt.appendTextMessage("Sorry, I don't understand ... Give me a valid exercise rate please.");
-        }
-        publisher.publish(fmt);
-        return isValid;
-    }
-
-    /**
-     * Helper function for deciding whether input message contains one of the key words.
-     * @param msg User input message.
-     * @param keyWordInput single key word to check.
-     * @return Whether user means meal finished.
-     */
-    public boolean isContaining(String msg, String keyWordInput) {
-        Set<String> keyWords = new HashSet<>(Arrays.asList(keyWordInput.split(" ")));
-        for (String keyWord: keyWords) {
-            for (String word : TextProcessor.getTokens(msg)) {
-                if (keyWord.equals(word)) return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Helper function for deciding whether input message contains one of the key words.
-     * @param msg User input message.
-     * @param keyWordInputs a set of key words to check.
-     * @return Whether user means meal finished.
-     */
-    public boolean isContaining(String msg, Set<String> keyWordInputs) {
-        for (String keyWord : keyWordInputs) {
-            if (isContaining(msg, keyWord)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Wrapper function to check user has input the menu information or not.
-     * @param userId String of user id.
-     * @return whether check passed or not.
-     */
-    public boolean checkUserInfo(String userId) {
-        JSONObject userJSON = getUserJSON(userId);
-        if (userJSON == null) {
-            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-            fmt.appendTextMessage("Sorry, I don't have your personal " +
-               "information yet, so I could not give you recommendation. " +
-               "Please set your personal information first. " +
-               "Session cancelled.");
-            publisher.publish(fmt);
-            if (controller != null) {
-                controller.setUserState(userId, State.IDLE);
-            }
-            return false;
-        }
-        return true;
     }
 
     /**
@@ -494,53 +450,9 @@ public class FoodRecommender
                     intakeJSON.getString("unit"));
             worstReasons.add(resonNutrient);
         }
-        fmt.appendTextMessage(String.format("We dose not recommend %s, because ", worstDishName) +
+        fmt.appendTextMessage(String.format("We do not recommend %s, because ", worstDishName) +
                 String.join(", ", worstReasons) + ".");
         // Finally publish the reasons
-        publisher.publish(fmt);
-    }
-
-    /**
-     * Print opening words.
-     * @param userId String of user id.
-     */
-    public void openingWords(String userId) {
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("That's all the information we want. Hold tight, " +
-                "we are generating a personalized recommendation for you!\n... ... ...");
-        publisher.publish(fmt);
-    }
-
-    /**
-     * Print closing words.
-     * @param userId String of user id.
-     */
-    public void closingWords(String userId) {
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("Above are all the recommendations we give. " +
-                "Please tell me when you finish your meal so that we can record it for later analysis.");
-        fmt.appendTextMessage("If you are curious about how we generate this recommendation, and the mechanism behind, " +
-                "feel free to let me know!");
-        fmt.appendTextMessage("Wish you have a good meal!");
-        publisher.publish(fmt);
-    }
-
-    /**
-     * Print reference words.
-     * @param userId String of user id.
-     */
-    public void reference(String userId) {
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("Thanks a lot for your interests!");
-        fmt.appendTextMessage("We generate recommendation by assigning each dish with a score and order them.");
-        fmt.appendTextMessage("The score of each dish is calculated based on the well-known formula basal metabolic rate (BMR) " +
-                "(which makes use of the your age, recent weight, and height), " +
-                "and the recommended daily intake of 9 nutrients " +
-                "(fat, carbohydrate, sugar, protein, dietary fiber, vitamin C, and 3 kinds of minerals).");
-        fmt.appendTextMessage("To give more personalized recommendation, we also takes your exercise rate and current meal type in to consideration, " +
-                "to calculate your expected meal energy intake.");
-        fmt.appendTextMessage("Generally, the higher the score a dish has, the more nutrients it supplies meet our recommended value. " +
-                "We also carefully analyze 9 sub-scores for each dish you input, and generate persuasive reasons based on them.");
         publisher.publish(fmt);
     }
 
@@ -561,21 +473,6 @@ public class FoodRecommender
     }
 
     /**
-     * Helper function for getting a UserJSON given user Id.
-     * @param userId String of user Id.
-     * @return A UserJSON.
-     */
-    public JSONObject getUserJSON(String userId) {
-        UserQuerier userQuerier = new UserQuerier();
-        JSONObject userJSON = userQuerier.get(userId);
-        if (userJSON == null) {
-            log.error("Obtain a null userJSON from database.");
-        }
-        userQuerier.close();
-        return userJSON;
-    }
-
-    /**
      * Calculate score given food content of a dish.
      * @param userId String of userId.
      * @param foodContent A JSONArray representing the content of a dish.
@@ -583,7 +480,7 @@ public class FoodRecommender
      */
     public JSONObject calculateScore(String userId, JSONArray foodContent) {
         JSONArray foodList = getFoodJSON(foodContent);
-        JSONObject userJSON = getUserJSON(userId);
+        JSONObject userJSON = states.get(userId).getJSONObject("userJSON");
         JSONObject scoreJSON = new JSONObject();
         double totalScore = 0;
         double averageCalorie = getAverageNutrient(foodList, "energ_kcal");
@@ -610,7 +507,7 @@ public class FoodRecommender
      */
     public JSONObject calculateNutrientIntakes(String userId, JSONArray foodContent) {
         JSONArray foodList = getFoodJSON(foodContent);
-        JSONObject userJSON = getUserJSON(userId);
+        JSONObject userJSON = states.get(userId).getJSONObject("userJSON");
         JSONObject intakeJSON = new JSONObject();
         double averageCalorie = getAverageNutrient(foodList, "energ_kcal");
         for (int i = 0; i< nutrientDailyIntakes.length(); ++i) {
@@ -636,7 +533,7 @@ public class FoodRecommender
      */
     public JSONObject calculateEnergyIntakes(String userId, JSONArray foodContent) {
         JSONArray foodList = getFoodJSON(foodContent);
-        JSONObject userJSON = getUserJSON(userId);
+        JSONObject userJSON = states.get(userId).getJSONObject("userJSON");
         JSONObject sizeJSON = new JSONObject();
         double averageCalorie = getAverageNutrient(foodList, "energ_kcal");
         // 100 factor comes from the energy_kcal are listed in unit kcal/100g
@@ -684,9 +581,8 @@ public class FoodRecommender
         String userId = userJSON.getString("id");
         log.info(userJSON.toString(4));
         log.info("BMR: " + getUserBMR(userJSON));
-        log.info("ex ration: " + exerciseIntakeRatios.get(userId));
-        log.info("meal portion: " + mealPortions.get(userId));
-        return getUserBMR(userJSON) * exerciseIntakeRatios.get(userId) * mealPortions.get(userId);
+        return getUserBMR(userJSON) * states.get(userId).getDouble("intakeRatio")
+            * states.get(userId).getDouble("mealPortion");
     }
 
     /**
@@ -696,7 +592,7 @@ public class FoodRecommender
      */
     public double getDailyIntake(JSONObject userJSON) {
         String userId = userJSON.getString("id");
-        return getUserBMR(userJSON) * exerciseIntakeRatios.get(userId);
+        return getUserBMR(userJSON) * states.get(userId).getDouble("intakeRatio");
     }
 
     /**
@@ -717,18 +613,6 @@ public class FoodRecommender
             default:
                 log.info("Invalid gender {}", gender);
                 return 0;
-        }
-    }
-
-    /**
-     * Sleep for a few seconds, used for pursuing the order or messages.
-     * @param seconds the number of seconds to sleep.
-     */
-    public void sleep(int seconds) {
-        try {
-            TimeUnit.SECONDS.sleep(seconds);
-        } catch (InterruptedException e ) {
-            log.warn("Sleeping in FoodRecommender got interrupted.");
         }
     }
 
@@ -762,23 +646,5 @@ public class FoodRecommender
         log.info("getIndex: input: " + Arrays.toString(array) +
                 "index:" + Arrays.toString(index));
         return index;
-    }
-
-    /**
-     * Helper function to modify internal exerciseIntakeRatios memory for testing.
-     * @param userId String of user id.
-     * @param ratio ratio.
-     */
-    public void addExerciseIntakeRatios(String userId, double ratio) {
-        exerciseIntakeRatios.put(userId, ratio);
-    }
-
-    /**
-     * Helper function to modify internal mealPortions memory for testing.
-     * @param userId String of user id.
-     * @param portion portion.
-     */
-    public void addMealPortions(String userId, double portion) {
-        mealPortions.put(userId, portion);
     }
 }

@@ -59,7 +59,7 @@ public class CampaignKeeper extends Keeper {
     }
 
     /**
-     * Reset the coupon count to 1.
+     * Reset the coupon count to 0.
      * @return whether reset successfully or not
      */
     public Boolean resetCouponCnt() {
@@ -97,6 +97,4 @@ public class CampaignKeeper extends Keeper {
         if (!checkValidityCode(key)) return null;
         return jedis.get(KEY_PREFIX + ":" + KEY_PARENT + ":" + key);
     }
-
-
 }

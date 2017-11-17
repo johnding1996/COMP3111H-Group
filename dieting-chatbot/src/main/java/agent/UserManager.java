@@ -9,7 +9,7 @@ import utility.FormatterMessageJSON;
 import utility.ParserMessageJSON;
 
 import javax.annotation.PostConstruct;
-
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -19,51 +19,40 @@ import controller.State;
 import database.keeper.HistKeeper;
 import database.keeper.StateKeeper;
 import database.querier.UserQuerier;
+import java.util.Arrays;
+import java.util.HashSet;
 
 /**
  * UserManager: handling user follow and unfollow event.
  * @author szhouan
- * @version v1.0.0
+ * @version v1.1.0
  */
 @Slf4j
 @Component
-public class UserManager implements Consumer<Event<ParserMessageJSON>> {
-    @Autowired
-    private EventBus eventBus;
-
-    @Autowired
-    private Publisher publisher;
-
-    @Autowired(required = false)
-    private ChatbotController controller;
+public class UserManager extends Agent {
 
     /**
-     * Register on event bus.
+     * Initialize user manager agent.
      */
-    @PostConstruct
+    @Override
     public void init() {
-        if (eventBus != null) {
-            eventBus.on($("ParserMessageJSON"), this);
-            log.info("UserManager register on eventBus");
-        }
+        agentName = "UserManager";
+        agentStates = new HashSet<>(
+            Arrays.asList(State.FOLLOWING, State.UNFOLLOWING)
+        );
+        handleImage = false;
+        useSpellChecker = false;
+        this.addHandler(0, (psr) -> handleUser(psr));
     }
 
     /**
-     * Event handler for ParserMessageJSON.
-     * @param ev Event object.
+     * Handler for follow and unfollow event.
+     * @param psr Input ParserMessageJSON
+     * @return next state
      */
-    public void accept(Event<ParserMessageJSON> ev) {
-        ParserMessageJSON psr = ev.getData();
-
-        // only handle message if state is `Following` or `Unfollowing`
+    public int handleUser(ParserMessageJSON psr) {
         String userId = psr.getUserId();
         State state = psr.getState();
-        if (state != State.FOLLOWING && state != State.UNFOLLOWING) {
-            return;
-        }
-
-        log.info("Entering UserManager");
-        publisher.publish(new FormatterMessageJSON(userId));
 
         if (state == State.FOLLOWING) {
             FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
@@ -77,8 +66,37 @@ public class UserManager implements Consumer<Event<ParserMessageJSON>> {
             UserQuerier userQuerier = new UserQuerier();
             userQuerier.delete(userId);
             userQuerier.close();
+            log.info("Remove user {} from UserInfo table", userId);
 
             controller.setUserState(userId, State.IDLE);
         }
+        return END_STATE;
+    }
+
+    /**
+     * Get UserJSON from UserQuerier.
+     * @param userId String of user Id
+     * @return A UserJSON
+     */
+    public JSONObject getUserJSON(String userId) {
+        UserQuerier querier = new UserQuerier();
+        JSONObject userJSON = querier.get(userId);
+        querier.close();
+        return userJSON;
+    }
+
+    /**
+     * Store UserJSON to UserQuerier.
+     * @param userId String of user Id
+     * @param userJSON userJSON to store
+     */
+    public void storeUserJSON(String userId, JSONObject userJSON) {
+        UserQuerier querier = new UserQuerier();
+        if (getUserJSON(userId) == null) {
+            querier.add(userJSON);
+        } else {
+            querier.update(userJSON);
+        }
+        querier.close();
     }
 }
