@@ -98,9 +98,8 @@ public class ChatbotController
         // Config the CMU Sphinx data path
         sphinxConfiguration = new Configuration();
         sphinxConfiguration.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
-        sphinxConfiguration.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
-        sphinxConfiguration.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
-        sphinxConfiguration.setSampleRate(8000);
+        sphinxConfiguration.setDictionaryPath("resource:/language/chatbot.dic");
+        sphinxConfiguration.setLanguageModelPath("resource:/language/chatbot.lm");
     }
 
     /**
@@ -199,6 +198,8 @@ public class ChatbotController
         String messageId = event.getMessage().getId();
         String replyToken = event.getReplyToken();
 
+        Set<String> keyWords = new HashSet<>(Arrays.asList("CANCEL", "ENABLE", "DISABLE"));
+
         // remove first letter 'U' from userId
         userId = userId.substring(1);
 
@@ -216,20 +217,18 @@ public class ChatbotController
             InputStream inputStream = new BufferedInputStream(response.getStream());
             AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(inputStream);
             AudioFormat oldFormat = audioInputStream.getFormat();
-            AudioFormat newFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 8000, 16, 1, 2, 8000, false);
+            AudioFormat newFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 16000, 16, 1, 2, 16000, false);
             log.info("Old audio format:" + oldFormat.toString());
             log.info("New audio format:" + newFormat.toString());
             AudioInputStream recognitionInputStream = AudioSystem.getAudioInputStream(newFormat, audioInputStream);
-
-            // Logging
-            log.error(String.format("getLength: %d", response.getLength()));
-
             // Recognition
             recognizer.startRecognition(recognitionInputStream);
             SpeechResult result;
             log.info("entered recognition part");
             while ((result = recognizer.getResult()) != null) {
-                messages.add(result.getHypothesis());
+                String word = result.getHypothesis();
+                if (!keyWords.contains(word)) word = word.toLowerCase();
+                messages.add(word);
             }
             recognizer.stopRecognition();
             recognitionInputStream.close();
