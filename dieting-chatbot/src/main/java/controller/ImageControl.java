@@ -52,72 +52,82 @@ public class ImageControl {
 
     public static String saveContent(MessageContentResponse responseBody, String type) {
         log.info("Got content-type: {}", responseBody);
-        // String encodingMethod = inputStreamReader.getEncoding();
         String mimeType = responseBody.getMimeType();
         String extension = mimeType.substring(6);   // image/jpeg or image/png
         log.info("extension: {}", extension);
-        // log.info("Encoding method: {}", encodingMethod);
-        InputStream inputStream = responseBody.getStream();
-        log.info("Input stream: {}", inputStream);
+        //InputStream inputStream = responseBody.getStream();
+        //log.info("Input stream: {}", inputStream);
         try {
-            InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "UTF-8");
-            
+            InputStreamReader inputStreamReader = new InputStreamReader(responseBody.getStream());
+            String encodingMethod = inputStreamReader.getEncoding();
+            log.info("Encoding method: {}", encodingMethod);
+            if(!inputStreamReader.ready()) {
+                log.info("input stream is not ready yet, fail to read in bytes");
+            }
             if(type.equals("TempFile")) {
-                return inputToTempFile(extension, inputStream);
+                // return inputToTempFile(extension, inputStream);
                 // return the uri of the downloaded image
             }
             else if(type.equals("DB")) {
-                // ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                // try {
-                //     long numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), bos);
-                //     log.info("copied " + numOfCopiesInBytes + " bytes");
-                //     String decodedContent = new String(bos.toString(StandardCharsets.UTF_8.name()));
-                //     log.info("************  decodedContent = " + decodedContent.substring(0, 100));
-                //     // store encodedContent to DB
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                try {
+                    long numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), bos);
+                    log.info("copied " + numOfCopiesInBytes + " bytes");
+                    byte[] buf = bos.toByteArray();
+                    String decodedContent = new String(bos.toString("UTF-8"));
+                    String anotherDecodedContent = new String(buf);
+                    log.info("************  decodedContent = " + decodedContent.substring(0, 100));
+                    log.info("************  anotherDecodedContent = " + anotherDecodedContent.substring(0, 100));
+                    // store encodedContent to DB
                     
-                //     inputStream = new ByteArrayInputStream(decodedContent.getBytes(StandardCharsets.UTF_8.name()));
-                //     String tempFileUri = inputToTempFile(extension, inputStream);
-                //     log.info("prepare to get tempFileUri");
-                //     return tempFileUri;
-                //     // DownloadedContent tempFile = createTempFile(extension);
-                //     // try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
-                //     //     bos.writeTo(outputStream); 
-                //     //     log.info("Saved {}: {}", extension, tempFile);
-                //     //     return tempFile.getUri();
-                //     // } catch (IOException e) {
-                //     //     throw new UncheckedIOException(e);
-                //     // }
+                    InputStream inputStream = new ByteArrayInputStream(decodedContent.getBytes("UTF-8"));
+                    DownloadedContent tempFile = createTempFile(extension);
+                    OutputStream outputStream = Files.newOutputStream(tempFile.path); 
+                    ByteStreams.copy(inputStream, outputStream);
+                    //String tempFileUri = inputToTempFile(extension, inputStream);
+                    log.info("prepare to get tempFileUri");
+                    return tempFile.getUri();
+                    // DownloadedContent tempFile = createTempFile(extension);
+                    // try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
+                    //     bos.writeTo(outputStream); 
+                    //     log.info("Saved {}: {}", extension, tempFile);
+                    //     return tempFile.getUri();
+                    // } catch (IOException e) {
+                    //     throw new UncheckedIOException(e);
+                    // }
                     
-                // }
-                // catch (IOException e) {
-                //     log.info("Caught IOException when testing DB part");
-                // }
-                log.info("before reading ......");
-                int bytesRead = 0;
-                if(!inputStreamReader.ready()) {
-                    log.info("input stream is not ready yet, fail to read in bytes");
-                    return null;
                 }
-                final char[] buffer = new char[20000];
-                final StringBuilder contents = new StringBuilder();
-                while(true) {
-                    int bytesNumber = inputStreamReader.read(buffer, 0, buffer.length);
-                    log.info("Read in " + bytesNumber + " Bytes");
-                    if (bytesNumber < 0)
-                        break;
-                    contents.append(buffer, 0, bytesNumber);
+                catch (IOException e) {
+                    log.info("Caught IOException when testing DB part");
                 }
-                inputStreamReader.close();
-                String decodedContent = contents.toString();
-                log.info("decodedContent: {}", decodedContent.substring(0,100));
-
-                DownloadedContent tempFile = createTempFile(extension);
                 
-                OutputStream outputStream = Files.newOutputStream(tempFile.path); 
-                OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, "UTF-8");
-                outputStreamWriter.write(decodedContent);
-                log.info("Saved {}: {}", extension, tempFile);
-                return tempFile.getUri();
+                
+                
+                // log.info("before reading ......");
+                // int bytesRead = 0;
+                // if(!inputStreamReader.ready()) {
+                //     log.info("input stream is not ready yet, fail to read in bytes");
+                //     return null;
+                // }
+                // final char[] buffer = new char[20000];
+                // final StringBuilder contents = new StringBuilder();
+                // while(true) {
+                //     int bytesNumber = inputStreamReader.read(buffer, 0, buffer.length);
+                //     log.info("Read in " + bytesNumber + " Bytes");
+                //     if (bytesNumber < 0)
+                //         break;
+                //     contents.append(buffer, 0, bytesNumber);
+                // }
+                // inputStreamReader.close();
+                // String decodedContent = contents.toString();
+                // log.info("decodedContent: {}", decodedContent.substring(0,100));
+
+                // DownloadedContent tempFile = createTempFile(extension);
+                // OutputStream outputStream = Files.newOutputStream(tempFile.path); 
+                // OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, "UTF-8");
+                // outputStreamWriter.write(decodedContent);
+                // log.info("Saved {}: {}", extension, tempFile);
+                // return tempFile.getUri();
             }    
                 
         } catch (Exception e) {
