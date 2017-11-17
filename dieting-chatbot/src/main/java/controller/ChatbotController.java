@@ -236,9 +236,13 @@ public class ChatbotController
                 String word = result.getHypothesis();
                 messages.add(word);
             }
+            // Close all possible buffers
             recognizer.stopRecognition();
+            response.getStream().close();
+            inputStream.close();
+            audioInputStream.close();
             recognitionInputStream.close();
-
+            response.close();
             // Force garbage collection
             System.gc();
         } catch (InterruptedException | ExecutionException | IOException | UnsupportedAudioFileException e) {

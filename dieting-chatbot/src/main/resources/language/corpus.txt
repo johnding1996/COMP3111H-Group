@@ -33,22 +33,10 @@ with
 and
 hello
 what
-are
-is
-you
-me
-I
 menu
-eat
-ate
-our
 gram
 calorie
 killo
-
-one
-
-
 
 fried
 boiled
@@ -85,13 +73,11 @@ sheep
 whey
 yogurt
 fresh
-duck
 yolk
 dried
 mozzarella
 bowl
 ice
-dry
 fat
 leaf
 spices
@@ -99,7 +85,6 @@ garic
 pepper
 pumpkin
 poultry
-baby food
 fruit
 juice
 dessert
