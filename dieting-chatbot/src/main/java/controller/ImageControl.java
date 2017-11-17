@@ -80,7 +80,8 @@ public class ImageControl {
                     log.info("************  anotherDecodedContent = " + anotherDecodedContent.substring(0, 100));
                     // store encodedContent to DB
                     
-                    InputStream inputStream = new ByteArrayInputStream(decodedContent.getBytes("UTF-8"));
+                    //InputStream inputStream = new ByteArrayInputStream(decodedContent.getBytes("UTF-8"));
+                    InputStream inputStream = new ByteArrayInputStream(buf);
                     DownloadedContent tempFile = createTempFile(extension);
                     OutputStream outputStream = Files.newOutputStream(tempFile.path); 
                     ByteStreams.copy(inputStream, outputStream);
