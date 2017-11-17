@@ -261,16 +261,20 @@ public class PortionAsker
                 int menuNum = menuCount.get(userId).intValue();
                 String[] portion = psr.get("textContent").split(":");
                 boolean done = true;
+                int index = 0;
+                int port = 0;
                 if (!Validator.isInteger(portion[0]))
                     done = false;
                 else if (!Validator.isInteger(portion[1]))
                     done = false;
-                int index = Integer.parseInt(portion[0]);
-                int port = Integer.parseInt(portion[1]);
-                if (index < 1 || index > menuNum)
-                    done = false;
-                else if (port < 1 || port > 7000)
-                    done = false;
+                else {
+                    index = Integer.parseInt(portion[0]);
+                    port = Integer.parseInt(portion[1]);
+                    if (index < 1 || index > menuNum)
+                        done = false;
+                    else if (port < 1 || port > 7000)
+                        done = false;
+                }
 
                 if (!done) {
                     response.appendTextMessage("Plz enter in this format, " +
