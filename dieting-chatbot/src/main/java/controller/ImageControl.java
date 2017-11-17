@@ -52,14 +52,16 @@ public class ImageControl {
 
     public static String saveContent(MessageContentResponse responseBody, String type) {
         log.info("Got content-type: {}", responseBody);
+        String encodingMethod = inputStreamReader.getEncoding();
+        String mimeType = responseBody.getMimeType();
+        String extension = mimeType.substring(6);   // image/jpeg or image/png
+        log.info("extension: {}", extension);
+        log.info("Encoding method: {}", encodingMethod);
         InputStream inputStream = responseBody.getStream();
+        log.info("Input stream: {}", inputStream);
         try {
             InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "UTF-8");
-            String encodingMethod = inputStreamReader.getEncoding();
-            String mimeType = responseBody.getMimeType();
-            String extension = mimeType.substring(6);   // image/jpeg or image/png
-            log.info("extension: {}", extension);
-            log.info("Encoding method: {}", encodingMethod);
+            
             if(type.equals("TempFile")) {
                 return inputToTempFile(extension, inputStream);
                 // return the uri of the downloaded image
@@ -91,15 +93,19 @@ public class ImageControl {
                 //     log.info("Caught IOException when testing DB part");
                 // }
                 log.info("before reading ......");
-                StringBuilder contents = new StringBuilder();
-                
                 int bytesRead = 0;
                 if(!inputStreamReader.ready()) {
                     log.info("input stream is not ready yet, fail to read in bytes");
                     return null;
                 }
-                while ((bytesRead = inputStreamReader.read()) != -1) {
-                    contents.append((char)bytesRead);
+                final char[] buffer = new char[20000];
+                final StringBuilder contents = new StringBuilder();
+                while(true) {
+                    int bytesNumber = inputStreamReader.read(buffer, 0, buffer.length);
+                    log.info("Read in " + bytesNumber + " Bytes");
+                    if (bytesNumber < 0)
+                        break;
+                    contents.append(buffer, 0, bytesNumber);
                 }
                 inputStreamReader.close();
                 String decodedContent = contents.toString();
