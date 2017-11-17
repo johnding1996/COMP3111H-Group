@@ -67,29 +67,26 @@ public class MealAsker
     /**
      * Clear all QueryJSON.
      */
-    public void clearQueryJSON() {
-        log.info("Removing all QueryJSON object");
+    public void clearMenuJSON() {
+        log.info("Removing all MenuJSON object");
         menus.clear();
     }
 
     /**
-     * set QueryJSON for a user.
-     * @param json QueryJSON to add.
+     * Set MenuJSON for a user.
+     * @param json MenuJSON to add.
      */
-    public void setQueryJSON(JSONObject json) {
-        if (JsonUtility.validateQueryJSON(json))
-            menus.put(json.getString("userId"), json);
-        else log.info("Invalid Query JSON:\n" + json.toString(4));
+    public void setMenuJSON(JSONObject json) {
+        menus.put(json.getString("userId"), json);
     }
 
     /**
-     * get QueryJSON for a user.
+     * get MenuJSON for a user.
      * @param userId String of user Id.
-     * @return JSONObject.
+     * @return JSONObject, null if no such user.
      */
-    public JSONObject getQueryJSON(String userId) {
-        if (menus.containsKey(userId)) return menus.get(userId);
-        else return null;
+    public JSONObject getMenuJSON(String userId) {
+        return menus.getOrDefault(userId, null);
     }
 
     /**
@@ -124,14 +121,17 @@ public class MealAsker
         }
         
         if (menus.containsKey(userId)) {
-            JSONObject queryJSON = menus.get(userId);
-            response.appendTextMessage("Well, I got your menu.");
-            response.appendTextMessage("The Menu I got is\n" +
-                JsonUtility.formatQueryJSON(queryJSON));
+            JSONObject menuJSON = menus.get(userId);
+            JsonUtility.getFoodContent(menuJSON);
+            response.appendTextMessage("Well, I got your menu.")
+                    .appendTextMessage("The Menu I got is\n" +
+                        JsonUtility.formatMenuJSON(menuJSON, false))
+                    .appendTextMessage("And this is the food " +
+                        "content of each dish I found:")
+                    .appendTextMessage(JsonUtility.formatMenuJSON(menuJSON, true));
             publisher.publish(response);
 
             menus.remove(userId);
-            JSONObject menuJSON = queryJSONtoMenuJSON(queryJSON);
             log.info("MenuJSON:\n{}", menuJSON.toString(4));
             portionAsker.setMenuJSON(menuJSON);
             if (controller != null) {
@@ -145,82 +145,5 @@ public class MealAsker
                 controller.setUserState(userId, State.IDLE);
             }
         }
-    }
-
-    /**
-     * Transform a QueryJSON to MenuJSON, by quering food content.
-     * @param queryJSON A JSONObject of QueryJSON format.
-     * @return A MenuJSON.
-     */
-    public JSONObject queryJSONtoMenuJSON(JSONObject queryJSON) {
-        JSONObject menuJSON = new JSONObject();
-        String userId = queryJSON.getString("userId");
-        menuJSON.put("userId", userId);
-        JSONArray menu = new JSONArray();
-        JSONArray queryMenu = queryJSON.getJSONArray("menu");
-        for (int i=0; i<queryMenu.length(); ++i) {
-            JSONObject queryDish = queryMenu.getJSONObject(i);
-            JSONObject dish = new JSONObject();
-            String dishName = queryDish.getString("name");
-            dish.put("dishName", dishName);
-            dish.put("foodContent", getFoodContent(dishName));
-            menu.put(dish);
-        }
-        menuJSON.put("menu", menu);
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("And this is the food content of each dish I found:")
-           .appendTextMessage(JsonUtility.formatMenuJSON(menu));
-        publisher.publish(fmt);
-        return menuJSON;
-    }
-
-    /**
-     * Return food content JSONArray given dish name.
-     * @param dishName String of dish name.
-     * @return A JSONArray containing food content.
-     */
-    public JSONArray getFoodContent(String dishName) {
-        List<String> keyWords = filterDishName(dishName);
-        FuzzyFoodQuerier querier = new FuzzyFoodQuerier();
-        querier.setQueryLimit(1);
-
-        JSONArray foodContent = new JSONArray();
-        for (String word : keyWords) {
-            JSONObject candidate = querier.search(word)
-                .getJSONObject(0);
-            log.info("candidate:\n{}", candidate.toString(4));
-            int index = candidate.getInt("ndb_no");
-            String description = candidate.getString("shrt_desc");
-            JSONObject item = new JSONObject();
-            item.put("idx", index);
-            item.put("description", description);
-            foodContent.put(item);
-        }
-        querier.close();
-        return foodContent;
-    }
-
-    private static final HashSet<String> discardWords;
-    static {
-        List<String> list = Arrays.asList(
-            "of", "with", "and", "the", "a", "on", "in",
-            "served", "fried", "minced", "stewed", "baked",
-            "roasted", "grilled", "dish", "some",
-            "sweet", "sour", "spicy", "salty"
-        );
-        discardWords = new HashSet<>(list);
-    }
-
-    /**
-     * Filter dish name.
-     * @param dishName String of dish name.
-     * @return A list of words filtered.
-     */
-    public static List<String> filterDishName(String dishName) {
-        ArrayList<String> list = new ArrayList<>();
-        for (String word : TextProcessor.getTokens(dishName)) {
-            if (!discardWords.contains(word)) list.add(word);
-        }
-        return list;
     }
 }
