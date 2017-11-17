@@ -28,11 +28,13 @@ import utility.Validator;
 /**
  * PortionAsker: ask portion size of each dish.
  * @author cliubf, szhouan
- * @version v1.0.0
+ * @version v1.3.0
  */
 @Slf4j
 @Component
-public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
+public class PortionAsker
+    implements Consumer<Event<ParserMessageJSON>> {
+
     @Autowired
     private EventBus eventBus;
 
@@ -45,6 +47,9 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
     @Autowired
     private FoodRecommender recommender;
 
+    /**
+     * Register on eventBus.
+     */
     @PostConstruct
     public void init() {
         if (eventBus != null) {
@@ -54,8 +59,8 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
     }
 
     /**
-     * User states tracking for interaction
-     * false stands for user did not confirm food list yet
+     * User states tracking for interaction.
+     * false stands for user did not confirm food list yet.
      */
     private static Map<String, Integer> userStates = new HashMap<>();
     private static Map<String, Integer> menuCount = new HashMap<>();
@@ -67,9 +72,9 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
 
 
     /**
-     * Change user state, for testing purpose
-     * @param userId String of user Id
-     * @param state New user state
+     * Change user state, for testing purpose.
+     * @param userId String of user Id.
+     * @param state New user state.
      */
     public void changeUserState(String userId, int state) {
         userStates.put(userId, state);
@@ -77,9 +82,9 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
     }
 
     /**
-     * Change user number of meals in menuCount
-     * @param userId String of user Id
-     * @param count user's number of meals in menu
+     * Change user number of meals in menuCount.
+     * @param userId String of user Id.
+     * @param count user's number of meals in menu.
      */
     public void changeMenusCount(String userId, int count){
         menuCount.put(userId, count);
@@ -87,9 +92,9 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
     }
 
     /**
-     * get most recent QueryJSON from menuKeeper (the first one)
-     * @param userId
-     * @return a json object
+     * get most recent QueryJSON from menuKeeper (the first one).
+     * @param userId String of user Id.
+     * @return a json object.
      */
     public JSONObject getMenuKeeperJSON(String userId){
         MenuKeeper menuKeeper = new MenuKeeper();
@@ -99,9 +104,10 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
     }
 
     /**
-     * set the user menuKeeper with new JSON
-     * @param userId
-     * @param updatedJSON
+     * set the user menuKeeper with new JSON.
+     * @param userId String of user Id.
+     * @param updatedJSON JSON of updated queryJSON.
+     * @return a boolean value indicating whether the set is success.
      */
     public boolean setMenuKeeperJSON(String userId, JSONObject updatedJSON){
         MenuKeeper menuKeeper = new MenuKeeper();
@@ -111,9 +117,9 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
     }
 
     /**
-     * Get list of menu previously input by user
-     * @param userId String of user Id
-     * @return Menu list in String
+     * Get list of menu previously input by user.
+     * @param userId String of user Id.
+     * @return Menu list in String.
      */
     public String getMenu(String userId) {
         String reply = "";
@@ -132,9 +138,11 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
     }
 
     /**
-     * update portion size to MenuKeeper
-     * @param dishIndex the index of dish in menu, started by 1
-     * @param portion portion of the dish, default portion unit as gram
+     * update portion size to MenuKeeper.
+     * @param dishIndex the index of dish in menu, started by 1.
+     * @param portion portion of the dish, default portion unit as gram.
+     * @param userId String of user Id.
+     * @return a string confirming the set is success with desired portion.
      */
     public String updateDatabase(int dishIndex, double portion, String userId) {
         String reply = "";
@@ -165,8 +173,8 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
     }
 
     /**
-     * Event handler for ParserMessageJSON
-     * @param ev Event object
+     * Event handler for ParserMessageJSON.
+     * @param ev Event object.
      */
     public void accept(Event<ParserMessageJSON> ev) {
         ParserMessageJSON psr = ev.getData();
@@ -278,11 +286,11 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
         publisher.publish(response);
     }
 
-    /**
-     * Set MenuJSON for a user.
-     * @param json menuJSON to add.
-     */
-    public void setMenuJSON(JSONObject json) {
-        menus.put(json.getString("userId"), json);
-    }
+//    /**
+//     * Set MenuJSON for a user.
+//     * @param json menuJSON to add.
+//     */
+//    public void setMenuJSON(JSONObject json) {
+//        menus.put(json.getString("userId"), json);
+//    }
 }

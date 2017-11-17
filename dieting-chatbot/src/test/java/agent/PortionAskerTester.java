@@ -231,12 +231,57 @@ public class PortionAskerTester {
     }
 
     @Test
-    public void testState2b1() {
+    public void testState2b1a() {
+        this.setMockDatabase(10);
+
+        ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
+        psr.setState("AskPortion")
+                .set("textContent", "hskdfjh:100");
+        asker.changeUserState(psr.get("userId"), 2);
+
+        List<String> prefixList = new ArrayList<>();
+        prefixList.add("Plz enter in this format");
+        log.info(psr.toString());
+        assertReplyContent(prefixList, psr);
+    }
+
+    @Test
+    public void testState2b1b() {
+        this.setMockDatabase(10);
+
+        ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
+        psr.setState("AskPortion")
+                .set("textContent", "6:sdfhks");
+        asker.changeUserState(psr.get("userId"), 2);
+
+        List<String> prefixList = new ArrayList<>();
+        prefixList.add("Plz enter in this format");
+        log.info(psr.toString());
+        assertReplyContent(prefixList, psr);
+    }
+
+    @Test
+    public void testState2b1c() {
         this.setMockDatabase(10);
 
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "100:100");
+        asker.changeUserState(psr.get("userId"), 2);
+
+        List<String> prefixList = new ArrayList<>();
+        prefixList.add("Plz enter in this format");
+        log.info(psr.toString());
+        assertReplyContent(prefixList, psr);
+    }
+
+    @Test
+    public void testState2b1d() {
+        this.setMockDatabase(10);
+
+        ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
+        psr.setState("AskPortion")
+                .set("textContent", "100:1000000");
         asker.changeUserState(psr.get("userId"), 2);
 
         List<String> prefixList = new ArrayList<>();

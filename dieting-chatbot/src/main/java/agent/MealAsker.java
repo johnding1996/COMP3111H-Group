@@ -133,7 +133,7 @@ public class MealAsker
 
             menus.remove(userId);
             log.info("MenuJSON:\n{}", menuJSON.toString(4));
-            portionAsker.setMenuJSON(menuJSON);
+//            portionAsker.setMenuJSON(menuJSON);
             if (controller != null) {
                 controller.setUserState(userId, State.ASK_PORTION);
             }
