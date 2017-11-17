@@ -37,7 +37,7 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
     private EventBus eventBus;
 
     @Autowired
-    private Publisher publisher;
+    public Publisher publisher;
 
     @Autowired(required = false)
     private ChatbotController controller;
@@ -60,10 +60,10 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
     private static Map<String, Integer> userStates = new HashMap<>();
     private static Map<String, Integer> menuCount = new HashMap<>();
 
-    /**
-     * User menus internal memory for food recommendation.
-     */
-    private HashMap<String, JSONObject> menus = new HashMap<>();
+//    /**
+//     * User menus internal memory for food recommendation.
+//     */
+//    private HashMap<String, JSONObject> menus = new HashMap<>();
 
 
     /**
@@ -74,6 +74,16 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
     public void changeUserState(String userId, int state) {
         userStates.put(userId, state);
         log.info("Change state of user {} to {}", userId, state);
+    }
+
+    /**
+     * Change user number of meals in menuCount
+     * @param userId String of user Id
+     * @param count user's number of meals in menu
+     */
+    public void changeMenusCount(String userId, int count){
+        menuCount.put(userId, count);
+        log.info("Change menuCount of user {} to {}", userId, count);
     }
 
     /**
@@ -111,12 +121,11 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
             JSONArray menu = this.getMenuKeeperJSON(userId).getJSONArray("menu");
             for(int j = 0; j < menu.length(); j++){
                 JSONObject food = menu.getJSONObject(j);
-                reply += String.format("%d - %s\n", j + 1,
-                        food.getString("name"));
+                reply += String.format((j + 1) + " - " + food.getString("name") + "\n");
             }
             reply += "Do you want to input portion size?";
             menuCount.put(userId, menu.length());
-        } catch (JSONException e){
+        } catch (JSONException e) {
             log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
         }
         return reply;
@@ -170,7 +179,7 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
             if (userStates.containsKey(userId)) {
                 userStates.remove(userId);
                 menuCount.remove(userId);
-                menus.remove(userId);
+//                menus.remove(userId);
                 log.info("Clear user {}", userId);
             }
             return;
@@ -233,7 +242,7 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
                 userStates.remove(userId);
                 menuCount.remove(userId);
                 response.appendTextMessage("Alright, we are going to process your update");
-                recommender.setMenuJSON(menus.remove(userId));
+                //recommender.setMenuJSON(menus.remove(userId));
                 if (controller != null) {
                     publisher.publish(response);
                     controller.setUserState(userId, State.RECOMMEND);
@@ -242,7 +251,7 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
             }
             else{
                 int menuNum = menuCount.get(userId).intValue();
-                String[] portion = psr.get("textContent").split(";");
+                String[] portion = psr.get("textContent").split(":");
                 boolean done = true;
                 if (!Validator.isInteger(portion[0]))
                     done = false;

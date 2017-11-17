@@ -5,6 +5,7 @@ import controller.TestConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
@@ -13,18 +14,22 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import reactor.bus.Event;
 import utility.FormatterMessageJSON;
 import utility.ParserMessageJSON;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {FoodRecommender.class, PortionAsker.class})
-@ContextConfiguration(classes = TestConfiguration.class)
+@SpringBootTest(classes = {FoodRecommender.class})
+@ContextConfiguration(classes = {TestConfiguration.class, PortionAskerTester.class})
 public class PortionAskerTester {
 
     @Autowired
@@ -35,6 +40,9 @@ public class PortionAskerTester {
 
     //Used to save mocked user menu json record
     private static HashMap<String, JSONObject> userMenuJSON = new HashMap<>();
+
+    //test userId throughout this test suite
+    private static final String userId = "cliubf";
 
     /**
      * This method would initialize userMenuJSON with a record QueryJSON
@@ -59,15 +67,14 @@ public class PortionAskerTester {
             menu.put(dish);
         }
 
-        queryJSON.put("userId", "cliubf");
+        queryJSON.put("userId", userId);
         queryJSON.put("menu", menu);
-        this.userMenuJSON.put("cliubf", queryJSON);
+        this.userMenuJSON.put(userId, queryJSON);
+        asker.changeMenusCount(userId, 2 * numOfDish);
     }
 
-    /**
-     * Constructor for test class, initialized asker with a mocked one
-     */
-    public PortionAskerTester(){
+    @Bean
+    public PortionAsker createPortionAsker(){
         PortionAsker asker = Mockito.spy(PortionAsker.class);
         Mockito.doAnswer(new Answer<JSONObject>() {
             @Override
@@ -76,29 +83,27 @@ public class PortionAskerTester {
                 return userMenuJSON.get(userId);
             }
         }).when(asker).getMenuKeeperJSON(Matchers.anyString());
-        Mockito.doAnswer(new Answer<Void>() {
+        Mockito.doAnswer(new Answer<Boolean>() {
             @Override
-            public Void answer(InvocationOnMock invocation) {
+            public Boolean answer(InvocationOnMock invocation) {
                 String userId = invocation.getArgumentAt(0, String.class);
                 JSONObject newMenuJSON = invocation.getArgumentAt(1, JSONObject.class);
                 userMenuJSON.put(userId, newMenuJSON);
-                return null;
+                return true;
             }
         }).when(asker).setMenuKeeperJSON(Matchers.anyString(),
                 Matchers.any(JSONObject.class));
 
-        this.asker = asker;
+        return asker;
     }
 
-    @Test
-    public void testAcceptImageMessage() {
-        String userId = "cliubf";
-        this.setMockDatabase(1);
-        ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
-        psr.setState("AskPortion");
-        asker.changeUserState(psr.get("userId"), 0);
-        Event<ParserMessageJSON> ev =
-                new Event<ParserMessageJSON>(null, psr);
+    /**
+     * Assert replies for a psr have expected prefix.
+     * @param prefixList List of prefix
+     * @param psr ParserMessageJSON
+     */
+    private void assertReplyContent(List<String> prefixList, ParserMessageJSON psr) {
+        Event<ParserMessageJSON> ev = new Event<ParserMessageJSON>(null, psr);
         Mockito.doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation)
@@ -106,11 +111,12 @@ public class PortionAskerTester {
                 FormatterMessageJSON fmt = invocation.getArgumentAt(0,
                         FormatterMessageJSON.class);
                 assert fmt.getUserId().equals(userId);
-                JSONArray messages = (JSONArray)fmt.getMessageArray();
+                JSONArray messages = fmt.getMessageArray();
                 if (messages.length() == 0) return null;
-                String text = (String) messages.getJSONObject(0)
-                        .get("textContent");
-                assert text.startsWith("I am sorry that");
+                for (int i=0; i<prefixList.size(); ++i) {
+                    String text = messages.getJSONObject(i).getString("textContent");
+                    assert text.startsWith(prefixList.get(i));
+                }
                 return null;
             }
         }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
@@ -119,9 +125,22 @@ public class PortionAskerTester {
     }
 
     @Test
-    public void testAnotherState() {
-        String userId = "cliubf";
+    public void testAcceptImageMessage() {
         this.setMockDatabase(1);
+
+        ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
+        psr.setState("AskPortion");
+        asker.changeUserState(psr.get("userId"), 0);
+
+        List<String> prefixList = new ArrayList<>();
+        prefixList.add("I am sorry that");
+        assertReplyContent(prefixList, psr);
+    }
+
+    @Test
+    public void testAnotherState() {
+        this.setMockDatabase(1);
+
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("RecordMeal")
                 .set("textContent", "hello");
@@ -141,187 +160,102 @@ public class PortionAskerTester {
 
     @Test
     public void testState0() {
-        String userId = "cliubf";
         this.setMockDatabase(1);
+
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "hello");
         asker.changeUserState(psr.get("userId"), 0);
-        Event<ParserMessageJSON> ev =
-                new Event<ParserMessageJSON>(null, psr);
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable {
-                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
-                        FormatterMessageJSON.class);
-                assert fmt.getUserId().equals(userId);
-                JSONArray messages = (JSONArray)fmt.getMessageArray();
-                String text1 = (String) messages.getJSONObject(0).get("textContent");
-                assert text1.startsWith("Okay, this is");
-                String text2 = (String) messages.getJSONObject(1).get("textContent");
-                assert text2.startsWith("1 - xiaoxigua");
-                String text3 = (String) messages.getJSONObject(2).get("textContent");
-                assert text3.startsWith("Would you like to update");
-                return null;
-            }
-        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
-        asker.accept(ev);
+
+        List<String> prefixList = new ArrayList<>();
+        prefixList.add("Okay, this is");
+        prefixList.add("1 - xiaoxigua");
+        prefixList.add("Would you like to update");
+        assertReplyContent(prefixList, psr);
     }
 
     @Test
     public void testState1a() {
-        String userId = "cliubf";
         this.setMockDatabase(1);
+
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "Yes");
         asker.changeUserState(psr.get("userId"), 1);
-        Event<ParserMessageJSON> ev =
-                new Event<ParserMessageJSON>(null, psr);
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable {
-                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
-                        FormatterMessageJSON.class);
-                assert fmt.getUserId().equals(userId);
-                JSONArray messages = (JSONArray)fmt.getMessageArray();
-                String text1 = (String) messages.getJSONObject(0).get("textContent");
-                assert text1.startsWith("Okay, so give me");
-                return null;
-            }
-        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
-        asker.accept(ev);
+
+        List<String> prefixList = new ArrayList<>();
+        prefixList.add("Okay, so give me");
+        assertReplyContent(prefixList, psr);
     }
 
     @Test
     public void testState1b() {
-        String userId = "cliubf";
         this.setMockDatabase(1);
+
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "No");
         asker.changeUserState(psr.get("userId"), 1);
-        Event<ParserMessageJSON> ev =
-                new Event<ParserMessageJSON>(null, psr);
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable {
-                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
-                        FormatterMessageJSON.class);
-                assert fmt.getUserId().equals(userId);
-                JSONArray messages = (JSONArray)fmt.getMessageArray();
-                String text1 = (String) messages.getJSONObject(0).get("textContent");
-                assert text1.startsWith("Alright, let's move on");
-                return null;
-            }
-        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
-        asker.accept(ev);
+
+        List<String> prefixList = new ArrayList<>();
+        prefixList.add("Alright, let's move on");
+        assertReplyContent(prefixList, psr);
     }
 
     @Test
     public void testState1c() {
-        String userId = "cliubf";
         this.setMockDatabase(1);
+
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "skdhfkjdsfh");
         asker.changeUserState(psr.get("userId"), 1);
-        Event<ParserMessageJSON> ev =
-                new Event<ParserMessageJSON>(null, psr);
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable {
-                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
-                        FormatterMessageJSON.class);
-                assert fmt.getUserId().equals(userId);
-                JSONArray messages = (JSONArray)fmt.getMessageArray();
-                String text1 = (String) messages.getJSONObject(0).get("textContent");
-                assert text1.startsWith("Sorry, I'm not sure");
-                return null;
-            }
-        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
-        asker.accept(ev);
+
+        List<String> prefixList = new ArrayList<>();
+        prefixList.add("Sorry, I'm not sure");
+        assertReplyContent(prefixList, psr);
     }
 
     @Test
     public void testState2a() {
-        String userId = "cliubf";
         this.setMockDatabase(1);
+
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "leave");
         asker.changeUserState(psr.get("userId"), 2);
-        Event<ParserMessageJSON> ev =
-                new Event<ParserMessageJSON>(null, psr);
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable {
-                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
-                        FormatterMessageJSON.class);
-                assert fmt.getUserId().equals(userId);
-                JSONArray messages = (JSONArray)fmt.getMessageArray();
-                String text1 = (String) messages.getJSONObject(0).get("textContent");
-                assert text1.startsWith("Alright, we are going to process your update");
-                return null;
-            }
-        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
-        asker.accept(ev);
+
+        List<String> prefixList = new ArrayList<>();
+        prefixList.add("Alright, we are going to process your update");
+        assertReplyContent(prefixList, psr);
     }
 
     @Test
     public void testState2b1() {
-        String userId = "cliubf";
         this.setMockDatabase(10);
+
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "100:100");
         asker.changeUserState(psr.get("userId"), 2);
-        Event<ParserMessageJSON> ev =
-                new Event<ParserMessageJSON>(null, psr);
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable {
-                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
-                        FormatterMessageJSON.class);
-                assert fmt.getUserId().equals(userId);
-                JSONArray messages = (JSONArray)fmt.getMessageArray();
-                String text1 = (String) messages.getJSONObject(0).get("textContent");
-                assert text1.startsWith("Plz enter in this format");
-                return null;
-            }
-        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
-        asker.accept(ev);
+
+        List<String> prefixList = new ArrayList<>();
+        prefixList.add("Plz enter in this format");
+        log.info(psr.toString());
+        assertReplyContent(prefixList, psr);
     }
 
     @Test
     public void testState2b2() {
-        String userId = "cliubf";
         this.setMockDatabase(10);
+
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.setState("AskPortion")
                 .set("textContent", "15:100");
         asker.changeUserState(psr.get("userId"), 2);
-        Event<ParserMessageJSON> ev =
-                new Event<ParserMessageJSON>(null, psr);
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable {
-                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
-                        FormatterMessageJSON.class);
-                assert fmt.getUserId().equals(userId);
-                JSONArray messages = (JSONArray)fmt.getMessageArray();
-                String text1 = (String) messages.getJSONObject(0).get("textContent");
-                assert text1.startsWith("Roger, 100 gram laoxigua");
-                return null;
-            }
-        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
-        asker.accept(ev);
+
+        List<String> prefixList = new ArrayList<>();
+        prefixList.add("Roger, 100 gram laoxigua");
+        assertReplyContent(prefixList, psr);
     }
 }
