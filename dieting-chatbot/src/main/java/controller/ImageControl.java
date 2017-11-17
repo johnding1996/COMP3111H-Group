@@ -52,11 +52,11 @@ public class ImageControl {
 
     public static String saveContent(MessageContentResponse responseBody, String type) {
         log.info("Got content-type: {}", responseBody);
-        String encodingMethod = inputStreamReader.getEncoding();
+        // String encodingMethod = inputStreamReader.getEncoding();
         String mimeType = responseBody.getMimeType();
         String extension = mimeType.substring(6);   // image/jpeg or image/png
         log.info("extension: {}", extension);
-        log.info("Encoding method: {}", encodingMethod);
+        // log.info("Encoding method: {}", encodingMethod);
         InputStream inputStream = responseBody.getStream();
         log.info("Input stream: {}", inputStream);
         try {
