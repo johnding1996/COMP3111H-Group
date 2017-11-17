@@ -72,10 +72,8 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
      * @param state New user state
      */
     public void changeUserState(String userId, int state) {
-        if (userStates.containsKey(userId)) {
-            userStates.put(userId, state);
-            log.info("Change state of user {} to {}", userId, state);
-        }
+        userStates.put(userId, state);
+        log.info("Change state of user {} to {}", userId, state);
     }
 
     /**
@@ -166,8 +164,7 @@ public class PortionAsker implements Consumer<Event<ParserMessageJSON>> {
 
         // only handle message if state is `AskPortion`
         String userId = psr.getUserId();
-        State state = controller == null ?
-                State.INVALID : controller.getUserState(userId);
+        State state = psr.getState();
         //This need to be changed, state should be ask portion
         if (state != State.ASK_PORTION) {
             if (userStates.containsKey(userId)) {

@@ -96,6 +96,7 @@ public class PortionAskerTester {
         this.setMockDatabase(1);
         ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
         psr.setState("AskPortion");
+        asker.changeUserState(psr.get("userId"), 0);
         Event<ParserMessageJSON> ev =
                 new Event<ParserMessageJSON>(null, psr);
         Mockito.doAnswer(new Answer<Void>() {
