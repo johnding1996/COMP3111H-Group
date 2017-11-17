@@ -237,7 +237,9 @@ public class PortionAsker
                 menuCount.remove(userId);
                 response.appendTextMessage("Alright, let's move on");
                 if (controller != null) {
+                    publisher.publish(response);
                     controller.setUserState(userId, State.RECOMMEND);
+                    return;
                 }
             }
             else
