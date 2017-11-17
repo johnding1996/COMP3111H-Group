@@ -27,7 +27,6 @@ moderate
 active
 intensive
 reference
-why
 how
 with
 and
@@ -70,7 +69,6 @@ milk
 egg
 soup
 sheep
-whey
 yogurt
 fresh
 yolk
