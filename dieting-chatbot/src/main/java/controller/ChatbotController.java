@@ -1,5 +1,7 @@
 package controller;
 
+import com.linecorp.bot.client.MessageContentResponse;
+import edu.cmu.sphinx.result.WordResult;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,7 @@ import com.linecorp.bot.model.event.FollowEvent;
 import com.linecorp.bot.model.event.MessageEvent;
 import com.linecorp.bot.model.event.UnfollowEvent;
 import com.linecorp.bot.model.event.message.TextMessageContent;
+import com.linecorp.bot.model.event.message.AudioMessageContent;
 import com.linecorp.bot.model.message.ImageMessage;
 import com.linecorp.bot.model.message.Message;
 import com.linecorp.bot.model.message.TextMessage;
@@ -18,11 +21,12 @@ import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
 import database.keeper.StateKeeper;
 import agent.IntentionClassifier;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import utility.Validator;
@@ -38,6 +42,16 @@ import reactor.fn.Consumer;
 
 import static reactor.bus.selector.Selectors.$;
 import javax.annotation.PostConstruct;
+import java.io.InputStream;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.UnsupportedAudioFileException;
+
+import edu.cmu.sphinx.api.Configuration;
+import edu.cmu.sphinx.api.SpeechResult;
+import edu.cmu.sphinx.api.StreamSpeechRecognizer;
 
 /**
  * ChatbotController: interfacing with LINE API, handle global state transition.
@@ -69,7 +83,9 @@ public class ChatbotController
     private IntentionClassifier classifier;
 
     private static final int NO_REPLY_TIMEOUT = 1;
- 
+
+    private Configuration sphinxConfiguration;
+
     /**
      * Register on eventBus.
      */
@@ -79,6 +95,12 @@ public class ChatbotController
             eventBus.on($("FormatterMessageJSON"), this);
             log.info("ChatbotController register on eventBus");
         }
+        // Config the CMU Sphinx data path
+        sphinxConfiguration = new Configuration();
+        sphinxConfiguration.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
+        sphinxConfiguration.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
+        sphinxConfiguration.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
+        sphinxConfiguration.setSampleRate(8000);
     }
 
     /**
@@ -164,6 +186,80 @@ public class ChatbotController
             }
         }
     }
+
+    /**
+     * Event handler for LINE audio message.
+     * Making use of the CMU Sphinx recognition package.
+     * @param event LINE image message event
+     */
+    @EventMapping
+    public void handleAudioMessageEvent(MessageEvent<AudioMessageContent> event) {
+
+        String userId = event.getSource().getUserId();
+        String messageId = event.getMessage().getId();
+        String replyToken = event.getReplyToken();
+
+        // remove first letter 'U' from userId
+        userId = userId.substring(1);
+
+        MessageContentResponse response;
+        List<String> messages = new ArrayList<>();
+        try {
+            // Prompt recognition in progress
+            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+            fmt.appendTextMessage("Speech recognition in progress, please wait...");
+            publisher.publish(fmt);
+            // Initialization
+            StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
+            response = lineMessagingClient.getMessageContent(messageId).get();
+            // Conversion to correct format
+            InputStream inputStream = new BufferedInputStream(response.getStream());
+            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(inputStream);
+            AudioFormat oldFormat = audioInputStream.getFormat();
+            AudioFormat newFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 8000, 16, 1, 2, 8000, false);
+            log.info("Old audio format:" + oldFormat.toString());
+            log.info("New audio format:" + newFormat.toString());
+            AudioInputStream recognitionInputStream = AudioSystem.getAudioInputStream(newFormat, audioInputStream);
+
+            // Logging
+            log.error(String.format("getLength: %d", response.getLength()));
+
+            // Recognition
+            recognizer.startRecognition(recognitionInputStream);
+            SpeechResult result;
+            log.info("entered recognition part");
+            while ((result = recognizer.getResult()) != null) {
+                messages.add(result.getHypothesis());
+            }
+            recognizer.stopRecognition();
+            recognitionInputStream.close();
+            // Force garbage collection
+            System.gc();
+        } catch (InterruptedException | ExecutionException | IOException | UnsupportedAudioFileException e) {
+            log.error("Error in recognition.", e);
+        }
+        // Join results
+        String msg = String.join(" ", messages);
+
+        // Show recognition result
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage("RECOGNIZED: " + msg);
+        publisher.publish(fmt);
+
+        // Publish message
+        ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
+        psr.set("messageId", messageId)
+                .set("textContent", msg)
+                .setState(getUserState(userId).toString());
+        registerNoReplyCallback(userId);
+        if (getUserState(userId) != State.IDLE) {
+            publisher.publish(psr);
+        } else {
+            Event<ParserMessageJSON> ev = new Event<>(null, psr);
+            if (classifier != null) classifier.accept(ev);
+        }
+    }
+
 
     /**
      * Event handler for LINE unfollow event.
