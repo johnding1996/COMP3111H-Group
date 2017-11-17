@@ -1,5 +1,6 @@
 package agent;
 
+import database.querier.FoodQuerier;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -49,6 +50,7 @@ public class MealAsker
 
     private static HashMap<String, JSONObject> menus = new HashMap<>();
     private static Map<String, Integer> userStates = new HashMap<>();
+    private static Map<String, NewFood> userNewFood = new HashMap<>();
 
     /**
      * Register on eventBus.
@@ -149,7 +151,6 @@ public class MealAsker
      * @param userId String of user Id.
      */
     public void updateDatabase(int dishIndex, String name, String userId) {
-        String reply = "";
         try {
             JSONObject queryJSON = this.getMenuKeeperJSON(userId);
             JSONObject dish = queryJSON.getJSONArray("menu").getJSONObject(dishIndex - 1);
@@ -165,8 +166,49 @@ public class MealAsker
         }
     }
 
-    public void updateDatabase(String name, int energy, int protein, int lipid){
+    /**
+     * updates new food to database, as well as update this new dish in MenuKeeper.
+     * @param name String of the food name.
+     * @param energy energy amount in new food.
+     * @param protein protein amount in new food.
+     * @param lipid lipid amount in new food.
+     * @param userId String of user Id.
+     */
+    public void updateDatabase(String name, int energy, int protein, int lipid, String userId){
+        int i = 250;
+        JSONObject newDish = new JSONObject();
+        newDish.put("ndb_no", i);
+        newDish.put("shrt_desc", name);
+        newDish.put("energ_kcal", energy);
+        newDish.put("protein", protein);
+        newDish.put("lipid_tot", lipid);
 
+        FoodQuerier fq = new FoodQuerier();
+        boolean flag = false;
+        while (!flag){
+            i++;
+            newDish.put("ndb_no", i);
+            flag = fq.add(newDish);
+        }
+
+        JSONObject foodContent = new JSONObject();
+        foodContent.put("idx", i);
+        foodContent.put("description", name);
+        JSONObject newFood = new JSONObject();
+        newFood.put("name", userId);
+        newFood.put("foodContent", foodContent);
+
+        try {
+            JSONObject queryJSON = this.getMenuKeeperJSON(userId);
+            queryJSON.getJSONArray("menu").put(newFood);
+            boolean success = this.setMenuKeeperJSON(userId, queryJSON);
+            if(success)
+                log.info(String.format("Updated dish name in menu of user %s in to the caches.", userId));
+            else
+                log.warn(String.format("Set error occurs, for user %s.", userId));
+        } catch (JSONException e){
+            log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
+        }
     }
 
     /**
@@ -272,6 +314,7 @@ public class MealAsker
                 if(update.equals("yes")){
                     response.appendTextMessage("So what is the name of this food?");
                     userStates.put(userId, userState + 1);
+                    userNewFood.put(userId, new NewFood());
                 }
                 else if(update.equals("no")){
                     userStates.remove(userId);
@@ -290,7 +333,7 @@ public class MealAsker
             //State for feature 7, continued
             else if(userState == 3){
                 String dishName = psr.get("textContent");
-                updateDatabase(dishName, -1, -1, -1);
+                userNewFood.get(userId).name = dishName;
                 userStates.put(userId, userState + 1);
                 response.appendTextMessage("Okay, I need you provide some nutrition details" +
                         " So what is the energy contained in this dish? (in terms of kcal)" +
@@ -302,7 +345,7 @@ public class MealAsker
                 if(Validator.isInteger(energy))
                     response.appendTextMessage("Give me an integer please ~");
                 else{
-                    updateDatabase("default", parseInt(energy), -1, -1);
+                    userNewFood.get(userId).energy = parseInt(energy);
                     userStates.put(userId, userState + 1);
                     response.appendTextMessage("Okay, so what is the protein contained in this dish? " +
                             "(in terms of gram) Give me an integer please ~");
@@ -314,7 +357,7 @@ public class MealAsker
                 if(Validator.isInteger(protein))
                     response.appendTextMessage("Give me an integer please ~");
                 else{
-                    updateDatabase("default", -1, parseInt(protein), -1);
+                    userNewFood.get(userId).protein = parseInt(protein);
                     userStates.put(userId, userState + 1);
                     response.appendTextMessage("Okay, so what is the lipid contained in this dish? " +
                             "(in terms of tot) Give me an integer please ~");
@@ -326,7 +369,14 @@ public class MealAsker
                 if(Validator.isInteger(lipid))
                     response.appendTextMessage("Give me an integer please ~");
                 else{
-                    updateDatabase("default", -1, -1, parseInt(lipid));
+                    userNewFood.get(userId).lipid = parseInt(lipid);
+                    String n = userNewFood.get(userId).name;
+                    int en = userNewFood.get(userId).energy;
+                    int pro = userNewFood.get(userId).protein;
+                    int lip = userNewFood.get(userId).lipid;
+                    userNewFood.remove(userId);
+                    updateDatabase(n, en, pro, lip, userId);
+
                     response.appendTextMessage("Alright, I have recorded your meal");
                     if (controller != null) {
                         publisher.publish(response);
@@ -348,4 +398,14 @@ public class MealAsker
         }
         publisher.publish(response);
     }
+}
+
+/**
+ * record user's new food information.
+ */
+class NewFood {
+    String name;
+    int energy;
+    int protein;
+    int lipid;
 }
