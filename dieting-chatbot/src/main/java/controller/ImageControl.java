@@ -107,14 +107,14 @@ public class ImageControl {
      * @param fileName the name of the file
      */
     public static void addBorder(String fileName) {
-        BufferedImage bimg;
-		try {
-			bimg = ImageIO.read(file);
-		} catch (IOException e) {
-            log.info("cannot read in file");
-		}
-        int width          = bimg.getWidth();
-        int height         = bimg.getHeight();
+        // BufferedImage bimg;
+		// try {
+		// 	bimg = ImageIO.read(file);
+		// } catch (IOException e) {
+        //     log.info("cannot read in file");
+		// }
+        // int width          = bimg.getWidth();
+        // int height         = bimg.getHeight();
 
     }
 
