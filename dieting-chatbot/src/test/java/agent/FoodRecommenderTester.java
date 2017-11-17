@@ -43,13 +43,13 @@ public class FoodRecommenderTester {
         menuJSON.put("userId", szhouanId);
         JSONArray menu = new JSONArray();
         dish1 = new JSONObject();
-        dish1.put("dishName", "Dish1");
+        dish1.put("name", "Dish1");
         dish1.put("foodContent", (new JSONArray())
             .put(getNutrientJSON(1058))
             .put(getNutrientJSON(2010)));
         menu.put(dish1);
         dish2 = new JSONObject();
-        dish2.put("dishName", "Dish2");
+        dish2.put("name", "Dish2");
         dish2.put("foodContent", (new JSONArray())
             .put(getNutrientJSON(1094))
             .put(getNutrientJSON(4572))
@@ -271,6 +271,7 @@ public class FoodRecommenderTester {
         menuJSON.put("userId", annonymousID);
         recommender.addExerciseIntakeRatios(annonymousID, 1.25);
         recommender.addMealPortions(annonymousID, 0.15);
+        log.error(menuJSON.toString(4));
         JSONObject foodScoreJSON = recommender.getMenuScore(menuJSON);
         recommender.generateRecommendation(foodScoreJSON);
         userQuerier.delete(annonymousID);

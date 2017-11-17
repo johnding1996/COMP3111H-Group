@@ -3,6 +3,10 @@ package agent;
 import controller.Publisher;
 import controller.TestConfiguration;
 import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.json.JSONArray;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,39 +62,33 @@ public class MealRecorderTester {
 
     @Test
     public void testFalseState() {
-        String userId = "cliubf";
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
-        psr.setState("Feedback");
+        psr.setState("RecordMeal");
         recorder.setUserState(psr.get("userId"), 0);
-        Event<ParserMessageJSON> ev =
-                new Event<ParserMessageJSON>(null, psr);
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation)
-                    throws Throwable {
-                FormatterMessageJSON fmt = invocation.getArgumentAt(0,
-                        FormatterMessageJSON.class);
-                assert fmt.getUserId().equals(userId);
-                JSONArray messages = (JSONArray)fmt.getMessageArray();
-                String text1 = (String) messages.getJSONObject(0).get("textContent");
-                assert text1.startsWith("Welcome back");
-                String text2 = (String) messages.getJSONObject(0).get("textContent");
-                assert text2.startsWith("Please enter in");
-                return null;
-            }
-        }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
-        recorder.accept(ev);
+        List<String> prefixList = new ArrayList<>();
+        prefixList.add("Welcome back");
+        prefixList.add("please enter in");
+        assertReplyContent(prefixList, psr);
     }
 
 
     @Test
     public void testTrueState() {
-        ParserMessageJSON psr = new ParserMessageJSON("userId", "text");
-        psr.setState("Feedback")
+        ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
+        psr.setState("RecordMeal")
            .set("textContent", "1;2;3");
-        recorder.setUserState(psr.get("userId"), 1);
-        Event<ParserMessageJSON> ev =
-                new Event<ParserMessageJSON>(null, psr);
+        recorder.setUserState(psr.get(userId), 1);
+        List<String> prefixList = Collections.singletonList("Great! I have");
+        assertReplyContent(prefixList, psr);
+    }
+
+    /**
+     * Assert replies for a psr have expected prefix.
+     * @param prefixList List of prefix
+     * @param psr ParserMessageJSON
+     */
+    private void assertReplyContent(List<String> prefixList, ParserMessageJSON psr) {
+        Event<ParserMessageJSON> ev = new Event<ParserMessageJSON>(null, psr);
         Mockito.doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation)
@@ -98,12 +96,16 @@ public class MealRecorderTester {
                 FormatterMessageJSON fmt = invocation.getArgumentAt(0,
                         FormatterMessageJSON.class);
                 assert fmt.getUserId().equals(userId);
-                JSONArray messages = (JSONArray)fmt.getMessageArray();
-                String text1 = (String) messages.getJSONObject(0).get("textContent");
-                assert text1.startsWith("Great! I have");
+                JSONArray messages = fmt.getMessageArray();
+                if (messages.length() == 0) return null;
+                for (int i=0; i<prefixList.size(); ++i) {
+                    String text = messages.getJSONObject(i).getString("textContent");
+                    assert text.startsWith(prefixList.get(i));
+                }
                 return null;
             }
         }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
         recorder.accept(ev);
+        Mockito.reset(publisher);
     }
 }
