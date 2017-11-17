@@ -52,6 +52,8 @@ public class TextProcessor {
 
     /**
      * Try parsing a english number to numeric number.
+     * @param sentence input sentence probably is a english number
+     * @return string of numeric number
      */
     public static String sentenceToNumber(String sentence) {
         Map<String, String> mapping = new HashMap<>();

@@ -203,6 +203,9 @@ public class ChatbotController
         String userId = event.getSource().getUserId();
         String messageId = event.getMessage().getId();
 
+        // remove first letter 'U' from userId
+        userId = userId.substring(1);
+
         MessageContentResponse response;
         List<String> messages = new ArrayList<>();
         try {
@@ -247,7 +250,7 @@ public class ChatbotController
         if (!keyWords.contains(msg)) msg = msg.toLowerCase();
         // Try parsing number
         if (TextProcessor.sentenceToNumber(msg) != null) msg = TextProcessor.sentenceToNumber(msg);
-        log.info("Recognized message: " + msg);
+        log.info("Speech recognized message: " + msg);
 
         // Show recognition result
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
@@ -255,32 +258,11 @@ public class ChatbotController
         publisher.publish(fmt);
 
         // Pack into text message content and call text handler
-        //TextMessageContent textContent = new TextMessageContent(event.getMessage().getId(), msg);
-        //MessageEvent<TextMessageContent> textEvent = new MessageEvent<>(
-        //        event.getReplyToken(), event.getSource(), textContent, event.getTimestamp()
-        //);
-        //this.handleTextMessageEvent(textEvent);
-
-        // Duplicated code in handleTextMessageEvent but cannot directly call due to a unclear bug
-        if (msg.equals("CANCEL")) {
-            setUserState(userId, State.IDLE);
-            FormatterMessageJSON fmt3 = new FormatterMessageJSON(userId);
-            fmt.appendTextMessage("OK, the session is cancelled.");
-            publisher.publish(fmt3);
-            return;
-        }
-        ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
-        psr.set("messageId", messageId)
-                .set("textContent", msg)
-                .setState(getUserState(userId).toString());
-        registerNoReplyCallback(userId);
-        if (getUserState(userId) != State.IDLE) {
-            publisher.publish(psr);
-        } else {
-            // Prevent race condition
-            Event<ParserMessageJSON> ev = new Event<>(null, psr);
-            if (classifier != null) classifier.accept(ev);
-        }
+        TextMessageContent textContent = new TextMessageContent(event.getMessage().getId(), msg);
+        MessageEvent<TextMessageContent> textEvent = new MessageEvent<>(
+                event.getReplyToken(), event.getSource(), textContent, event.getTimestamp()
+        );
+        this.handleTextMessageEvent(textEvent);
     }
 
 
