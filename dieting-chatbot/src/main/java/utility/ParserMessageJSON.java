@@ -100,7 +100,8 @@ public class ParserMessageJSON extends MessageJSON {
             return responseBody;
 		} catch (JSONException | IOException e) {
 			log.info("get exception when parsing imageContent to MessageContentResponse Object");
-		} 
+        } 
+        return null;
     }
 
     /**
