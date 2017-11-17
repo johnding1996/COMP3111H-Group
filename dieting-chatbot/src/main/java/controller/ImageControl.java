@@ -70,6 +70,7 @@ public class ImageControl {
         String extension = mimeType.substring(6);   // image/jpeg or image/png
         log.info("extension: {}", extension);
         InputStream inputStream = responseBody.getStream();
+        log.info("Input Stream: {}", inputStream);
         if (type.equals("TempFile")) {
             log.info("Store temporary file");
             // return the uri of the downloaded image
@@ -125,7 +126,7 @@ public class ImageControl {
      * @param extension retrieved from DB
      * @return the temp file's uri
      */ 
-    public String getCouponImageUri(String userId, String encodedString, String extension) {
+    public static String getCouponImageUri(String userId, String encodedString, String extension) {
         byte[] decodedByteArray = Base64.decodeBase64(encodedString);
         InputStream inputStream = new ByteArrayInputStream(decodedByteArray);
         return inputToTempFile(extension, inputStream);
@@ -140,6 +141,7 @@ public class ImageControl {
     public static String inputToTempFile(String extension, InputStream inputStream) {
         DownloadedContent tempFile = createTempFile(extension);
         try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
+            log.info("Trying to copy");
             ByteStreams.copy(inputStream, outputStream);
             log.info("Saved {}: {}", extension, tempFile);
             return tempFile.getUri();

@@ -218,9 +218,14 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
         
         String userId = event.getSource().getUserId();
         userId = userId.substring(1);
+        String temp[] = ImageControl.saveContent(response, "DB");
+        String uri = ImageControl.getCouponImageUri(userId, temp[1], temp[0]);
         ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
         psr.set("messageId", messageId).setState(getUserState(userId).toString()).setImageContent(response);
         publisher.publish(psr);
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendImageMessage(uri, uri);
+        publisher.publish(fmt);
     }
 
     /**
