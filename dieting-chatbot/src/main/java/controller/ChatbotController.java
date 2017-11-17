@@ -43,6 +43,7 @@ import reactor.fn.Consumer;
 import static reactor.bus.selector.Selectors.$;
 import javax.annotation.PostConstruct;
 import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -257,6 +258,9 @@ public class ChatbotController
         fmt.appendTextMessage("RECOGNIZED: " + msg);
         publisher.publish(fmt);
 
+        // Sleep to pursue the order of replied messages
+        sleep(500);
+
         // Pack into text message content and call text handler
         TextMessageContent textContent = new TextMessageContent(event.getMessage().getId(), msg);
         MessageEvent<TextMessageContent> textEvent = new MessageEvent<>(
@@ -420,5 +424,17 @@ public class ChatbotController
             },
             new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));
         log.info("Register new no reply callback for user {}", userId);
+    }
+
+    /**
+     * Sleep for a few milliseconds, used for pursuing the order or messages.
+     * @param milliseconds the number of seconds to sleep.
+     */
+    public void sleep(int milliseconds) {
+        try {
+            TimeUnit.MILLISECONDS.sleep(milliseconds);
+        } catch (InterruptedException e ) {
+            log.warn("Sleeping in controller got interrupted.");
+        }
     }
 }
