@@ -74,14 +74,14 @@ public class ImageControl {
                     long numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), bos);
                     log.info("copied " + numOfCopiesInBytes + " bytes");
                     byte[] buf = bos.toByteArray();
-                    String decodedContent = new String(bos.toString("UTF-8"));
+                    String decodedContent = new String(bos.toString(mimeType));
                     String anotherDecodedContent = new String(buf);
                     log.info("************  decodedContent = " + decodedContent.substring(0, 100));
                     log.info("************  anotherDecodedContent = " + anotherDecodedContent.substring(0, 100));
                     // store encodedContent to DB
                     
-                    //InputStream inputStream = new ByteArrayInputStream(decodedContent.getBytes("UTF-8"));
-                    InputStream inputStream = new ByteArrayInputStream(buf);
+                    InputStream inputStream = new ByteArrayInputStream(decodedContent.getBytes(mimeType));
+                    //InputStream inputStream = new ByteArrayInputStream(buf);
                     DownloadedContent tempFile = createTempFile(extension);
                     OutputStream outputStream = Files.newOutputStream(tempFile.path); 
                     ByteStreams.copy(inputStream, outputStream);
