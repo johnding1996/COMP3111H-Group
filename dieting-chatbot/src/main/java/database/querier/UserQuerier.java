@@ -24,7 +24,8 @@ public class UserQuerier extends Querier {
         idx_field = "id";
         desc_field = "id";
         fields = Arrays.asList(
-                "id", "name", "age", "gender", "weight", "height", "goal_weight", "due_date"
+                "id", "name", "age", "gender", "weight", "height", "goal_weight", "due_date",
+                "isAdmin", "parentUserId", "followTime"
         );
         critical_fields = new HashSet<>(Arrays.asList(
                 "id", "age", "gender", "weight", "height"

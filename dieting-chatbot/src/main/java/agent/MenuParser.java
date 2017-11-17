@@ -126,8 +126,7 @@ public class MenuParser
         }
 
         log.info("Entering MenuParser");
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        publisher.publish(fmt);
+        publisher.publish(new FormatterMessageJSON(userId));
 
         // do not handle image for now
         //if(psr.getType().equals("image")) {

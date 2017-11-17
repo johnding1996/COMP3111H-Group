@@ -25,7 +25,7 @@ import utility.Validator;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {MealAsker.class, FoodRecommender.class})
+@SpringBootTest(classes = {MealAsker.class, PortionAsker.class, FoodRecommender.class})
 @ContextConfiguration(classes = TestConfiguration.class)
 public class MealAskerTester {
     @Autowired

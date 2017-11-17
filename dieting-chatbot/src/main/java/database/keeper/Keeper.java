@@ -32,4 +32,34 @@ public abstract class Keeper {
         RedisPool.closeConnection(jedis);
     }
 
+    /**
+     * Check if the input user id is in the valid format.
+     * @param userId String of user Id
+     * @return whether user Id is valid
+     */
+    public boolean checkValidityUserId(String userId){
+        if(userId.length() == 32){
+            return true;
+        }
+        else{
+            log.error("Invalid UserId Input");
+            return false;
+        }
+    }
+
+    /**
+     * Check if the input code is in the valid format.
+     * @param code Input code String
+     * @return whether coupon code is valid
+     */
+    public boolean checkValidityCode(String code){
+        if(code.length() == 6){
+            return true;
+        }
+        else{
+            log.error("Invalid Code Input");
+            return false;
+        }
+    }
+
 }

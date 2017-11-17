@@ -43,9 +43,10 @@ public class JazzySpellCheckerTester {
     }
 
     @Test
-    public void testFood() {
-        String text = "Spicy Bean Curd wllh Mlnced Pork served wllh RICe";
+    public void testSpellChecking3() {
+        String text = "Helllo woorld\nnow of ne.";
+        spellChecker.getCorrectedText("Teesst Teesst Teest");
         assert spellChecker.getCorrectedText(text).toLowerCase()
-            .equals("spicy bean curd with minced pork served with rice");
+            .equals("hello world\nnow of new.");
     }
 }

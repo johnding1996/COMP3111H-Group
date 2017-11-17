@@ -84,7 +84,7 @@ public class FoodRecommender
     /**
      * User menus internal memory for food recommendation.
      */
-    private static Map<String, JSONObject> menus = new HashMap<>();
+    private HashMap<String, JSONObject> menus = new HashMap<>();
 
     /**
      * User states tracking for interaction.
@@ -335,7 +335,7 @@ public class FoodRecommender
      * @return Whether user means meal finished.
      */
     public boolean isContaining(String msg, Set<String> keyWords) {
-        for (String word : TextProcessor.sentenceToWords(msg)) {
+        for (String word : TextProcessor.getTokens(msg)) {
             if (keyWords.contains(word)) return true;
         }
         return false;
