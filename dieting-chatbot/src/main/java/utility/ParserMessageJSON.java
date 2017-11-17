@@ -5,8 +5,6 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import com.linecorp.bot.client.MessageContentResponse;
 
 import controller.State;
@@ -95,15 +93,9 @@ public class ParserMessageJSON extends MessageJSON {
      * @return the responseBody
      */
     public MessageContentResponse getImageContent() {
-        Gson gson = new Gson();
         MessageContentResponse responseBody;
-		try {
-            responseBody = gson.fromJson(json.getJSONObject("imageContent").toString(), MessageContentResponse.class);
-            return responseBody;
-		} catch (JsonSyntaxException e) {
-			log.info("get exception when parsing imageContent to MessageContentResponse Object");
-        } 
-        return null;
+	    responseBody = (MessageContentResponse)json.get("imageContent");	
+        return responseBody;
     }
 
     /**
