@@ -92,12 +92,17 @@ public class ImageControl {
                 // }
                 log.info("before reading ......");
                 StringBuilder contents = new StringBuilder();
-                int len = inputStreamReader.read();
-                char[] buffer = new char[10000];
-                while (len >= 0) {
-                    contents.append(buffer, 0, len);
+                
+                int bytesRead = 0;
+                if(!inputStreamReader.ready()) {
+                    log.info("input stream is not ready yet, fail to read in bytes");
+                    return null;
                 }
-                String decodedContent = buffer.toString();
+                while ((bytesRead = inputStreamReader.read()) != -1) {
+                    contents.append((char)bytesRead);
+                }
+                inputStreamReader.close();
+                String decodedContent = contents.toString();
                 log.info("decodedContent: {}", decodedContent.substring(0,100));
 
                 DownloadedContent tempFile = createTempFile(extension);
@@ -111,6 +116,7 @@ public class ImageControl {
                 
         } catch (Exception e) {
             log.info("Do not support this kind of edcoding");
+            e.printStackTrace();
         }
         return null;
     }
