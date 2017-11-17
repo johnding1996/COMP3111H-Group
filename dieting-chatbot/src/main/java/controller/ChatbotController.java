@@ -87,6 +87,11 @@ public class ChatbotController
     private Configuration sphinxConfiguration;
 
     /**
+     * Set of global key words escaping used by various handlers.
+     */
+    Set<String> keyWords = new HashSet<>(Arrays.asList("CANCEL"));
+
+    /**
      * Register on eventBus.
      */
     @PostConstruct
@@ -188,7 +193,8 @@ public class ChatbotController
 
     /**
      * Event handler for LINE audio message.
-     * Making use of the CMU Sphinx recognition package.
+     * Making use of the CMU Sphinx recognition package to do speech recognition.
+     * The dictionary and language model files are at /resources/language folder.
      * @param event LINE image message event
      */
     @EventMapping
@@ -196,12 +202,6 @@ public class ChatbotController
 
         String userId = event.getSource().getUserId();
         String messageId = event.getMessage().getId();
-        String replyToken = event.getReplyToken();
-
-        Set<String> keyWords = new HashSet<>(Arrays.asList("CANCEL", "ENABLE", "DISABLE"));
-
-        // remove first letter 'U' from userId
-        userId = userId.substring(1);
 
         MessageContentResponse response;
         List<String> messages = new ArrayList<>();
@@ -210,9 +210,11 @@ public class ChatbotController
             FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
             fmt.appendTextMessage("Speech recognition in progress, please wait...");
             publisher.publish(fmt);
+
             // Initialization
             StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
             response = lineMessagingClient.getMessageContent(messageId).get();
+
             // Conversion to correct format
             InputStream inputStream = new BufferedInputStream(response.getStream());
             AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(inputStream);
@@ -221,31 +223,52 @@ public class ChatbotController
             log.info("Old audio format:" + oldFormat.toString());
             log.info("New audio format:" + newFormat.toString());
             AudioInputStream recognitionInputStream = AudioSystem.getAudioInputStream(newFormat, audioInputStream);
+
             // Recognition
             recognizer.startRecognition(recognitionInputStream);
             SpeechResult result;
-            log.info("entered recognition part");
+            log.info("Entered recognition part.");
             while ((result = recognizer.getResult()) != null) {
                 String word = result.getHypothesis();
-                if (!keyWords.contains(word)) word = word.toLowerCase();
                 messages.add(word);
             }
             recognizer.stopRecognition();
             recognitionInputStream.close();
+
             // Force garbage collection
             System.gc();
         } catch (InterruptedException | ExecutionException | IOException | UnsupportedAudioFileException e) {
             log.error("Error in recognition.", e);
         }
+
         // Join results
-        String msg = String.join(" ", messages);
+        String msg = String.join(" ", messages).trim();
+        // Escape lowing for the key words
+        if (!keyWords.contains(msg)) msg = msg.toLowerCase();
+        // Try parsing number
+        if (TextProcessor.sentenceToNumber(msg) != null) msg = TextProcessor.sentenceToNumber(msg);
+        log.info("Recognized message: " + msg);
 
         // Show recognition result
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("RECOGNIZED: " + msg);
         publisher.publish(fmt);
 
-        // Publish message
+        // Pack into text message content and call text handler
+        //TextMessageContent textContent = new TextMessageContent(event.getMessage().getId(), msg);
+        //MessageEvent<TextMessageContent> textEvent = new MessageEvent<>(
+        //        event.getReplyToken(), event.getSource(), textContent, event.getTimestamp()
+        //);
+        //this.handleTextMessageEvent(textEvent);
+
+        // Duplicated code in handleTextMessageEvent but cannot directly call due to a unclear bug
+        if (msg.equals("CANCEL")) {
+            setUserState(userId, State.IDLE);
+            FormatterMessageJSON fmt3 = new FormatterMessageJSON(userId);
+            fmt.appendTextMessage("OK, the session is cancelled.");
+            publisher.publish(fmt3);
+            return;
+        }
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
         psr.set("messageId", messageId)
                 .set("textContent", msg)
@@ -254,6 +277,7 @@ public class ChatbotController
         if (getUserState(userId) != State.IDLE) {
             publisher.publish(psr);
         } else {
+            // Prevent race condition
             Event<ParserMessageJSON> ev = new Event<>(null, psr);
             if (classifier != null) classifier.accept(ev);
         }
