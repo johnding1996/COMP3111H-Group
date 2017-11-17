@@ -24,7 +24,7 @@ import javax.imageio.ImageIO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
+import org.apache.commons.codec.binary.Base64;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import utility.FormatterMessageJSON;
@@ -74,14 +74,19 @@ public class ImageControl {
                     long numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), bos);
                     log.info("copied " + numOfCopiesInBytes + " bytes");
                     byte[] buf = bos.toByteArray();
-                    String decodedContent = new String(bos.toString(mimeType));
-                    String anotherDecodedContent = new String(buf);
-                    log.info("************  decodedContent = " + decodedContent.substring(0, 100));
-                    log.info("************  anotherDecodedContent = " + anotherDecodedContent.substring(0, 100));
+                    // String decodedContent = new String(bos.toString(mimeType));
+                    // String anotherDecodedContent = new String(buf);
+                    // log.info("************  decodedContent = " + decodedContent.substring(0, 100));
+                    // log.info("************  anotherDecodedContent = " + anotherDecodedContent.substring(0, 100));
                     // store encodedContent to DB
                     
-                    InputStream inputStream = new ByteArrayInputStream(decodedContent.getBytes(mimeType));
+                    String encodedString = Base64.encodeBase64URLSafeString(buf);
+                    log.info("Encoded String in Base64: {}", encodedString);
+                    byte[] decodedByteArray = Base64.decodeBase64(encodedString);
+
+                    //InputStream inputStream = new ByteArrayInputStream(decodedContent.getBytes(mimeType));
                     //InputStream inputStream = new ByteArrayInputStream(buf);
+                    InputStream inputStream = new ByteArrayInputStream(decodedByteArray);
                     DownloadedContent tempFile = createTempFile(extension);
                     OutputStream outputStream = Files.newOutputStream(tempFile.path); 
                     ByteStreams.copy(inputStream, outputStream);

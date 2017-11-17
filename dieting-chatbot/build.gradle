@@ -35,6 +35,7 @@ dependencies {
     compile "io.projectreactor:reactor-bus"
     compile "javax.json:javax.json-api:1.0"
     compile "org.json:json"
+    compile group: 'commons-codec', name: 'commons-codec', version: '1.9'
     compile group: 'org.languagetool', name: 'language-en', version: '3.9'
     compile group: 'com.asprise.ocr', name: 'java-ocr-api', version: '[15,)'
     compile group: 'org.glassfish', name: 'javax.json', version: '1.0.4'
