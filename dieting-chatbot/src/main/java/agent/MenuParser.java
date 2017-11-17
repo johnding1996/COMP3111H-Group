@@ -15,6 +15,7 @@ import org.json.JSONObject;
 import controller.Publisher;
 import controller.State;
 import controller.ChatbotController;
+import controller.ImageControl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,8 @@ import reactor.bus.Event;
 import reactor.bus.EventBus;
 import javax.annotation.PostConstruct;
 import org.springframework.util.ResourceUtils;
+
+import com.linecorp.bot.client.MessageContentResponse;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -155,7 +158,8 @@ public class MenuParser
         } else if (state == 1) {
             JSONArray menuArray;
             if(psr.getType().equals("image")) {
-                String uri = psr.get("imageContent");
+                MessageContentResponse msr = psr.getImageContent();
+                String uri = ImageControl.saveContent(msr, "TempFile")[0];
                 log.info("get imageContent with URI: " + uri);
                 menuArray = imageMenuParser.buildMenu(uri); 
             }

@@ -205,7 +205,7 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
      */
     @EventMapping
     public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) throws IOException {
-        log.info("Get IMAGE message from user: {} !!!!!!!!!!!!!!!!!!!!!!!!!!", event.getSource().getUserId());
+        log.info("Get IMAGE message from user: {}", event.getSource().getUserId());
         String messageId = event.getMessage().getId();
         String replyToken = event.getReplyToken();
         final MessageContentResponse response;
@@ -215,40 +215,12 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
             log.info("cannot get image: " + e.getMessage());
             throw new RuntimeException(e);
         }
-        //TEST: store the image I uploaded in a static url
-        // if(event.getSource().getUserId().equals("U60ee860ae5e086599f9e2baff5efcf15")) {
-        //     log.info("Get image sent from Lucis");
-
-        //     Path bgPath = DietingChatbotApplication.staticPath.resolve("pikachu.png");
-        //     DownloadedContent background = new DownloadedContent(bgPath
-        //     , createUri("/static/" + bgPath.getFileName()));
-        //     // Boolean bool = background.createNewFile;
-        //     // log.info("File created: " + bool);
-        //     try (OutputStream outputStream = Files.newOutputStream(background.path)) {
-        //         ByteStreams.copy(response.getStream(), outputStream);
-        //         log.info("Saved pikachu: {}", background);
-        //         List<Message> messages = new ArrayList<Message>();
-        //         messages.add(new ImageMessage(background.getUri(), background.getUri()));
-        //         lineMessagingClient.replyMessage(new ReplyMessage(replyToken, messages));
-        //     } catch(IOException e) {
-        //         throw new UncheckedIOException(e);
-        //     }
-        //     return;
-        // }
+        
         String userId = event.getSource().getUserId();
         userId = userId.substring(1);
-        //TODO: check null
-        //String uri = ImageControl.saveContent(response, "TempFile");
-        String tempFileUri = ImageControl.saveContent(response, "DB");
-        //log.info("Stored with uri: {}", uri);
-        log.info("Get tempFileUri: {}", tempFileUri);
-        //log.info("Get encodedContent inside ChatbotController with: {}", encodedContent);
-        //ImageMenuParser.buildMenu(png.getUri());
-        // ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
-        // psr.set("messageId", messageId).set("imageContent", uri).setState(getUserState(userId).toString());
-        // publisher.publish(psr);
-        FormatterMessageJSON fmt = new FormatterMessageJSON(userId).appendImageMessage(tempFileUri, tempFileUri);
-        publisher.publish(fmt);
+        ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
+        psr.set("messageId", messageId).setState(getUserState(userId).toString()).setImageContent(response);
+        publisher.publish(psr);
     }
 
     /**

@@ -1,10 +1,15 @@
 package utility;
 
+import org.json.JSONException;
 import org.json.JSONObject;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.linecorp.bot.client.MessageContentResponse;
 
 import controller.State;
 import lombok.extern.slf4j.Slf4j;
-
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -77,11 +82,35 @@ public class ParserMessageJSON extends MessageJSON {
      * @return String of value contained in the key
      */
     public String get(String key) {
-        // if (!keySet.contains(key) || key.equals("imageContent")) {
-        if (!keySet.contains(key)) {
+        if (!keySet.contains(key) || key.equals("imageContent")) {
             return null;
         }
         return json.getString(key);
+    }
+
+    /**
+     * Get image content, that is the response body.
+     * @return the responseBody
+     */
+    public MessageContentResponse getImageContent() {
+        ObjectMapper m = new ObjectMapper();
+        MessageContentResponse responseBody;
+		try {
+			responseBody = m.readValue(json.getJSONObject("imageContent").toString(), MessageContentResponse.class);
+		} catch (JSONException | IOException e) {
+			log.info("get exception when parsing imageContent to MessageContentResponse Object");
+		} 
+        return responseBody;
+    }
+
+    /**
+     * Set image content using the reponse
+     * @param the response body
+     * @return this object
+     */
+    public ParserMessageJSON setImageContent(MessageContentResponse mcr) {
+        json.put("imageContent", mcr);
+        return this;
     }
 
     /**

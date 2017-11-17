@@ -2,6 +2,9 @@ package controller;
 
 import com.google.common.io.ByteStreams;
 import com.linecorp.bot.client.MessageContentResponse;
+
+import database.keeper.CampaignKeeper;
+
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
@@ -41,7 +44,12 @@ public class ImageControl {
         String uri;
     }
 
-    public static DownloadedContent createTempFile(String ext) {
+    /**
+     * Create a temporary file on the current server directory.
+     * @param ext extension string, could be jpeg, jpg, png...
+     * @return a DownloadedContent instance created
+     */
+    private static DownloadedContent createTempFile(String ext) {
         String fileName = LocalDateTime.now().toString() + '-' 
                         + UUID.randomUUID().toString() + '.' + ext;
         Path tempFilePath= DietingChatbotApplication.downloadedContentDir.resolve(fileName);
@@ -50,141 +58,85 @@ public class ImageControl {
         return new DownloadedContent(tempFilePath, createUri("/downloaded/" + tempFilePath.getFileName()));
     }
 
-    public static String saveContent(MessageContentResponse responseBody, String type) {
+    /**
+     * Controller use this static method to save content from the InputStream specified in the response body.
+     * @param responseBody the response body get from LINE Messaging Client
+     * @param type can either be TempFile (will return uri of the temp image) or DB (the extension and encoded string) 
+     * @return will either return the uri or extension + encoded string          
+     */
+    public static String[] saveContent(MessageContentResponse responseBody, String type) {
         log.info("Got content-type: {}", responseBody);
         String mimeType = responseBody.getMimeType();
         String extension = mimeType.substring(6);   // image/jpeg or image/png
         log.info("extension: {}", extension);
-        //InputStream inputStream = responseBody.getStream();
-        //log.info("Input stream: {}", inputStream);
-        try {
-            InputStreamReader inputStreamReader = new InputStreamReader(responseBody.getStream());
-            String encodingMethod = inputStreamReader.getEncoding();
-            log.info("Encoding method: {}", encodingMethod);
-            if(!inputStreamReader.ready()) {
-                log.info("input stream is not ready yet, fail to read in bytes");
-            }
-            if(type.equals("TempFile")) {
-                // return inputToTempFile(extension, inputStream);
-                // return the uri of the downloaded image
-            }
-            else if(type.equals("DB")) {
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                try {
-                    long numOfCopiesInBytes = ByteStreams.copy(responseBody.getStream(), bos);
-                    log.info("copied " + numOfCopiesInBytes + " bytes");
-                    byte[] buf = bos.toByteArray();
-                    // String decodedContent = new String(bos.toString(mimeType));
-                    // String anotherDecodedContent = new String(buf);
-                    // log.info("************  decodedContent = " + decodedContent.substring(0, 100));
-                    // log.info("************  anotherDecodedContent = " + anotherDecodedContent.substring(0, 100));
-                    // store encodedContent to DB
-                    
-                    String encodedString = Base64.encodeBase64URLSafeString(buf);
-                    log.info("Encoded String in Base64: {}", encodedString);
-                    byte[] decodedByteArray = Base64.decodeBase64(encodedString);
-
-                    //InputStream inputStream = new ByteArrayInputStream(decodedContent.getBytes(mimeType));
-                    //InputStream inputStream = new ByteArrayInputStream(buf);
-                    InputStream inputStream = new ByteArrayInputStream(decodedByteArray);
-                    DownloadedContent tempFile = createTempFile(extension);
-                    OutputStream outputStream = Files.newOutputStream(tempFile.path); 
-                    ByteStreams.copy(inputStream, outputStream);
-                    //String tempFileUri = inputToTempFile(extension, inputStream);
-                    log.info("prepare to get tempFileUri");
-                    return tempFile.getUri();
-                    // DownloadedContent tempFile = createTempFile(extension);
-                    // try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
-                    //     bos.writeTo(outputStream); 
-                    //     log.info("Saved {}: {}", extension, tempFile);
-                    //     return tempFile.getUri();
-                    // } catch (IOException e) {
-                    //     throw new UncheckedIOException(e);
-                    // }
-                    
-                }
-                catch (IOException e) {
-                    log.info("Caught IOException when testing DB part");
-                }
-                
-                
-                
-                // log.info("before reading ......");
-                // int bytesRead = 0;
-                // if(!inputStreamReader.ready()) {
-                //     log.info("input stream is not ready yet, fail to read in bytes");
-                //     return null;
-                // }
-                // final char[] buffer = new char[20000];
-                // final StringBuilder contents = new StringBuilder();
-                // while(true) {
-                //     int bytesNumber = inputStreamReader.read(buffer, 0, buffer.length);
-                //     log.info("Read in " + bytesNumber + " Bytes");
-                //     if (bytesNumber < 0)
-                //         break;
-                //     contents.append(buffer, 0, bytesNumber);
-                // }
-                // inputStreamReader.close();
-                // String decodedContent = contents.toString();
-                // log.info("decodedContent: {}", decodedContent.substring(0,100));
-
-                // DownloadedContent tempFile = createTempFile(extension);
-                // OutputStream outputStream = Files.newOutputStream(tempFile.path); 
-                // OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, "UTF-8");
-                // outputStreamWriter.write(decodedContent);
-                // log.info("Saved {}: {}", extension, tempFile);
-                // return tempFile.getUri();
-            }    
-                
-        } catch (Exception e) {
-            log.info("Do not support this kind of edcoding");
-            e.printStackTrace();
+        InputStream inputStream = responseBody.getStream();
+        if (type.equals("TempFile")) {
+            log.info("Store temporary file");
+            // return the uri of the downloaded image
+            return new String[] {inputToTempFile(extension, inputStream)};
         }
+        else if(type.equals("DB")) {
+            log.info("Store image uploaded by administrator to DB");
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            try {
+                long numOfBytes = ByteStreams.copy(responseBody.getStream(), bos);
+                log.info("copied " + numOfBytes + " bytes");
+                byte[] buf = bos.toByteArray();
+                String encodedString = Base64.encodeBase64URLSafeString(buf);
+                log.info("Encoded String in Base64: {}", encodedString);
+                return new String[] {extension, encodedString};
+            }
+            catch (IOException e) {
+                log.info("Caught IOException when testing DB part");
+            }
+        }    
         return null;
     }
         
         
-    
-    static String createUri(String path) {
+    /**
+     * Create URI from current context path.
+     * @param path the desired sub directory path
+     */
+    private static String createUri(String path) {
         return ServletUriComponentsBuilder.fromCurrentContextPath().path(path).build().toString();
     }
 
+    /**
+     * Add border to a image file to facilitate OCR recognization
+     * @param fileName the name of the file
+     */
     public static void addBorder(String fileName) {
-        // BufferedImage bimg;
-		// try {
-		// 	bimg = ImageIO.read(file);
-		// } catch (IOException e) {
-        //     log.info("cannot read in file");
-		// }
-        // int width          = bimg.getWidth();
-        // int height         = bimg.getHeight();
+        BufferedImage bimg;
+		try {
+			bimg = ImageIO.read(file);
+		} catch (IOException e) {
+            log.info("cannot read in file");
+		}
+        int width          = bimg.getWidth();
+        int height         = bimg.getHeight();
 
     }
 
-    public String sendCoupon(String userId, String... info) {
-        String encodedContent = "";
-        String tempFileUri = "";
-        Boolean test = (info.length > 1);
-        if(test) {
-            encodedContent = "some method here to get the string from DB";
-            encodedContent = info[1];
-            try {
-                InputStream inputStream = new ByteArrayInputStream(encodedContent.getBytes(StandardCharsets.UTF_8.name()));
-                tempFileUri = inputToTempFile("png", inputStream);
-            } catch (UnsupportedEncodingException e) {
-                log.info("Encounter UnsupportedEncodingException when decoding encodedContent from DB");
-            }
-
-        } else {
-            String pathName = info[0];
-            // currently for testing
-            InputStream inputStream = getClass().getResourceAsStream(pathName);
-            // "/static/sample_menu.txt"
-            tempFileUri = inputToTempFile("png", inputStream);
-        }
-        return tempFileUri;
+    /**
+     * Store the encoded string retrieved from DB to a temp file.
+     * @param userId the user to be sent
+     * @param encodedString the encodedContent string retrieved from DB
+     * @param extension retrieved from DB
+     * @return the temp file's uri
+     */ 
+    public String getCouponImageUri(String userId, String encodedString, String extension) {
+        byte[] decodedByteArray = Base64.decodeBase64(encodedString);
+        InputStream inputStream = new ByteArrayInputStream(decodedByteArray);
+        return inputToTempFile(extension, inputStream);
     }
 
+    /**
+     * Store content into a temporary file
+     * @param extension the extension of the desired file format, corresponding to its MIME Type
+     * @param inputStream the inputStream to get ByteStreams
+     * @return the temporary file's uri
+     */
     public static String inputToTempFile(String extension, InputStream inputStream) {
         DownloadedContent tempFile = createTempFile(extension);
         try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {

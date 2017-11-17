@@ -90,42 +90,6 @@ public class ImageMenuParser {
                 continue;
 
             String correctedSentence = spellChecker.getCorrectedText(line);
-            /*
-            StringBuffer correctSentence = new StringBuffer(line);
-            
-            JLanguageTool langTool = new JLanguageTool(new BritishEnglish());
-            //langTool.activateDefaultPatternRules(); 
-            // this method cannot be called from a static method
-            // for (Rule rule : langTool.getAllActiveRules()) {
-            //     if (rule instanceof SpellingCheckRule) {
-            //         List<String> wordsToIgnore = Arrays.asList("specialword", "myotherword");
-            //         ((SpellingCheckRule)rule).addIgnoreTokens(wordsToIgnore);
-            //     }
-            // }
-            List<RuleMatch> matches = new ArrayList<RuleMatch>();
-            try {
-            	matches = langTool.check(line);
-            } catch (IOException e) {
-            	e.printStackTrace();
-            }
-            log.info("matches containing rule match: {}", matches);
-            int offset = 0;
-            for (RuleMatch match : matches) {
-                if(match.getSuggestedReplacements().isEmpty()) {
-                    log.info("Suggested Replacement is empty");
-                    continue;
-                }
-                correctSentence.replace(match.getFromPos() - offset
-                        , match.getToPos() - offset
-                        , match.getSuggestedReplacements().get(0));
-                offset += (match.getToPos() 
-                        - match.getFromPos() 
-                        - match.getSuggestedReplacements().get(0).length());
-            
-                log.info("match: {}", match);
-            }
-            log.info("corrected sentence: {}", correctSentence);
-            */
             JSONObject dish = new JSONObject();
             dish.put("name", correctedSentence);
             arr.put(dish);
