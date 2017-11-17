@@ -96,11 +96,11 @@ public class ParserMessageJSON extends MessageJSON {
         ObjectMapper m = new ObjectMapper();
         MessageContentResponse responseBody;
 		try {
-			responseBody = m.readValue(json.getJSONObject("imageContent").toString(), MessageContentResponse.class);
+            responseBody = m.readValue(json.getJSONObject("imageContent").toString(), MessageContentResponse.class);
+            return responseBody;
 		} catch (JSONException | IOException e) {
 			log.info("get exception when parsing imageContent to MessageContentResponse Object");
 		} 
-        return responseBody;
     }
 
     /**
