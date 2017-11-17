@@ -19,6 +19,7 @@ import database.querier.PartialFoodQuerier;
 
 import java.util.*;
 
+import static java.lang.Integer.parseInt;
 import static reactor.bus.selector.Selectors.$;
 import javax.annotation.PostConstruct;
 
@@ -164,6 +165,10 @@ public class MealAsker
         }
     }
 
+    public void updateDatabase(String name, int energy, int protein, int lipid){
+
+    }
+
     /**
      * Event handler for ParserMessageJSON.
      * @param ev Event object.
@@ -226,7 +231,9 @@ public class MealAsker
             else if(userState == 1){
                 String update = psr.get("textContent").toLowerCase();
                 if(update.equals("confirm")){
-                    response.appendTextMessage("Bravo! Your update has been saved");
+                    response.appendTextMessage("Bravo! Your update has been saved")
+                            .appendTextMessage("Is there any missing food on this list? " +
+                                    "Tell me Yes or No");
                     changeUserState(userId, userState + 1);
                 }
                 else{
@@ -241,7 +248,7 @@ public class MealAsker
                     else if(revised.length != 2)
                         done = false;
                     else {
-                        index = Integer.parseInt(revised[0]);
+                        index = parseInt(revised[0]);
                         newName = revised[1];
                         if (index < 1 || index > menuNum)
                             done = false;
@@ -261,7 +268,72 @@ public class MealAsker
             }
             //State for feature 7
             else if(userState == 2){
-
+                String update = psr.get("textContent").toLowerCase();
+                if(update.equals("yes")){
+                    response.appendTextMessage("So what is the name of this food?");
+                    userStates.put(userId, userState + 1);
+                }
+                else if(update.equals("no")){
+                    userStates.remove(userId);
+                    menus.remove(userId);
+                    response.appendTextMessage("Alright, let's move on");
+                    if (controller != null) {
+                        publisher.publish(response);
+                        controller.setUserState(userId, State.ASK_PORTION);
+                        return;
+                    }
+                }
+                else
+                    response.appendTextMessage("Sorry, I'm not sure about this. " +
+                            "Plz key in 'Yes' or 'No' at this moment");
+            }
+            //State for feature 7, continued
+            else if(userState == 3){
+                String dishName = psr.get("textContent");
+                updateDatabase(dishName, -1, -1, -1);
+                userStates.put(userId, userState + 1);
+                response.appendTextMessage("Okay, I need you provide some nutrition details" +
+                        " So what is the energy contained in this dish? (in terms of kcal)" +
+                        "Give me an integer please ~");
+            }
+            //State for feature 7, continued
+            else if(userState == 4){
+                String energy = psr.get("textContent");
+                if(Validator.isInteger(energy))
+                    response.appendTextMessage("Give me an integer please ~");
+                else{
+                    updateDatabase("default", parseInt(energy), -1, -1);
+                    userStates.put(userId, userState + 1);
+                    response.appendTextMessage("Okay, so what is the protein contained in this dish? " +
+                            "(in terms of gram) Give me an integer please ~");
+                }
+            }
+            //State for feature 7, continued
+            else if(userState == 5){
+                String protein = psr.get("textContent");
+                if(Validator.isInteger(protein))
+                    response.appendTextMessage("Give me an integer please ~");
+                else{
+                    updateDatabase("default", -1, parseInt(protein), -1);
+                    userStates.put(userId, userState + 1);
+                    response.appendTextMessage("Okay, so what is the lipid contained in this dish? " +
+                            "(in terms of tot) Give me an integer please ~");
+                }
+            }
+            //State for feature 7, continued
+            else if(userState == 6){
+                String lipid = psr.get("textContent");
+                if(Validator.isInteger(lipid))
+                    response.appendTextMessage("Give me an integer please ~");
+                else{
+                    updateDatabase("default", -1, -1, parseInt(lipid));
+                    response.appendTextMessage("Alright, I have recorded your meal");
+                    if (controller != null) {
+                        publisher.publish(response);
+                        controller.setUserState(userId, State.ASK_PORTION);
+                        return;
+                    }
+                }
             }
 
         }
