@@ -112,6 +112,7 @@ public class ImageControl {
     /**
      * Create URI from current context path.
      * @param path the desired sub directory path
+     * @return uri from the current context path
      */
     private static String createUri(String path) {
         return ServletUriComponentsBuilder.fromCurrentContextPath().path(path).build().toString();
@@ -119,7 +120,9 @@ public class ImageControl {
 
     /**
      * Add border to a image file to facilitate OCR recognization
-     * @param fileName the name of the file
+     * @param fileName name of the file
+     * @param type can either be test or server
+     * @return uri of the bordered image file
      */
     public static String addBorder(File tempFile, String type) {
         String tempFileName = tempFile.getName();
