@@ -4,6 +4,7 @@ import java.text.DateFormat;
 import java.util.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.io.InputStream;
 import java.lang.Integer;
 
 import database.keeper.HistKeeper;
@@ -15,6 +16,7 @@ import org.json.JSONObject;
 import controller.Publisher;
 import controller.State;
 import controller.ChatbotController;
+import controller.ImageControl;
 import database.querier.UserQuerier;
 
 import org.knowm.xchart.QuickChart;
@@ -133,6 +135,10 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
 
     public void drawWeightLineChart() {
         //XYChart chart = QuickChart.getChart("Sample Chart", "X", "Y", "y(x)", xData, yData);
+        InputStream inputStream = new InputStream(); // you should provide with me the inputstream
+        String tempFileUri = ImageControl.inputToTempFile("jpg", inputStream);   // you can choose the extension by setting the first parameter
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendImageMessage(tempFileUri, tempFileUri);
     }
 
     /**
