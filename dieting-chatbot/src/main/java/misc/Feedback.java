@@ -9,8 +9,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.lang.Integer;
 
+import agent.FoodRecommender;
 import controller.ImageControl;
 import database.keeper.HistKeeper;
+import net.arnx.jsonic.JSON;
 import org.apache.commons.lang3.time.DateUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -20,10 +22,7 @@ import controller.Publisher;
 import controller.State;
 import controller.ChatbotController;
 
-import org.knowm.xchart.BitmapEncoder;
-import org.knowm.xchart.XYChart;
-import org.knowm.xchart.XYChartBuilder;
-import org.knowm.xchart.XYSeries;
+import org.knowm.xchart.*;
 import org.knowm.xchart.internal.series.Series;
 import org.knowm.xchart.style.Styler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +45,7 @@ import org.knowm.xchart.internal.chartpart.Chart;
 
 /**
  * Generate user weight line chart and nutrient pie chart.
- * @author wguoaa
+ * @author mcding, wguoaa
  * @version v2.0.0
  */
 @Slf4j
@@ -68,7 +67,8 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
     private List<Date> timestamps = new ArrayList<>();
     private List<Integer> weights = new ArrayList<>();
     private Set<Map<String, Double>> nutrients = new HashSet<>();
-
+    private List<String> allNutrients = Arrays.asList("lipid_tot", "carbohydrate","sugar_tot",
+            "protein","fiber_td","vit_c","sodium","potassium","calcium");
     /**
      * Register on eventBus.
      */
@@ -143,7 +143,10 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
                 parseWeightHist(histJSON);
                 log.info("FEEDBACK: user timestamps" + timestamps.toString());
                 log.info("FEEDBACK: user weight histories" + weights.toString());
-                drawWeightLineChart(userId);
+                drawLineChart(userId);
+                parseNutrientHist(userId, histJSON);
+                log.info("FEEDBACK: user nutrition hist" + nutrients.toString());
+                drawPieChart(userId);
                 states.remove(userId);
                 if (controller != null) {
                     controller.setUserState(userId, State.IDLE);
@@ -155,9 +158,28 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
     }
 
 
-    public void drawWeightLineChart(String userId) {
+    public void drawPieChart(String userId) {
+        PieChart chart = new PieChartBuilder().width(800).height(600).title(getClass().getSimpleName()).build();
+        for (Map<String,Double> onePair: nutrients){
+            chart.addSeries("test",1.0);
+            chart.addSeries(onePair.keySet().iterator().next(),onePair.values().iterator().next());
+        }
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            BitmapEncoder.saveBitmap(chart, outputStream, BitmapEncoder.BitmapFormat.BMP);
+            byte[] bitmapData = outputStream.toByteArray();
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(bitmapData);
+            String tempFileUri = ImageControl.inputToTempFile("bmp", inputStream);
+            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+            fmt.appendImageMessage(tempFileUri, tempFileUri);
+        } catch (IOException e) {
+            log.error("Error encountered when saving charts in feedback handler.", e);
+        }
+    }
+
+    public void drawLineChart(String userId) {
         XYChart chart = new XYChartBuilder().width(800).height(400)
-                .title("Weight ")
+                .title("Weight Line Chart")
                 .xAxisTitle("Time")
                 .yAxisTitle("Weight").build();
         chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNE);
@@ -197,12 +219,39 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             log.error("Error encountered when fetching user hist from hist keeper.", e);
         }
     }
-
     /**
      * Get the nutrient consumption statistics from hist JSONArray.
      */
-    private void parseNutrientHist(JSONArray histJSON) {
-
+    private void parseNutrientHist(String userId, JSONArray histJSON) {
+        FoodRecommender foodRecommender = new FoodRecommender();
+        int dishNum = 0;
+        List<Double> allScore = new ArrayList<>(9);
+        try {
+            int i;
+            for (i=0; i<histJSON.length(); i++) {
+                JSONObject hist = histJSON.getJSONObject(i);
+                JSONArray menu = new JSONArray(hist.getString("menu"));
+                for(int j = 0; j < menu.length(); j++) {
+                    JSONArray food = menu.getJSONObject(j).getJSONArray("foodContent");
+                    JSONObject result = foodRecommender.calculateNutrientIntakes(userId,food);
+                    dishNum++;
+                    for (int m = 0; m< allNutrients.size(); ++m) {
+                        JSONObject nutrientScore = result.getJSONObject(allNutrients.get(m));
+                        double score = nutrientScore.getDouble("actual")/nutrientScore.getDouble("expect") + allScore.get(i);
+                        allScore.set(m, score);
+                    }
+                }
+            }
+            log.info(String.format("Successfully fetched user hist from hist keeper, %d records were found.", i));
+        } catch (JSONException e) {
+            log.error("Error encountered when fetching user hist from hist keeper.", e);
+        }
+        for (int i = 0; i< allNutrients.size(); ++i){
+            double finalScore = allScore.get(i)/dishNum;
+            Map<String, Double> pair = new HashMap<>();
+            pair.put(allNutrients.get(i),finalScore);
+            nutrients.add(pair);
+        }
     }
 
     /**
