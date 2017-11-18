@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
@@ -14,6 +15,7 @@ import org.json.JSONObject;
 import controller.Publisher;
 import controller.State;
 import controller.ChatbotController;
+import controller.ImageControl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,6 +28,8 @@ import reactor.bus.Event;
 import reactor.bus.EventBus;
 import javax.annotation.PostConstruct;
 import org.springframework.util.ResourceUtils;
+
+import com.linecorp.bot.client.MessageContentResponse;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,6 +57,9 @@ public class MenuParser
 
     @Autowired(required = false)
     private ChatbotController controller;
+
+    @Autowired
+    private ImageMenuParser imageMenuParser;
 
     /**
      * Register on eventBus.
@@ -125,14 +132,14 @@ public class MenuParser
         publisher.publish(new FormatterMessageJSON(userId));
 
         // do not handle image for now
-        if(psr.getType().equals("image")) {
-            FormatterMessageJSON response = new FormatterMessageJSON(userId);
-            response.appendTextMessage(
-                "Sorry but I don't understand this image, give me some text please ~");
-            publisher.publish(response);
-            log.info("Cannot handle image message");
-            return;
-        }
+        //if(psr.getType().equals("image")) {
+            // FormatterMessageJSON response = new FormatterMessageJSON(userId);
+            // response.appendTextMessage(
+            //     "Sorry but I don't understand this image, give me some text please ~");
+            // publisher.publish(response);
+            // log.info("Cannot handle image message");
+            // return;
+        //}
 
         // register user if it is new
         if (!states.containsKey(userId)) {
@@ -150,11 +157,18 @@ public class MenuParser
             publisher.publish(response);
         } else if (state == 1) {
             JSONArray menuArray;
-            String text = psr.get("textContent");
-            if (ResourceUtils.isUrl(text)) {
-                menuArray = UrlMenuParser.buildMenu(text);
-            } else {
-                menuArray = TextMenuParser.buildMenu(text);
+            if(psr.getType().equals("image")) {
+                String uri = psr.get("imageContent");
+                log.info("get imageContent with URI: " + uri);
+                menuArray = imageMenuParser.buildMenu("uri", uri); 
+            }
+            else {
+                String text = psr.get("textContent");
+                if (ResourceUtils.isUrl(text)) {
+                    menuArray = UrlMenuParser.buildMenu(text);
+                } else {
+                    menuArray = TextMenuParser.buildMenu(text);
+                }
             }
             checkAndReply(userId, response, menuArray);
         }

@@ -17,9 +17,10 @@
 package controller;
 
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
+import java.nio.file.Paths;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -60,6 +61,17 @@ public class DietingChatbotApplication {
      * Path to downloaded contents.
      */
     static Path downloadedContentDir;
+    static Path staticPath;
+    static {
+        try {
+            staticPath = Files.createDirectory(Paths.get("static")); 
+        }
+        catch(FileAlreadyExistsException e) {
+            
+        }
+        catch(IOException e) {
+        }
+    }
 
     /**
      * Entry point of the application.
