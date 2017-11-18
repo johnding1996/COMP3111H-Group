@@ -212,8 +212,8 @@ public class MealAsker
 
 
                         .appendTextMessage("Do you want to revise some food names? " +
-                                "If no, you can type 'confirm to leave'")
-                        .appendTextMessage("Plz show me your revise in this format: " +
+                                "If no, you can type 'confirm' to leave. " +
+                                "Plz show me your revise in this format: " +
                                 "'dish index':'revised name', such as 1:beef");
                 log.info("MenuJSON:\n{}", menuJSON.toString(4));
                 changeUserState(userId, userState + 1);
@@ -248,9 +248,8 @@ public class MealAsker
 
                     if (!done) {
                         response.appendTextMessage("Plz enter in this format, " +
-                                "'dish index':'portion in gram', " +
-                                "both of the number shall be integer. " +
-                                "Or type 'leave' if no more update desired.");
+                                "'dish index':'new name', " +
+                                "Or type 'confirm' if no more update desired.");
                     }
                     else{
                         updateFood(index, newName, userId);
