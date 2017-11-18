@@ -40,7 +40,7 @@ public class ImageMenuParser {
      * @param uri URL string to use
      * @return A JSON array
      */
-    public static String readJsonFromImage(String uri) throws IOException, JSONException {
+    public static String readJsonFromImage(String uri) {
         log.info("Entering readJsonFromImage");
         URL url = null;
         // handle Exception
@@ -61,7 +61,7 @@ public class ImageMenuParser {
     }
 
     /**
-     * Build menu information from JSON array
+     * Build menu information from JSON array.
      * @param arr A JSON array
      * @return A JSON array; null if no dish is successfully parsed
      * @throws IOException
