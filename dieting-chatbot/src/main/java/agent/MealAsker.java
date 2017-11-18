@@ -1,7 +1,7 @@
 package agent;
 
 import database.querier.FoodQuerier;
-import org.json.JSONException;
+
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +48,9 @@ public class MealAsker
     @Autowired(required = false)
     private ChatbotController controller;
 
-    private static HashMap<String, JSONObject> menus = new HashMap<>();
+
+    static private HashMap<String, JSONObject> menus = new HashMap<>();
+
     private static Map<String, Integer> userStates = new HashMap<>();
     private static Map<String, NewFood> userNewFood = new HashMap<>();
 
@@ -59,8 +61,18 @@ public class MealAsker
     public void init() {
         if (eventBus != null) {
             eventBus.on($("ParserMessageJSON"), this);
-            log.info("UserInitialInputRecord register on event bus");
+            log.info("MealAsker register on event bus");
         }
+    }
+
+    /**
+     * Change user state, for testing purpose.
+     * @param userId String of user Id.
+     * @param state New user state.
+     */
+    public void changeUserState(String userId, int state) {
+        userStates.put(userId, state);
+        log.info("Change state of user {} to {}", userId, state);
     }
 
     /**
@@ -89,84 +101,6 @@ public class MealAsker
     }
 
     /**
-     * Change user state, for testing purpose.
-     * @param userId String of user Id.
-     * @param state New user state.
-     */
-    public void changeUserState(String userId, int state) {
-        userStates.put(userId, state);
-        log.info("Change state of user {} to {}", userId, state);
-    }
-
-    /**
-     * get most recent QueryJSON from menuKeeper (the first one).
-     * @param userId String of user Id.
-     * @return a json object.
-     */
-    public JSONObject getMenuKeeperJSON(String userId){
-        MenuKeeper menuKeeper = new MenuKeeper();
-        JSONObject menu = menuKeeper.get(userId, 1).getJSONObject(0);
-        menuKeeper.close();
-        return menu;
-    }
-
-    /**
-     * set the user menuKeeper with new JSON.
-     * @param userId String of user Id.
-     * @param updatedJSON JSON of updated queryJSON.
-     * @return a boolean value indicating whether the set is success.
-     */
-    public boolean setMenuKeeperJSON(String userId, JSONObject updatedJSON){
-        MenuKeeper menuKeeper = new MenuKeeper();
-        boolean success = menuKeeper.set(userId, updatedJSON);
-        menuKeeper.close();
-        return success;
-    }
-
-    /**
-     * Get list of menu previously input by user.
-     * @param userId String of user Id.
-     * @return Menu list in String.
-     */
-    public String getMenu(String userId) {
-        String reply = "";
-        try {
-            JSONArray menu = this.getMenuKeeperJSON(userId).getJSONArray("menu");
-            for(int j = 0; j < menu.length(); j++){
-                JSONObject food = menu.getJSONObject(j);
-                reply += String.format((j + 1) + " - " + food.getString("name") + "\n");
-            }
-            reply += "Do you want to revise some dish name any more?" +
-                    " Note that you can type 'comfirm' to finish at anytime";
-        } catch (JSONException e) {
-            log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
-        }
-        return reply;
-    }
-
-    /**
-     * update portion size to MenuKeeper.
-     * @param dishIndex the index of dish in menu, started by 1.
-     * @param portion portion of the dish, default portion unit as gram.
-     * @param userId String of user Id.
-     */
-    public void updateDatabase(int dishIndex, String name, String userId) {
-        try {
-            JSONObject queryJSON = this.getMenuKeeperJSON(userId);
-            JSONObject dish = queryJSON.getJSONArray("menu").getJSONObject(dishIndex - 1);
-            dish.put("name", name);
-            queryJSON.getJSONArray("menu").put(dishIndex - 1, dish);
-            boolean success = this.setMenuKeeperJSON(userId, queryJSON);
-            if(success)
-                log.info(String.format("Updated dish name in menu of user %s in to the caches.", userId));
-            else
-                log.warn(String.format("Set error occurs, for user %s.", userId));
-        } catch (JSONException e){
-            log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
-        }
-    }
-
-    /**
      * Store the new dish supplied by user.
      * @param newDish a new dish supplied by user to store in database.
      * @return idx i that used for database storage.
@@ -185,14 +119,29 @@ public class MealAsker
     }
 
     /**
-     * updates new food to database, as well as update this new dish in MenuKeeper.
+     * update food revised by user.
+     * @param dishIndex the index of dish in menu, started by 1.
+     * @param name name of the dish.
+     * @param userId String of user Id.
+     */
+    public void updateFood(int dishIndex, String name, String userId) {
+        JSONObject queryJSON = getMenuJSON(userId);
+        JSONObject dish = queryJSON.getJSONArray("menu").getJSONObject(dishIndex - 1);
+        dish.put("name", name);
+        queryJSON.getJSONArray("menu").put(dishIndex - 1, dish);
+        setMenuJSON(queryJSON);
+    }
+
+    /**
+     * updates new food to menus, as well as update this new dish in MenuKeeper.
      * @param name String of the food name.
      * @param energy energy amount in new food.
      * @param protein protein amount in new food.
      * @param lipid lipid amount in new food.
      * @param userId String of user Id.
      */
-    public void updateDatabase(String name, int energy, int protein, int lipid, String userId){
+    public void updateNewFood(String name, int energy, int protein, int lipid, String userId){
+
         JSONObject newDish = new JSONObject();
 
         newDish.put("shrt_desc", name);
@@ -209,17 +158,10 @@ public class MealAsker
         newFood.put("name", userId);
         newFood.put("foodContent", foodContent);
 
-        try {
-            JSONObject queryJSON = this.getMenuKeeperJSON(userId);
-            queryJSON.getJSONArray("menu").put(newFood);
-            boolean success = this.setMenuKeeperJSON(userId, queryJSON);
-            if(success)
-                log.info(String.format("Updated dish name in menu of user %s in to the caches.", userId));
-            else
-                log.warn(String.format("Set error occurs, for user %s.", userId));
-        } catch (JSONException e){
-            log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
-        }
+        JSONObject queryJSON = new JSONObject();
+        queryJSON = getMenuJSON(userId);
+        queryJSON.getJSONArray("menu").put(newFood);
+        setMenuJSON(queryJSON);
     }
 
     /**
@@ -262,9 +204,15 @@ public class MealAsker
             return;
         }
 
+        // register user if it is new
+        if (!userStates.containsKey(userId)) {
+            log.info("register new user {}", userId);
+            userStates.put(userId, 0);
+        }
+
         int userState = userStates.get(userId).intValue();
-        if (menus.get(userId) != null) {
-            //State for feature 5
+        if (menus.containsKey(userId)) {
+
             if(userState == 0){
                 JSONObject menuJSON = menus.get(userId);
                 JsonUtility.getFoodContent(menuJSON);
@@ -274,13 +222,18 @@ public class MealAsker
                         .appendTextMessage("And this is the food " +
                                 "content of each dish I found:")
                         .appendTextMessage(JsonUtility.formatMenuJSON(menuJSON, true))
+
+
+
                         .appendTextMessage("Do you want to revise some food names? " +
-                                "If no, you can type 'confirm to leave'")
-                        .appendTextMessage("Plz show me your revise in this format: " +
+                                "If no, you can type 'confirm' to leave. " +
+                                "Plz show me your revise in this format: " +
+
                                 "'dish index':'revised name', such as 1:beef");
                 log.info("MenuJSON:\n{}", menuJSON.toString(4));
                 changeUserState(userId, userState + 1);
             }
+
             //State for feature 6
             else if(userState == 1){
                 String update = psr.get("textContent").toLowerCase();
@@ -310,16 +263,20 @@ public class MealAsker
 
                     if (!done) {
                         response.appendTextMessage("Plz enter in this format, " +
-                                "'dish index':'portion in gram', " +
-                                "both of the number shall be integer. " +
-                                "Or type 'leave' if no more update desired.");
+
+                                "'dish index':'new name', " +
+                                "Or type 'confirm' if no more update desired.");
                     }
                     else{
-                        updateDatabase(index, newName, userId);
-                        response.appendTextMessage(getMenu(userId));
+                        updateFood(index, newName, userId);
+                        JSONObject menuJSON = menus.get(userId);
+                        response.appendTextMessage("The Menu I got is\n" +
+                                JsonUtility.formatMenuJSON(menuJSON, false));
                     }
                 }
             }
+
+
             //State for feature 7
             else if(userState == 2){
                 String update = psr.get("textContent").toLowerCase();
@@ -334,6 +291,13 @@ public class MealAsker
                     response.appendTextMessage("Alright, let's move on");
                     if (controller != null) {
                         publisher.publish(response);
+
+
+                        JSONObject menuJSON = menus.get(userId);
+                        menus.remove(userId);
+                        userStates.remove(userId);
+                        portionAsker.setMenuJSON(menuJSON);
+
                         controller.setUserState(userId, State.ASK_PORTION);
                         return;
                     }
@@ -342,6 +306,9 @@ public class MealAsker
                     response.appendTextMessage("Sorry, I'm not sure about this. " +
                             "Plz key in 'Yes' or 'No' at this moment");
             }
+
+
+
             //State for feature 7, continued
             else if(userState == 3){
                 String dishName = psr.get("textContent");
@@ -354,7 +321,8 @@ public class MealAsker
             //State for feature 7, continued
             else if(userState == 4){
                 String energy = psr.get("textContent");
-                if(Validator.isInteger(energy))
+
+                if(!Validator.isInteger(energy))
                     response.appendTextMessage("Give me an integer please ~");
                 else{
                     userNewFood.get(userId).energy = parseInt(energy);
@@ -366,7 +334,9 @@ public class MealAsker
             //State for feature 7, continued
             else if(userState == 5){
                 String protein = psr.get("textContent");
-                if(Validator.isInteger(protein))
+
+                if(!Validator.isInteger(protein))
+
                     response.appendTextMessage("Give me an integer please ~");
                 else{
                     userNewFood.get(userId).protein = parseInt(protein);
@@ -374,11 +344,12 @@ public class MealAsker
                     response.appendTextMessage("Okay, so what is the lipid contained in this dish? " +
                             "(in terms of tot) Give me an integer please ~");
                 }
+
             }
             //State for feature 7, continued
             else if(userState == 6){
                 String lipid = psr.get("textContent");
-                if(Validator.isInteger(lipid))
+                if(!Validator.isInteger(lipid))
                     response.appendTextMessage("Give me an integer please ~");
                 else{
                     userNewFood.get(userId).lipid = parseInt(lipid);
@@ -387,18 +358,37 @@ public class MealAsker
                     int pro = userNewFood.get(userId).protein;
                     int lip = userNewFood.get(userId).lipid;
                     userNewFood.remove(userId);
-                    updateDatabase(n, en, pro, lip, userId);
+                    updateNewFood(n, en, pro, lip, userId);
 
                     response.appendTextMessage("Alright, I have recorded your meal");
                     if (controller != null) {
                         publisher.publish(response);
+
+                        JSONObject menuJSON = menus.get(userId);
+                        menus.remove(userId);
+                        userStates.remove(userId);
+                        portionAsker.setMenuJSON(menuJSON);
                         controller.setUserState(userId, State.ASK_PORTION);
                         return;
                     }
                 }
             }
 
+
+
+            publisher.publish(response);
+
+//            menus.remove(userId);
+//            log.info("MenuJSON:\n{}", menuJSON.toString(4));
+//            portionAsker.setMenuJSON(menuJSON);
+//            if (controller != null) {
+//                controller.setUserState(userId, State.ASK_PORTION);
+//            }
+
         }
+
+
+
         else {
             response.appendTextMessage(
                 "Oops, looks like there is something wrong with your menu. Session cancelled.");
