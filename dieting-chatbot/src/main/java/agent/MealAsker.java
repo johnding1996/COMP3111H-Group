@@ -275,6 +275,9 @@ public class MealAsker
                     response.appendTextMessage("Alright, let's move on");
                     if (controller != null) {
                         publisher.publish(response);
+
+                        JSONObject menuJSON = menus.get(userId);
+                        portionAsker.setMenuJSON(menuJSON);
                         controller.setUserState(userId, State.ASK_PORTION);
                         return;
                     }
@@ -334,6 +337,9 @@ public class MealAsker
                     response.appendTextMessage("Alright, I have recorded your meal");
                     if (controller != null) {
                         publisher.publish(response);
+
+                        JSONObject menuJSON = menus.get(userId);
+                        portionAsker.setMenuJSON(menuJSON);
                         controller.setUserState(userId, State.ASK_PORTION);
                         return;
                     }
