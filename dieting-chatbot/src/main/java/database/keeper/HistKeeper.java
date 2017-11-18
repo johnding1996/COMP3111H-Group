@@ -3,6 +3,7 @@ package database.keeper;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +27,7 @@ public class HistKeeper extends SerializeKeeper {
      * field weight is added for record of the user current weight
      */
     private static final List<String> fields = Arrays.asList(
-            "date", "number_of_meal", "food", "timestamp","weight"
+            "timestamp", "weight", "portionSize", "menu"
     );
 
     /**
@@ -67,6 +68,25 @@ public class HistKeeper extends SerializeKeeper {
     }
 
     /**
+     * Get the latest rows of user hist.
+     * @param key user id
+     * @param date date
+     * @return JSONArray array of recent JSONObjects
+     */
+    public JSONArray get(String key, Date date) {
+        JSONArray jsonArray = rangeList(prefix, key, date);
+        if (jsonArray.length() == 0) {
+            log.error("Attempting to search user meal hist that does not exist.");
+            return null;
+        }
+        if (!checkValidity(jsonArray, fields)) {
+            log.error("Failed to load user history due to wrongly formatted HistJSON.");
+            return null;
+        }
+        return jsonArray;
+    }
+
+    /**
      * Add new user hist to cache.
      * @param key user id
      * @param jsonObject new row to add to the redis cache
@@ -74,7 +94,7 @@ public class HistKeeper extends SerializeKeeper {
      */
     public boolean set(String key, JSONObject jsonObject) {
         if (!checkValitidy(jsonObject, fields)) {
-            log.error("Invalid formatted MealJSON.");
+            log.error("Invalid formatted HistJSON.");
             return false;
         }
         return appendList(prefix, key, jsonObject);

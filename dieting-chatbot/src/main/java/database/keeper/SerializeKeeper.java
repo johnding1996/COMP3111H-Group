@@ -1,7 +1,11 @@
 package database.keeper;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
@@ -36,7 +40,6 @@ public abstract class SerializeKeeper extends Keeper {
      */
     public abstract JSONArray get(String key, int number);
 
-
     /**
      * Append a JSONObject to a list with specific key.
      * @param prefix key field prefix
@@ -51,7 +54,7 @@ public abstract class SerializeKeeper extends Keeper {
     }
 
     /**
-     * Get the latest several records of a list with specific key.
+     * Get the latest n records of a list with specific key.
      * @param prefix key field prefix
      * @param key key
      * @param number the number of latest records to get
@@ -66,6 +69,32 @@ public abstract class SerializeKeeper extends Keeper {
         for (String value: values) {
             JSONObject jsonObject= new JSONObject(value);
             jsonArray.put(jsonObject);
+        }
+        return jsonArray;
+    }
+
+    /**
+     * Get the latest several records before a timestamp of a list with specific key.
+     * @param prefix key field prefix
+     * @param key key
+     * @param date timestamp
+     * @return JSONArray as a list of latest several JSONObject records
+     */
+    protected JSONArray rangeList(String prefix, String key, Date date) {
+        int count = 0;
+        Date curDate = new Date();
+        JSONArray jsonArray = null;
+        while (date.before(curDate)) {
+            count++;
+            jsonArray = this.rangeList(prefix, key, count);
+            try {
+                String dateString = jsonArray.getJSONObject(0).getString("timestamp");
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+                curDate = dateFormat.parse(dateString);
+            } catch (JSONException | ParseException e) {
+                log.error("Failed to parse the timestamp in redis.", e);
+                return null;
+            }
         }
         return jsonArray;
     }
