@@ -23,9 +23,10 @@ public class HistKeeper extends SerializeKeeper {
 
     /**
      * The valid fields of MealJSON.
+     * field weight is added for record of the user current weight
      */
     private static final List<String> fields = Arrays.asList(
-            "date", "number_of_meal", "food", "time_created"
+            "date", "number_of_meal", "food", "timestamp","weight"
     );
 
     /**

@@ -72,30 +72,24 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
      * @param userId String of userId.
      */
     public void updateDatabase (List<Integer> idxs, String userId) {
-        List<String> foodNames = new ArrayList<>();
         MenuKeeper menuKeeper = new MenuKeeper();
         HistKeeper histKeeper = new HistKeeper();
+        JSONArray menu = new JSONArray();
         try {
-            JSONArray menu = menuKeeper.get(userId, 1)
+                menu = menuKeeper.get(userId, 1)
                 .getJSONObject(0).getJSONArray("menu");
-            for(int j = 0; j < menu.length(); j++){
-                foodNames.add(menu.getJSONObject(j).getString("name"));
-            }
         } catch (JSONException e){
             log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
         }
-        for (Integer idx : idxs) {
-            JSONObject foodJson = new JSONObject();
-            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            foodJson.put("date", dateFormat.format(new Date()));
-            foodJson.put("number_of_meal", 1);
-            foodJson.put("food", foodNames.get(idx));
-            DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-            foodJson.put("timestamp", dateTimeFormat.format(new Date()));
-            histKeeper.set(userId, foodJson);
-            log.info("Food JSON:\n{}", foodJson.toString(4));
-        }
-
+        JSONObject foodJson = new JSONObject();
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        foodJson.put("date", dateFormat.format(new Date()));
+        foodJson.put("number_of_meal", 1);
+        foodJson.put("food", menu);
+        DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        foodJson.put("timestamp", dateTimeFormat.format(new Date()));
+        histKeeper.set(userId, foodJson);
+        log.info("Food JSON:\n{}", foodJson.toString(4));
         log.info(String.format("Stored the meal history of user %s in to the caches.", userId));
         menuKeeper.close();
         histKeeper.close();
