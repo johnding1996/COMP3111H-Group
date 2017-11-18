@@ -51,8 +51,8 @@ public class ImageMenuParser {
         }
         Ocr.setUp(); // one time setup
         Ocr ocr = new Ocr(); // create a new OCR engine
-        ocr.startEngine("eng", Ocr.SPEED_FASTEST, "PROP_PAGE_TYPE=single_block|PROP_IMG_PREPROCESS_TYPE=default_with_orientation_detection|"
-                + "PROP_IMG_PREPROCESS_CUSTOM_CMDS=invert();grayscale();|PROP_TABLE_SKIP_DETECTION=true");
+        ocr.startEngine("eng", Ocr.SPEED_FASTEST, "PROP_PAGE_TYPE=single_block|PROP_IMG_PREPROCESS_TYPE=custom|"
+                + "PROP_IMG_PREPROCESS_CUSTOM_CMDS=invert();grayscale();autoRotate()");
         String s = ocr.recognize(new URL[] { url }, Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT);
         log.info("Result: " + s);
         // ocr more images here ...

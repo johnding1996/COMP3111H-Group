@@ -132,21 +132,21 @@ public class ImageControl {
 			bimg = ImageIO.read(tempFile);
             int width = bimg.getWidth();
             int height = bimg.getHeight();
-            int borderedImageWidth = width + 20;
-            int borderedImageHeight = height + 20;
+            int borderedImageWidth = width + 200;
+            int borderedImageHeight = height + 200;
             BufferedImage img = new BufferedImage(borderedImageWidth, borderedImageHeight, BufferedImage.TYPE_3BYTE_BGR);
             img.createGraphics();
             Graphics2D g = (Graphics2D) img.getGraphics();
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, borderedImageWidth, borderedImageHeight);
-            g.drawImage(bimg, 10, 10, width + 10, height + 10, 0, 0, width, height, Color.BLACK, null);
+            g.drawImage(bimg, 100, 100, width + 100, height + 100, 0, 0, width, height, Color.BLACK, null);
             log.info("Default temporary file directory: {}", System.getProperty("java.io.tmpdir"));
             log.info("Creating bordered image...");
 
             // create uri for this output file, if type is specified as test
             // because local file starts with file://
             if(type.equals("test")) {
-                File outputFile = File.createTempFile(tempFile.getParent() + "/bordered_menu", extension);
+                File outputFile = File.createTempFile(tempFile.getParent() + "/bordered_menu", ".png");
                 ImageIO.write(img, "png", ImageIO.createImageOutputStream(outputFile));
                 String path = outputFile.getAbsolutePath ();
                 if (File.separatorChar != '/')
