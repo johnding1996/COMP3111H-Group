@@ -68,14 +68,8 @@ public class ImageMenuParser {
      */
     public JSONArray buildMenu(String uri) {
         String text = "";
-        try {
-            log.info("Entering image menu parser build menu");
-            text = readJsonFromImage(uri);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        log.info("Entering image menu parser build menu");
+        text = readJsonFromImage(uri);
         JSONArray arr = new JSONArray();
         String[] lines = text.split("\n");
 
