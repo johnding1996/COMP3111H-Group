@@ -194,7 +194,7 @@ public class MealAsker
      */
     public void updateDatabase(String name, int energy, int protein, int lipid, String userId){
         JSONObject newDish = new JSONObject();
-        newDish.put("ndb_no", i);
+
         newDish.put("shrt_desc", name);
         newDish.put("energ_kcal", energy);
         newDish.put("protein", protein);
@@ -236,6 +236,7 @@ public class MealAsker
             if (menus.containsKey(userId)) {
                 menus.remove(userId);
                 userStates.remove(userId);
+                userNewFood.remove(userId);
                 log.info("Remove menu of user {}", userId);
             }
             return;
