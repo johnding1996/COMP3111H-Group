@@ -300,7 +300,7 @@ public class MealAsker
             //State for feature 7, continued
             else if(userState == 4){
                 String energy = psr.get("textContent");
-                if(Validator.isInteger(energy))
+                if(!Validator.isInteger(energy))
                     response.appendTextMessage("Give me an integer please ~");
                 else{
                     userNewFood.get(userId).energy = parseInt(energy);
@@ -312,7 +312,7 @@ public class MealAsker
             //State for feature 7, continued
             else if(userState == 5){
                 String protein = psr.get("textContent");
-                if(Validator.isInteger(protein))
+                if(!Validator.isInteger(protein))
                     response.appendTextMessage("Give me an integer please ~");
                 else{
                     userNewFood.get(userId).protein = parseInt(protein);
@@ -324,7 +324,7 @@ public class MealAsker
             //State for feature 7, continued
             else if(userState == 6){
                 String lipid = psr.get("textContent");
-                if(Validator.isInteger(lipid))
+                if(!Validator.isInteger(lipid))
                     response.appendTextMessage("Give me an integer please ~");
                 else{
                     userNewFood.get(userId).lipid = parseInt(lipid);
