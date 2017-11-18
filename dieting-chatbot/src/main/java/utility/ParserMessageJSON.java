@@ -77,7 +77,7 @@ public class ParserMessageJSON extends MessageJSON {
     }
 
     /**
-     * Get value corresponding to key
+     * Get value corresponding to key.
      * @param key Name of the key
      * @return String of value contained in the key
      */

@@ -1,8 +1,5 @@
 package utility;
 
-import java.util.Locale;
-
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 public class JazzySpellCheckerTester {
     @Autowired
     private JazzySpellChecker spellChecker;
-
-    @Before
-    public void init() {
-        Locale.setDefault(Locale.US);
-    }
 
     @Test
     public void testConstruct() {

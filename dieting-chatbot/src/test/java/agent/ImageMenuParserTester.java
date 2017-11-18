@@ -38,7 +38,7 @@ public class ImageMenuParserTester {
     public void buildMenuTester() {
         String fileUrl = this.getClass().getClassLoader()
             .getResource(sampleMenu).toString(); 
-        JSONArray arr = imageMenuParser.buildMenu(fileUrl);
+        JSONArray arr = imageMenuParser.buildMenu("uri", fileUrl);
         log.info("get menu JSON Array: {}", arr);
         assert arr.getJSONObject(0).getString("name").toLowerCase()
             .contains("spicy bean cured law minced pork served law rice");
@@ -47,19 +47,21 @@ public class ImageMenuParserTester {
     @Test
     public void addBorderTester() {
         String outputFileUri = ImageControl.addBorder(new File(this.getClass()
-            .getClassLoader().getResource(sampleMenu).getFile()), "test");
-        log.info("Output border file with uri: {}", outputFileUri);
+            .getClassLoader().getResource(sampleMenu).getFile()), "test"); 
+        JSONArray arr = imageMenuParser.buildMenu("path", outputFileUri);
+        log.info("get menu JSON Array for menu 1 after bordered: {}", arr);
+        log.info("Output border file for menu 1 with uri: {}", outputFileUri);
     }
 
-    @Test
-    public void borderedOCRTester() {
-        String outputFileUri = ImageControl.addBorder(new File(this.getClass()
-            .getClassLoader().getResource(sampleMenu2).getFile()), "test"); 
-        JSONArray arr = imageMenuParser.buildMenu(outputFileUri);
-        log.info("get menu JSON Array after bordered: {}", arr);
-        assert arr.getJSONObject(0).getString("name").toLowerCase()
-            .contains("ah");
-    }
+    // @Test
+    // public void borderedOCRTester() {
+    //     String outputFileUri = ImageControl.addBorder(new File(this.getClass()
+    //         .getClassLoader().getResource(sampleMenu2).getFile()), "test"); 
+    //     JSONArray arr = imageMenuParser.buildMenu("path", outputFileUri);
+    //     log.info("get menu JSON Array for menu 2 after bordered: {}", arr);
+    //     log.info("Output border file for menu 2 with uri: {}", outputFileUri);
+    //     assert false;
+    // }
 
 
     

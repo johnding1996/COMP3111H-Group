@@ -66,7 +66,6 @@ public class JazzySpellChecker implements SpellCheckListener {
      * @return corrected input text
      */
     public String getCorrectedText(String text) {
-        text = text.toLowerCase();
         log.info("SPELL_CHECKER: {}", text);
         spellChecker.reset();
         misspelledWords.clear();

@@ -160,7 +160,7 @@ public class MenuParser
             if(psr.getType().equals("image")) {
                 String uri = psr.get("imageContent");
                 log.info("get imageContent with URI: " + uri);
-                menuArray = imageMenuParser.buildMenu(uri); 
+                menuArray = imageMenuParser.buildMenu("uri", uri); 
             }
             else {
                 String text = psr.get("textContent");

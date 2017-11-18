@@ -204,7 +204,7 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
      * @param event LINE image message event
      */
     @EventMapping
-    public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) throws IOException {
+    public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) {
         log.info("Get IMAGE message from user: {}", event.getSource().getUserId());
         String messageId = event.getMessage().getId();
         String replyToken = event.getReplyToken();
