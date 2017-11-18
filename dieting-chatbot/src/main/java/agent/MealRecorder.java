@@ -68,29 +68,29 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
 
     /**
      * add userInfo to history if everything is correct.
-     * @param idxs list of indices.
+     * @param ids list of indices.
      * @param userId String of userId.
      */
-    public void updateDatabase (List<Integer> idxs, String userId) {
+    public void updateDatabase (String userId, List<Integer> ids, int portionSize, int weight) {
         MenuKeeper menuKeeper = new MenuKeeper();
         HistKeeper histKeeper = new HistKeeper();
-        JSONArray menu = new JSONArray();
-        try {
-                menu = menuKeeper.get(userId, 1)
-                .getJSONObject(0).getJSONArray("menu");
-        } catch (JSONException e){
-            log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
+        JSONObject histJson = new JSONObject();
+        try{
+            DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+            histJson.put("timestamp", dateTimeFormat.format(new Date()));
+            histJson.put("weight", weight);
+            histJson.put("portionSize", portionSize);
+            JSONArray menu = menuKeeper.get(userId, 1).getJSONObject(0).getJSONArray("menu");
+            JSONArray selectedMenu = new JSONArray();
+            for (Integer id : ids) {
+                selectedMenu.put(menu.getJSONObject(id));
+            }
+            histJson.put("menu", selectedMenu);
+            histKeeper.set(userId, histJson);
+            log.info(String.format("Stored the user history of user %s in to the caches.", userId));
+        } catch (JSONException e) {
+            log.error("Error encountered when parsing the MealJSON.", e);
         }
-        JSONObject foodJson = new JSONObject();
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        foodJson.put("date", dateFormat.format(new Date()));
-        foodJson.put("number_of_meal", 1);
-        foodJson.put("food", menu);
-        DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-        foodJson.put("timestamp", dateTimeFormat.format(new Date()));
-        histKeeper.set(userId, foodJson);
-        log.info("Food JSON:\n{}", foodJson.toString(4));
-        log.info(String.format("Stored the meal history of user %s in to the caches.", userId));
         menuKeeper.close();
         histKeeper.close();
     }
@@ -161,7 +161,10 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
         }
 
         FormatterMessageJSON response = new FormatterMessageJSON(userId);
-        int state = states.get(userId).intValue();
+        List<Integer> ids = new ArrayList<>();
+        int portionSize = 0;
+        int weight = 0;
+        int state = states.get(userId);
         if (state == 0) {
             if (!psr.getType().equals("transition")) return;
             log.info("CONFIRM MEAL: conversation initiated");
@@ -171,23 +174,21 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
             states.put(userId, state+1);
         } else if (state == 1) {
             String[] idxStrings = psr.get("textContent").split(";");
-            List<Integer> idxs = new ArrayList<>();
             for (String idxString : idxStrings) {
                 idxString = idxString.trim();
                 if (Validator.isInteger(idxString)) {
                     int x = Integer.parseInt(idxString);
-                    if (x >= 1 && x <= menuCount.get(userId).intValue())
-                        idxs.add(x - 1);
+                    if (x >= 1 && x <= menuCount.get(userId))
+                        ids.add(x - 1);
                 }
             }
-            if (idxs.size() == 0) {
+            if (ids.size() == 0) {
                 log.info("Invalid meal option");
                 response.appendTextMessage("Your input is invalid!");
             } else {
                 response.appendTextMessage("Great! " +
                         "I have recorded what you have just eaten!")
                         .appendTextMessage("And what is the portion size of it? (in gram)");
-                updateDatabase(idxs, userId);
                 states.put(userId, state+1);
                 menuCount.remove(userId);
                 log.info("CONFIRM MEAL: remove user {}", userId);
@@ -197,7 +198,7 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
             if (!Validator.isInteger(textContent)) {
                 response.appendTextMessage("Your input is not an integer");
             } else {
-                int portionSize = Integer.parseInt(textContent);
+                portionSize = Integer.parseInt(textContent);
                 if (portionSize <= 0) {
                     response.appendTextMessage("Your input is invalid");
                 } else {
@@ -215,9 +216,10 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
             if (!done) {
                 response.appendTextMessage("This is not a valid weight, please input again");
             } else {
-                int weight = Integer.parseInt(textContent);
+                weight = Integer.parseInt(textContent);
                 response.appendTextMessage(String.format("So your weight now is %d kg", weight))
                         .appendTextMessage("See you ^_^");
+                updateDatabase(userId, ids, portionSize, weight);
                 states.remove(userId);
                 if (controller != null) {
                     controller.setUserState(userId, State.IDLE);

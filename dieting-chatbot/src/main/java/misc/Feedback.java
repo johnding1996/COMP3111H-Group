@@ -8,6 +8,8 @@ import java.lang.Integer;
 
 import database.keeper.HistKeeper;
 import org.apache.commons.lang3.time.DateUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import controller.Publisher;
@@ -56,6 +58,10 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
     @Autowired(required = false)
     private ChatbotController controller;
 
+    private List<Date> timestamps = new ArrayList<>();
+    private List<Integer> weights = new ArrayList<>();
+    private Set<Map<String, Double>> nutrients = new HashSet<>();
+
     /**
      * Register on eventBus.
      */
@@ -76,7 +82,6 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
      */
     public void accept(Event<ParserMessageJSON> ev) {
         ParserMessageJSON psr = ev.getData();
-
         // Is it my duty?
         String userId = psr.getUserId();
         State globalState = psr.getState();
@@ -88,13 +93,10 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             }
             return;
         }
-
         log.info("FEEDBACK:\n{}", psr.toString());
-
         // Acknowledge that the psr is handled
-        log.info("Entering user initial input handler");
+        log.info("Entering feedback handler");
         publisher.publish(new FormatterMessageJSON(userId));
-
         // if the input is image
         if(psr.getType().equals("image")) {
             FormatterMessageJSON response = new FormatterMessageJSON(userId);
@@ -104,13 +106,29 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             return;
         }
 
-        // register user if it is new
-        if (!states.containsKey(userId)) {
-            log.info("register new user {}", userId);
-            states.put(userId, 0);
+        // main interaction
+        int state = states.get(userId);
+        if (state==0) {
+            FormatterMessageJSON response = new FormatterMessageJSON(userId);
+            response.appendTextMessage("Ok, how many dates do you want for feedback? Please input an positive integer.");
+            publisher.publish(response);
+            states.put(userId, 1);
+        } else if (state==1) {
+            String msg = psr.get("textContent");
+            if (parseFeedbackDuration(msg) != -1) {
+                JSONArray histJSON = getHist(userId, parseFeedbackDuration(msg));
+                parseWeightHist(histJSON);
+                log.info("TIMESTAMPS:" + timestamps.toString());
+                log.info("WEIGHTS:" + weights.toString());
+                states.remove(userId);
+                if (controller != null) {
+                    controller.setUserState(userId, State.IDLE);
+                }
+            }
+        } else {
+            log.error("Invalid internal state in feedback handler.");
         }
     }
-
 
 
     public void drawWeightLineChart() {
@@ -118,20 +136,65 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
     }
 
     /**
-     * getWeightHist: Get the weight history list according to userid and required duration.
-     * @param userId userid String
-     * @param duration daily or weekly int
-     * @return weightHist list of mapped timestamp and weight
+     * Get the weight history list from hist JSONArray.
      */
-    private List<Map<Date,Double>> getWeightHist(String userId, int duration) {
-        List<Map<Date,String>> weightHist = new ArrayList<>();
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DATE, -duration);
-        Date date = cal.getTime();
+    private void parseWeightHist(JSONArray histJSON) {
+        timestamps = new ArrayList<>();
+        weights = new ArrayList<>();
+        try {
+            int i;
+            for (i=0; i<histJSON.length(); i++) {
+                JSONObject hist = histJSON.getJSONObject(i);
+                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+                Date timestamp = format.parse(hist.getString("timestamp"));
+                int weight = hist.getInt("weight");
+                timestamps.add(timestamp);
+                weights.add(weight);
+            }
+            log.info(String.format("Successfully fetched user hist from hist keeper, %d records were found.", i));
+        } catch (JSONException | ParseException e) {
+            log.error("Error encountered when fetching user hist from hist keeper.", e);
+        }
+    }
+
+    /**
+     * Get the nutrient consumption statistics from hist JSONArray.
+     */
+    private void parseNutrientHist(JSONArray histJSON) {
+
+    }
+
+    /**
+     * Get the hist JSONArray form HistKeeper.
+     * @param userId userid String
+     * @param duration number of days to query
+     * @return user hist JSONArray
+     */
+    private JSONArray getHist(String userId, int duration) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DATE, -duration);
+        Date date = calendar.getTime();
         date = DateUtils.truncate(date, Calendar.DATE);
         HistKeeper histKeeper = new HistKeeper();
-        histKeeper.get(userId, date);
-        return new ArrayList<Map<Date, Double>>();
+        return histKeeper.get(userId, date);
     }
+
+    /**
+     * Parse the duration from input message.
+     * @param msg message
+     * @return int of duration
+     */
+    private int parseFeedbackDuration(String msg) {
+        try {
+            int duration = Integer.parseInt(msg);
+            if (duration<=0) throw new NumberFormatException();
+            return duration;
+        } catch (NumberFormatException e) {
+            log.info("Invalid input when parsing duration in feedback handler.", e);
+            return -1;
+        }
+    }
+
+
 
 }

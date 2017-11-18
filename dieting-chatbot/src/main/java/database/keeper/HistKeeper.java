@@ -27,8 +27,7 @@ public class HistKeeper extends SerializeKeeper {
      * field weight is added for record of the user current weight
      */
     private static final List<String> fields = Arrays.asList(
-            "timestamp", "weight", "portion_size",
-            "lipid_tot", "carbohydrate", "sugar", "protein", "dietary fiber", "vitamin C", "sodium", "potassium"
+            "timestamp", "weight", "portionSize", "menu"
     );
 
     /**
