@@ -19,7 +19,6 @@ apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'idea'
 apply plugin: 'checkstyle'
-apply plugin: 'javafx-gradle-plugin'
 
 dependencies {
     compile project(':line-bot-spring-boot')
@@ -27,6 +26,7 @@ dependencies {
     compile "org.apache.commons:commons-dbcp2:2.1.1"
     compile 'redis.clients:jedis:2.9.0'
     testCompile "org.skyscreamer:jsonassert:1.2.3"
+    compile 'org.knowm.xchart:xchart:3.5.0'
 }
 
 dependencies {

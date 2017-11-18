@@ -76,7 +76,6 @@ public class ChartGenerator extends Application{
             }
         }
         return weightHist;
-
     }
     private List<Map<String,String>> getNutritionHist(String key, int dur, String type){
         List<Map<String,String>> nutritionHist = new ArrayList<>();
