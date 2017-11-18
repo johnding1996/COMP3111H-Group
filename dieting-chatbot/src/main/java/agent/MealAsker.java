@@ -276,6 +276,8 @@ public class MealAsker
                         publisher.publish(response);
 
                         JSONObject menuJSON = menus.get(userId);
+                        menus.remove(userId);
+                        userStates.remove(userId);
                         portionAsker.setMenuJSON(menuJSON);
                         controller.setUserState(userId, State.ASK_PORTION);
                         return;
@@ -338,6 +340,8 @@ public class MealAsker
                         publisher.publish(response);
 
                         JSONObject menuJSON = menus.get(userId);
+                        menus.remove(userId);
+                        userStates.remove(userId);
                         portionAsker.setMenuJSON(menuJSON);
                         controller.setUserState(userId, State.ASK_PORTION);
                         return;
