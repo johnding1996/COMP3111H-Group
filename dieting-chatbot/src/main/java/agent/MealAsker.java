@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * MealAsker: interact with user to get the appropriate menu.
  * @author szhouan, cliubf
- * @version v2.2.0
+ * @version v2.2.1
  */
 @Slf4j
 @Component
@@ -167,6 +167,24 @@ public class MealAsker
     }
 
     /**
+     * Store the new dish supplied by user.
+     * @param newDish a new dish supplied by user to store in database.
+     * @return idx i that used for database storage.
+     */
+    public int getFoodQuerier(JSONObject newDish){
+        int i = 250;
+        FoodQuerier fq = new FoodQuerier();
+        boolean flag = false;
+        while (!flag){
+            i++;
+            newDish.put("ndb_no", i);
+            flag = fq.add(newDish);
+        }
+        fq.close();
+        return i;
+    }
+
+    /**
      * updates new food to database, as well as update this new dish in MenuKeeper.
      * @param name String of the food name.
      * @param energy energy amount in new food.
@@ -175,7 +193,6 @@ public class MealAsker
      * @param userId String of user Id.
      */
     public void updateDatabase(String name, int energy, int protein, int lipid, String userId){
-        int i = 250;
         JSONObject newDish = new JSONObject();
         newDish.put("ndb_no", i);
         newDish.put("shrt_desc", name);
@@ -183,13 +200,7 @@ public class MealAsker
         newDish.put("protein", protein);
         newDish.put("lipid_tot", lipid);
 
-        FoodQuerier fq = new FoodQuerier();
-        boolean flag = false;
-        while (!flag){
-            i++;
-            newDish.put("ndb_no", i);
-            flag = fq.add(newDish);
-        }
+        int i = getFoodQuerier(newDish);
 
         JSONObject foodContent = new JSONObject();
         foodContent.put("idx", i);
