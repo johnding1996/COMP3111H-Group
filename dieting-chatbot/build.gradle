@@ -19,6 +19,7 @@ apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'idea'
 apply plugin: 'checkstyle'
+apply plugin: 'javafx-gradle-plugin'
 
 dependencies {
     compile project(':line-bot-spring-boot')
