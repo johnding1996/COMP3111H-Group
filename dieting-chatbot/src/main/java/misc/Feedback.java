@@ -1,6 +1,9 @@
 package misc;
 
-import java.text.DateFormat;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -15,17 +18,18 @@ import org.json.JSONObject;
 import controller.Publisher;
 import controller.State;
 import controller.ChatbotController;
-import database.querier.UserQuerier;
 
-import org.knowm.xchart.QuickChart;
+import org.knowm.xchart.BitmapEncoder;
 import org.knowm.xchart.XYChart;
+import org.knowm.xchart.XYChartBuilder;
+import org.knowm.xchart.XYSeries;
+import org.knowm.xchart.internal.series.Series;
+import org.knowm.xchart.style.Styler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-
-import com.swabunga.spell.event.SpellChecker;
 
 import static reactor.bus.selector.Selectors.$;
+
 import reactor.fn.Consumer;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
@@ -34,8 +38,10 @@ import lombok.extern.slf4j.Slf4j;
 import utility.FormatterMessageJSON;
 import utility.JazzySpellChecker;
 import utility.ParserMessageJSON;
-import utility.TextProcessor;
-import utility.Validator;
+
+import org.knowm.xchart.internal.ChartBuilder;
+import org.knowm.xchart.internal.chartpart.Chart;
+
 
 /**
  * Generate user weight line chart and nutrient pie chart.
@@ -105,6 +111,11 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             log.info("Cannot handle image message");
             return;
         }
+        // register user if it is new
+        if (!states.containsKey(userId)) {
+            log.info("register new user {}", userId);
+            states.put(userId, 0);
+        }
 
         // main interaction
         int state = states.get(userId);
@@ -115,11 +126,23 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             states.put(userId, 1);
         } else if (state==1) {
             String msg = psr.get("textContent");
-            if (parseFeedbackDuration(msg) != -1) {
-                JSONArray histJSON = getHist(userId, parseFeedbackDuration(msg));
+            int result = parseFeedbackDuration(userId, msg);
+            if (result != -1) {
+                JSONArray histJSON = getHist(userId, result);
+                if (histJSON.length() == 0) {
+                    log.info(String.format("Empty hist json for user %s", userId));
+                    FormatterMessageJSON response = new FormatterMessageJSON(userId);
+                    response.appendTextMessage("Sorry you don't have any recorded history, session cancelled.");
+                    publisher.publish(response);
+                    states.remove(userId);
+                    if (controller != null) {
+                        controller.setUserState(userId, State.IDLE);
+                    }
+                }
                 parseWeightHist(histJSON);
-                log.info("TIMESTAMPS:" + timestamps.toString());
-                log.info("WEIGHTS:" + weights.toString());
+                log.info("FEEDBACK: user timestamps" + timestamps.toString());
+                log.info("FEEDBACK: user weight histories" + weights.toString());
+                drawWeightLineChart(userId);
                 states.remove(userId);
                 if (controller != null) {
                     controller.setUserState(userId, State.IDLE);
@@ -131,8 +154,25 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
     }
 
 
-    public void drawWeightLineChart() {
-        //XYChart chart = QuickChart.getChart("Sample Chart", "X", "Y", "y(x)", xData, yData);
+    public void drawWeightLineChart(String userId) {
+        XYChart chart = new XYChartBuilder().width(800).height(400)
+                .title("Weight ")
+                .xAxisTitle("Time")
+                .yAxisTitle("Weight").build();
+        chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNE);
+        chart.getStyler().setDefaultSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Area);
+        chart.addSeries("weight", timestamps, weights);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            BitmapEncoder.saveBitmap(chart, outputStream, BitmapEncoder.BitmapFormat.BMP);
+            byte[] bitmapData = outputStream.toByteArray();
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(bitmapData);
+            //String tempFileUri = ImageControl.inputToTempFile("bmp", inputStream);
+            //FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+            //fmt.appendImageMessage(tempFileUri, tempFileUri);
+        } catch (IOException e) {
+            log.error("Error encountered when saving charts in feedback handler.", e);
+        }
     }
 
     /**
@@ -176,7 +216,9 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
         Date date = calendar.getTime();
         date = DateUtils.truncate(date, Calendar.DATE);
         HistKeeper histKeeper = new HistKeeper();
-        return histKeeper.get(userId, date);
+        JSONArray histJSON = histKeeper.get(userId, date);
+        histKeeper.close();
+        return histJSON;
     }
 
     /**
@@ -184,13 +226,16 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
      * @param msg message
      * @return int of duration
      */
-    private int parseFeedbackDuration(String msg) {
+    private int parseFeedbackDuration(String userId, String msg) {
         try {
             int duration = Integer.parseInt(msg);
             if (duration<=0) throw new NumberFormatException();
             return duration;
         } catch (NumberFormatException e) {
             log.info("Invalid input when parsing duration in feedback handler.", e);
+            FormatterMessageJSON response = new FormatterMessageJSON(userId);
+            response.appendTextMessage("Invalid input, please give me a positive integer.");
+            publisher.publish(response);
             return -1;
         }
     }
