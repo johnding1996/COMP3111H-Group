@@ -158,8 +158,7 @@ public class MenuParser
         } else if (state == 1) {
             JSONArray menuArray;
             if(psr.getType().equals("image")) {
-                MessageContentResponse msr = psr.getImageContent();
-                String uri = ImageControl.saveContent(msr, "TempFile")[0];
+                String uri = psr.get("imageContent");
                 log.info("get imageContent with URI: " + uri);
                 menuArray = imageMenuParser.buildMenu(uri); 
             }

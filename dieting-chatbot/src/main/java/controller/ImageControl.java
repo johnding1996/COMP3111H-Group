@@ -4,7 +4,8 @@ import com.google.common.io.ByteStreams;
 import com.linecorp.bot.client.MessageContentResponse;
 
 import database.keeper.CampaignKeeper;
-
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
@@ -62,7 +63,7 @@ public class ImageControl {
      * Controller use this static method to save content from the InputStream specified in the response body.
      * @param responseBody the response body get from LINE Messaging Client
      * @param type can either be TempFile (will return uri of the temp image) or DB (the extension and encoded string) 
-     * @return will either return the uri or extension + encoded string          
+     * @return will either return the bordered image's uri or extension + encoded string          
      */
     public static String[] saveContent(MessageContentResponse responseBody, String type) {
         log.info("Got content-type: {}", responseBody);
@@ -74,9 +75,22 @@ public class ImageControl {
         if (type.equals("TempFile")) {
             log.info("Store temporary file");
             // return the uri of the downloaded image
-            return new String[] {inputToTempFile(extension, inputStream)};
-        }
-        else if(type.equals("DB")) {
+            String fileName = LocalDateTime.now().toString() + '-' 
+                + UUID.randomUUID().toString() + '.' + extension;
+            Path filePath= DietingChatbotApplication.downloadedContentDir.resolve(fileName);
+            file = filePath.toFile();
+            file.deleteOnExit();
+            try (OutputStream outputStream = Files.newOutputStream(filePath)) {
+                log.info("Trying to copy");
+                ByteStreams.copy(inputStream, outputStream);
+                log.info("Saved {} with name {} and path", extension, file.getName(), filePath);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            } 
+            String borderedImageUri = addBorder(file, "server");
+            log.info("Added border, will return borderedImageUri as: {}", borderedImageUri);
+            return new String[] { borderedImageUri };
+        } else if (type.equals("DB")) {
             log.info("Store image uploaded by administrator to DB");
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try {
@@ -85,12 +99,12 @@ public class ImageControl {
                 byte[] buf = bos.toByteArray();
                 String encodedString = Base64.encodeBase64URLSafeString(buf);
                 log.info("Encoded String in Base64: {}", encodedString);
-                return new String[] {extension, encodedString};
+                return new String[] { extension, encodedString };
             }
             catch (IOException e) {
                 log.info("Caught IOException when testing DB part");
             }
-        }    
+        }
         return null;
     }
         
@@ -107,16 +121,55 @@ public class ImageControl {
      * Add border to a image file to facilitate OCR recognization
      * @param fileName the name of the file
      */
-    public static void addBorder(String fileName) {
-        // BufferedImage bimg;
-		// try {
-		// 	bimg = ImageIO.read(file);
-		// } catch (IOException e) {
-        //     log.info("cannot read in file");
-		// }
-        // int width          = bimg.getWidth();
-        // int height         = bimg.getHeight();
+    public static String addBorder(File tempFile, String type) {
+        String tempFileName = tempFile.getName();
+        String extension = tempFileName.substring(tempFileName.lastIndexOf('.'));
+        BufferedImage bimg;
+		try {
+			bimg = ImageIO.read(tempFile);
+            int width = bimg.getWidth();
+            int height = bimg.getHeight();
+            int borderedImageWidth = width + 20;
+            int borderedImageHeight = height + 20;
+            BufferedImage img = new BufferedImage(borderedImageWidth, borderedImageHeight, BufferedImage.TYPE_3BYTE_BGR);
+            img.createGraphics();
+            Graphics2D g = (Graphics2D) img.getGraphics();
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, borderedImageWidth, borderedImageHeight);
+            g.drawImage(bimg, 10, 10, width + 10, height + 10, 0, 0, width, height, Color.BLACK, null);
+            log.info("Default temporary file directory: {}", System.getProperty("java.io.tmpdir"));
+            log.info("Creating bordered image...");
 
+            // create uri for this output file, if type is specified as test
+            // because local file starts with file://
+            if(type.equals("test")) {
+                File outputFile = File.createTempFile(tempFile.getParent() + "/bordered_menu", extension);
+                ImageIO.write(img, "png", ImageIO.createImageOutputStream(outputFile));
+                String path = outputFile.getAbsolutePath ();
+                if (File.separatorChar != '/')
+                    path = path.replace (File.separatorChar, '/');
+                if (!path.startsWith ("/"))
+                    path = "/" + path;
+                String outputFileUri = "file:" + path;
+                return outputFileUri;
+            }
+
+            //create uri for file stored on server, if type is specified as server
+            if(type.equals("server")) {
+                String fileName = LocalDateTime.now().toString() + '-' 
+                    + UUID.randomUUID().toString() + ".png";
+                Path tempFilePath= DietingChatbotApplication.downloadedContentDir.resolve(fileName);
+                file = tempFilePath.toFile();
+                file.deleteOnExit();
+                ImageIO.write(img, "png", ImageIO.createImageOutputStream(file));
+                log.info("Written into a new image file with file name: {}", file.getName());
+                return createUri("/downloaded/" + tempFilePath.getFileName());
+            }
+
+        } catch (IOException e) {
+            log.info("cannot read in file {}", tempFile.getName());
+        }
+        return null;
     }
 
     /**

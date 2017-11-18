@@ -77,36 +77,16 @@ public class ParserMessageJSON extends MessageJSON {
     }
 
     /**
-     * Get value corresponding to key (except imageContent).
+     * Get value corresponding to key
      * @param key Name of the key
      * @return String of value contained in the key
      */
     public String get(String key) {
-        if (!keySet.contains(key) || key.equals("imageContent")) {
-            return null;
-        }
-        return json.getString(key);
+        if(keySet.contains(key)) 
+            return json.getString(key);
+        return null;
     }
 
-    /**
-     * Get image content, that is the response body.
-     * @return the responseBody
-     */
-    public MessageContentResponse getImageContent() {
-        MessageContentResponse responseBody;
-	    responseBody = (MessageContentResponse)json.get("imageContent");	
-        return responseBody;
-    }
-
-    /**
-     * Set image content using the reponse
-     * @param the response body
-     * @return this object
-     */
-    public ParserMessageJSON setImageContent(MessageContentResponse mcr) {
-        json.put("imageContent", mcr);
-        return this;
-    }
 
     /**
      * Get state object corresponding to the JSON.

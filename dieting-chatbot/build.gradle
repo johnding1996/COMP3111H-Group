@@ -52,6 +52,12 @@ test {
     environment "JSON_MENU_URL", "https://rawgit.com/johnding1996/7cf1827fc16dbe93c7df04bc3ca16141/raw/3fb21fe06a6b194b4a07055e51ffd5c911184c6b/Meal.json"
 }
 
+task copyTask(type: Copy) { 
+    from "${projectDir}/src/test/resources" 
+    into "${buildDir}/classes/test/resources" 
+} 
+processTestResources.dependsOn copyTask 
+
 task miniTest ( type: Test ) {
     exclude '**/database/**'
     environment "DATABASE_URL", "postgres://lcepujgoulxdin:40aeb5b7ca23b637293f769642cf1636e384065f0c5e93d7a7594986a458b1ef@ec2-107-20-250-195.compute-1.amazonaws.com:5432/d3u92m2tkcnrcn"
