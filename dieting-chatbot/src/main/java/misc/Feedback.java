@@ -9,6 +9,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.lang.Integer;
 
+import controller.ImageControl;
 import database.keeper.HistKeeper;
 import org.apache.commons.lang3.time.DateUtils;
 import org.json.JSONArray;
@@ -167,9 +168,9 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             BitmapEncoder.saveBitmap(chart, outputStream, BitmapEncoder.BitmapFormat.BMP);
             byte[] bitmapData = outputStream.toByteArray();
             ByteArrayInputStream inputStream = new ByteArrayInputStream(bitmapData);
-            //String tempFileUri = ImageControl.inputToTempFile("bmp", inputStream);
-            //FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-            //fmt.appendImageMessage(tempFileUri, tempFileUri);
+            String tempFileUri = ImageControl.inputToTempFile("bmp", inputStream);
+            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+            fmt.appendImageMessage(tempFileUri, tempFileUri);
         } catch (IOException e) {
             log.error("Error encountered when saving charts in feedback handler.", e);
         }
