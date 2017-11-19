@@ -24,6 +24,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import javax.annotation.PostConstruct;
 import javax.imageio.ImageIO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -53,8 +55,6 @@ public class ImageControl {
 
     public static ServletUriComponentsBuilder servletUriComponentsBuilder;
     
-    { ImageControl.servletUriComponentsBuilder = ServletUriComponentsBuilder.fromCurrentContextPath(); }
-
     /**
      * Create a temporary file on the current server directory.
      * @param ext extension string, could be jpeg, jpg, png...
