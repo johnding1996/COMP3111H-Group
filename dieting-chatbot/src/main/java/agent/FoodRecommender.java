@@ -48,7 +48,7 @@ public class FoodRecommender extends Agent {
     @Autowired
     private UserManager userManager;
     
-    private static JSONArray nutrientDailyIntakes;
+    public static JSONArray nutrientDailyIntakes;
     static {
         nutrientDailyIntakes = new JSONArray();
         nutrientDailyIntakes

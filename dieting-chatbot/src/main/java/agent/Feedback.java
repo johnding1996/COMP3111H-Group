@@ -71,9 +71,7 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
     private List<Date> timestamps = new ArrayList<>();
     private List<Integer> weights = new ArrayList<>();
     private Map<String, Double> nutrients = new HashMap<>();
-    private List<String> allNutrients = Arrays.asList(
-            "lipid_tot", "carbohydrate","sugar_tot", "protein","fiber_td","vit_c","sodium","potassium","calcium"
-    );
+
     /**
      * Register on eventBus.
      */
@@ -242,27 +240,19 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
      */
     private void parseNutrientHist(String userId, JSONArray histJSON) {
         try {
-            int dishNum = 0;
-            List<Double> allScore = new ArrayList<>();
+            nutrients = new HashMap<>();
             for (int i=0; i<histJSON.length(); i++) {
                 JSONObject hist = histJSON.getJSONObject(i);
-                JSONArray menu = hist.getJSONArray("menu");
-                for(int j = 0; j < menu.length(); j++) {
-                    JSONArray foodContent = menu.getJSONObject(j).getJSONArray("foodContent");
-                    JSONObject result = recommender.calculateNutrientIntakes(userId, foodContent);
-                    dishNum++;
-                    for (int m = 0; m < allNutrients.size(); m++) {
-                        JSONObject nutrientScore = result.getJSONObject(allNutrients.get(m));
-                        double score = nutrientScore.getDouble("actual")/nutrientScore.getDouble("expect") + allScore.get(i);
-                        allScore.add(score);
-                    }
+                JSONArray foodContent = hist.getJSONArray("menu").getJSONObject(0).getJSONArray("foodContent");
+                int portionSize = hist.getInt("portionSize");
+                JSONArray foodList = recommender.getFoodJSON(foodContent);
+                for (int j=0; j<FoodRecommender.nutrientDailyIntakes.length(); j++) {
+                    String nutrient = FoodRecommender.nutrientDailyIntakes.getJSONObject(j).getString("name");
+                    double actualIntake = portionSize * recommender.getAverageNutrient(foodList, nutrient) / 100 * 3;
+                    double expectedIntake = FoodRecommender.nutrientDailyIntakes.getJSONObject(j).getInt("y");
+                    if (!nutrients.containsKey(nutrient)) nutrients.put(nutrient, 0.0);
+                    nutrients.put(nutrient, actualIntake/expectedIntake/histJSON.length() + nutrients.get(nutrient));
                 }
-            }
-            log.error("dishNum" + dishNum);
-            log.error("allScore" + allScore.toString());
-            for (int j = 0; j< allNutrients.size(); j++){
-                double finalScore = allScore.get(j)/dishNum;
-                nutrients.put(allNutrients.get(j),finalScore);
             }
             log.info("Successfully calculated the user nutrient consumptions.");
         } catch (JSONException e) {
