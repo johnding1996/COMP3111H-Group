@@ -7,13 +7,10 @@ import java.io.InputStream;
 import java.util.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.io.InputStream;
 import java.lang.Integer;
 
-import agent.FoodRecommender;
 import controller.ImageControl;
 import database.keeper.HistKeeper;
-import net.arnx.jsonic.JSON;
 import org.apache.commons.lang3.time.DateUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,7 +21,6 @@ import controller.State;
 import controller.ChatbotController;
 
 import org.knowm.xchart.*;
-import org.knowm.xchart.internal.series.Series;
 import org.knowm.xchart.style.Styler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -40,8 +36,7 @@ import utility.FormatterMessageJSON;
 import utility.JazzySpellChecker;
 import utility.ParserMessageJSON;
 
-import org.knowm.xchart.internal.ChartBuilder;
-import org.knowm.xchart.internal.chartpart.Chart;
+import utility.TextProcessor;
 
 
 /**
@@ -85,6 +80,8 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
 
     // User state tracking for interaction
     private static HashMap<String, Integer> states = new HashMap<>();
+
+    private int resultDuration;
 
     /**
      * Event handler for ParserMessageJSON.
@@ -130,9 +127,9 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             states.put(userId, 1);
         } else if (state==1) {
             String msg = psr.get("textContent");
-            int result = parseFeedbackDuration(userId, msg);
-            if (result != -1) {
-                JSONArray histJSON = getHist(userId, result);
+            resultDuration = parseFeedbackDuration(userId, msg);
+            if (resultDuration != -1) {
+                JSONArray histJSON = getHist(userId, resultDuration);
                 if (histJSON.length() == 0) {
                     log.info(String.format("Empty hist json for user %s", userId));
                     FormatterMessageJSON response = new FormatterMessageJSON(userId);
@@ -143,6 +140,18 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
                         controller.setUserState(userId, State.IDLE);
                     }
                 }
+                FormatterMessageJSON response = new FormatterMessageJSON(userId);
+                response.appendTextMessage("Great, We've analyzed the history of your weights and meals, " +
+                        "and generated two charts for you. Which chart would you like to have a look at? " +
+                        "Please reply \'weight\' or \'nutrient\'.");
+                publisher.publish(response);
+                states.put(userId, 2);
+            }
+        } else if (state==2) {
+            String msg = psr.get("textContent");
+            if (getMatch(TextProcessor.getTokens(msg),
+                    Arrays.asList("weight", "nutrient")) != null) {
+                JSONArray histJSON = getHist(userId, resultDuration);
                 parseWeightHist(histJSON);
                 log.info("FEEDBACK: user timestamps" + timestamps.toString());
                 log.info("FEEDBACK: user weight histories" + weights.toString());
@@ -154,6 +163,11 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
                 if (controller != null) {
                     controller.setUserState(userId, State.IDLE);
                 }
+            } else {
+                FormatterMessageJSON response = new FormatterMessageJSON(userId);
+                response.appendTextMessage("Invalid chart type. " +
+                        "Please reply \'weight\' or \'nutrient\'.");
+                publisher.publish(response);
             }
         } else {
             log.error("Invalid internal state in feedback handler.");
@@ -249,10 +263,11 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
                 JSONArray foodList = recommender.getFoodJSON(foodContent);
                 for (int j=0; j<FoodRecommender.nutrientDailyIntakes.length(); j++) {
                     String nutrient = FoodRecommender.nutrientDailyIntakes.getJSONObject(j).getString("name");
+                    String desc = FoodRecommender.nutrientDailyIntakes.getJSONObject(j).getString("desc");
                     double actualIntake = portionSize * recommender.getAverageNutrient(foodList, nutrient) / 100 * 3;
                     double expectedIntake = FoodRecommender.nutrientDailyIntakes.getJSONObject(j).getInt("y");
-                    nutrients.putIfAbsent(nutrient, 0.0);
-                    nutrients.put(nutrient, actualIntake/expectedIntake/histJSON.length() + nutrients.get(nutrient));
+                    nutrients.putIfAbsent(desc, 0.0);
+                    nutrients.put(desc, actualIntake/expectedIntake/histJSON.length() + nutrients.get(desc));
                 }
             }
             log.info("Successfully calculated the user nutrient consumptions.");
@@ -295,6 +310,19 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             publisher.publish(response);
             return -1;
         }
+    }
+
+    /**
+     * Helper function for deciding whether two iterable has one match.
+     * @param it1 Input that needs to be matched
+     * @param it2 Template that input matched against
+     * @return matched item in it2, or null if no match found
+     */
+    String getMatch(Iterable<String> it1, Iterable<String> it2) {
+        for (String s1 : it1) for (String s2 : it2) {
+            if (s1.equals(s2)) return s2;
+        }
+        return null;
     }
 
 
