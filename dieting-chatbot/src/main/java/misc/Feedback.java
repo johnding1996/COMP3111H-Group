@@ -159,7 +159,7 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
     }
 
     /**
-     * Draw pie chart according to :   .
+     * Draw pie chart according to userId and user nutrition hist.
      * @param userId user's unique id
      */
     public void drawPieChart(String userId) {
@@ -225,9 +225,10 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             }
             log.info(String.format("Successfully fetched user hist from hist keeper, %d records were found.", i));
         } catch (JSONException | ParseException e) {
-            log.error("Error encountered when fetching user hist from hist keeper.", e);
+            log.error("Error encountered when fetching user weight hist from hist keeper.", e);
         }
     }
+
     /**
      * Get the nutrient consumption statistics from hist JSONArray.
      */
@@ -251,7 +252,7 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
                     }
                 }
             }
-            log.info(String.format("Successfully fetched user hist from hist keeper, %d records were found.", i));
+            log.info(String.format("Successfully fetched user nutrient hist from hist keeper, %d records were found.", i));
         } catch (JSONException e) {
             log.error("Error encountered when fetching user hist from hist keeper.", e);
         }
