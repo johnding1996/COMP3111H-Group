@@ -137,7 +137,7 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
      */
     @EventMapping
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event) {
-
+        ImageControl.servletUriComponentsBuilder = ServletUriComponentsBuilder.fromCurrentContextPath();
         String userId = event.getSource().getUserId();
         String textContent = event.getMessage().getText();
         String messageId = event.getMessage().getId();
@@ -205,6 +205,7 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
      */
     @EventMapping
     public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) {
+        ImageControl.servletUriComponentsBuilder = ServletUriComponentsBuilder.fromCurrentContextPath();
         log.info("Get IMAGE message from user: {}", event.getSource().getUserId());
         String messageId = event.getMessage().getId();
         String replyToken = event.getReplyToken();

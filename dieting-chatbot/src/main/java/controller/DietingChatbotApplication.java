@@ -61,17 +61,6 @@ public class DietingChatbotApplication {
      * Path to downloaded contents.
      */
     static Path downloadedContentDir;
-    static Path staticPath;
-    static {
-        try {
-            staticPath = Files.createDirectory(Paths.get("static")); 
-        }
-        catch(FileAlreadyExistsException e) {
-            
-        }
-        catch(IOException e) {
-        }
-    }
 
     /**
      * Entry point of the application.

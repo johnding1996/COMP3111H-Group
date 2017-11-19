@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.io.InputStream;
 import java.lang.Integer;
 
 import agent.FoodRecommender;
@@ -157,7 +158,10 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
         }
     }
 
-
+    /**
+     * Draw pie chart according to :   .
+     * @param userId user's unique id
+     */
     public void drawPieChart(String userId) {
         PieChart chart = new PieChartBuilder().width(800).height(600).title(getClass().getSimpleName()).build();
         for (Map<String,Double> onePair: nutrients){
@@ -168,7 +172,7 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
         try {
             BitmapEncoder.saveBitmap(chart, outputStream, BitmapEncoder.BitmapFormat.BMP);
             byte[] bitmapData = outputStream.toByteArray();
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(bitmapData);
+            InputStream inputStream = new ByteArrayInputStream(bitmapData);
             String tempFileUri = ImageControl.inputToTempFile("bmp", inputStream);
             FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
             fmt.appendImageMessage(tempFileUri, tempFileUri);
@@ -177,6 +181,10 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
         }
     }
 
+    /**
+     * Draw line chart of user's weight.
+     * @param userId user's unique id
+     */
     public void drawLineChart(String userId) {
         XYChart chart = new XYChartBuilder().width(800).height(400)
                 .title("Weight Line Chart")
@@ -189,10 +197,11 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
         try {
             BitmapEncoder.saveBitmap(chart, outputStream, BitmapEncoder.BitmapFormat.BMP);
             byte[] bitmapData = outputStream.toByteArray();
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(bitmapData);
+            InputStream inputStream = new ByteArrayInputStream(bitmapData);
             String tempFileUri = ImageControl.inputToTempFile("bmp", inputStream);
             FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
             fmt.appendImageMessage(tempFileUri, tempFileUri);
+            publisher.publish(fmt);
         } catch (IOException e) {
             log.error("Error encountered when saving charts in feedback handler.", e);
         }
