@@ -172,7 +172,7 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
         try {
             BitmapEncoder.saveBitmap(chart, outputStream, BitmapEncoder.BitmapFormat.BMP);
             byte[] bitmapData = outputStream.toByteArray();
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(bitmapData);
+            InputStream inputStream = new ByteArrayInputStream(bitmapData);
             String tempFileUri = ImageControl.inputToTempFile("bmp", inputStream);
             FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
             fmt.appendImageMessage(tempFileUri, tempFileUri);
@@ -197,7 +197,7 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
         try {
             BitmapEncoder.saveBitmap(chart, outputStream, BitmapEncoder.BitmapFormat.BMP);
             byte[] bitmapData = outputStream.toByteArray();
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(bitmapData);
+            InputStream inputStream = new ByteArrayInputStream(bitmapData);
             String tempFileUri = ImageControl.inputToTempFile("bmp", inputStream);
             FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
             fmt.appendImageMessage(tempFileUri, tempFileUri);

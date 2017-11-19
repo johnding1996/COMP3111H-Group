@@ -51,6 +51,10 @@ public class ImageControl {
         String uri;
     }
 
+    public ServletUriComponentsBuilder servletUriComponentsBuilder;
+    
+    { this.servletUriComponentsBuilder = ServletUriComponentsBuilder.fromCurrentContextPath(); }
+
     /**
      * Create a temporary file on the current server directory.
      * @param ext extension string, could be jpeg, jpg, png...
@@ -118,8 +122,8 @@ public class ImageControl {
      * @param path the desired sub directory path
      * @return uri from the current context path
      */
-    private static String createUri(String path) {
-        return ServletUriComponentsBuilder.fromCurrentContextPath().path(path).build().toString();
+    private String createUri(String path) {
+        return servletUriComponentsBuilder.path(path).build().toString();
     }
 
     /**
