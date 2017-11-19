@@ -67,9 +67,10 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
 
     private List<Date> timestamps = new ArrayList<>();
     private List<Integer> weights = new ArrayList<>();
-    private Set<Map<String, Double>> nutrients = new HashSet<>();
-    private List<String> allNutrients = Arrays.asList("lipid_tot", "carbohydrate","sugar_tot",
-            "protein","fiber_td","vit_c","sodium","potassium","calcium");
+    private Map<String, Double> nutrients = new HashMap<>();
+    private List<String> allNutrients = Arrays.asList(
+            "lipid_tot", "carbohydrate","sugar_tot", "protein","fiber_td","vit_c","sodium","potassium","calcium"
+    );
     /**
      * Register on eventBus.
      */
@@ -164,22 +165,16 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
      */
     public void drawPieChart(String userId) {
         PieChart chart = new PieChartBuilder().width(800).height(600).title(getClass().getSimpleName()).build();
-        for (Map<String,Double> onePair: nutrients){
-            chart.addSeries(onePair.keySet().iterator().next(),onePair.values().iterator().next());
+        for (String nutrient: nutrients.keySet()){
+            chart.addSeries(nutrient, nutrients.get(nutrient));
         }
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             BitmapEncoder.saveBitmap(chart, outputStream, BitmapEncoder.BitmapFormat.BMP);
-            byte[] bitmapData = outputStream.toByteArray();
-            InputStream inputStream = new ByteArrayInputStream(bitmapData);
-            String tempFileUri = ImageControl.inputToTempFile("bmp", inputStream);
-            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-            fmt.appendImageMessage(tempFileUri, tempFileUri);
-            publisher.publish(fmt);
+            sendChart(userId, outputStream);
         } catch (IOException e) {
             log.error("Error encountered when saving charts in feedback handler.", e);
-        }
-    }
+        }    }
 
     /**
      * Draw line chart of user's weight.
@@ -196,19 +191,29 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             BitmapEncoder.saveBitmap(chart, outputStream, BitmapEncoder.BitmapFormat.BMP);
-            byte[] bitmapData = outputStream.toByteArray();
-            InputStream inputStream = new ByteArrayInputStream(bitmapData);
-            String tempFileUri = ImageControl.inputToTempFile("bmp", inputStream);
-            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-            fmt.appendImageMessage(tempFileUri, tempFileUri);
-            publisher.publish(fmt);
+            sendChart(userId, outputStream);
         } catch (IOException e) {
             log.error("Error encountered when saving charts in feedback handler.", e);
         }
     }
 
     /**
+     * Send chart ot image controller.
+     * @param userId user id
+     * @param outputStream outputStream contains chart in bmp format.
+     */
+    public void sendChart(String userId, ByteArrayOutputStream outputStream) {
+        byte[] bitmapData = outputStream.toByteArray();
+        InputStream inputStream = new ByteArrayInputStream(bitmapData);
+        String tempFileUri = ImageControl.inputToTempFile("bmp", inputStream);
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendImageMessage(tempFileUri, tempFileUri);
+        publisher.publish(fmt);
+    }
+
+    /**
      * Get the weight history list from hist JSONArray.
+     * @param histJSON user hist JSONArray
      */
     private void parseWeightHist(JSONArray histJSON) {
         timestamps = new ArrayList<>();
@@ -233,34 +238,33 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
      * Get the nutrient consumption statistics from hist JSONArray.
      */
     private void parseNutrientHist(String userId, JSONArray histJSON) {
-        FoodRecommender foodRecommender = new FoodRecommender();
-        int dishNum = 0;
-        List<Double> allScore = new ArrayList<>(9);
         try {
-            int i;
-            for (i=0; i<histJSON.length(); i++) {
+            FoodRecommender foodRecommender = new FoodRecommender();
+            int dishNum = 0;
+            List<Double> allScore = new ArrayList<>();
+            for (int i=0; i<histJSON.length(); i++) {
                 JSONObject hist = histJSON.getJSONObject(i);
                 JSONArray menu = hist.getJSONArray("menu");
                 for(int j = 0; j < menu.length(); j++) {
-                    JSONArray food = menu.getJSONObject(j).getJSONArray("foodContent");
-                    JSONObject result = foodRecommender.calculateNutrientIntakes(userId,food);
+                    JSONArray foodContent = menu.getJSONObject(j).getJSONArray("foodContent");
+                    JSONObject result = foodRecommender.calculateNutrientIntakes(userId, foodContent);
                     dishNum++;
-                    for (int m = 0; m < allNutrients.size(); ++m) {
+                    for (int m = 0; m < allNutrients.size(); m++) {
                         JSONObject nutrientScore = result.getJSONObject(allNutrients.get(m));
                         double score = nutrientScore.getDouble("actual")/nutrientScore.getDouble("expect") + allScore.get(i);
-                        allScore.set(m, score);
+                        allScore.add(score);
                     }
                 }
             }
-            log.info(String.format("Successfully fetched user nutrient hist from hist keeper, %d records were found.", i));
+            log.error("dishNum" + dishNum);
+            log.error("allScore" + allScore.toString());
+            for (int j = 0; j< allNutrients.size(); j++){
+                double finalScore = allScore.get(j)/dishNum;
+                nutrients.put(allNutrients.get(j),finalScore);
+            }
+            log.info("Successfully calculated the user nutrient consumptions.");
         } catch (JSONException e) {
             log.error("Error encountered when fetching user hist from hist keeper.", e);
-        }
-        for (int i = 0; i< allNutrients.size(); ++i){
-            double finalScore = allScore.get(i)/dishNum;
-            Map<String, Double> pair = new HashMap<>();
-            pair.put(allNutrients.get(i),finalScore);
-            nutrients.add(pair);
         }
     }
 

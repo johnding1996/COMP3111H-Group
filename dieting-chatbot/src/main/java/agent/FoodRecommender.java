@@ -682,10 +682,6 @@ public class FoodRecommender
      */
     public double getMealIntake(JSONObject userJSON) {
         String userId = userJSON.getString("id");
-        log.info(userJSON.toString(4));
-        log.info("BMR: " + getUserBMR(userJSON));
-        log.info("ex ration: " + exerciseIntakeRatios.get(userId));
-        log.info("meal portion: " + mealPortions.get(userId));
         return getUserBMR(userJSON) * exerciseIntakeRatios.get(userId) * mealPortions.get(userId);
     }
 

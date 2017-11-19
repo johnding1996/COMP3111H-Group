@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.lang.Integer;
 
+import database.querier.UserQuerier;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -65,34 +66,46 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
      */
     private static Map<String, Integer> states = new HashMap<>();
     private static Map<String, Integer> menuCount = new HashMap<>();
+    private static List<Integer> ids = new ArrayList<>();
+
 
     /**
      * add userInfo to history if everything is correct.
-     * @param ids list of indices.
-     * @param userId String of userId.
+     * @param userId String of userId
+     * @param portionSize portion size
+     * @param weight weight
      */
-    public void updateDatabase (String userId, List<Integer> ids, int portionSize, int weight) {
+    public void updateDatabase (String userId, int portionSize, int weight) {
         MenuKeeper menuKeeper = new MenuKeeper();
         HistKeeper histKeeper = new HistKeeper();
+        UserQuerier userQuerier = new UserQuerier();
         JSONObject histJson = new JSONObject();
         try{
+            // Add hist to HistKeeper
             DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
             histJson.put("timestamp", dateTimeFormat.format(new Date()));
             histJson.put("weight", weight);
             histJson.put("portionSize", portionSize);
+            log.error("all" + menuKeeper.get(userId, 1).toString());
             JSONArray menu = menuKeeper.get(userId, 1).getJSONObject(0).getJSONArray("menu");
+            log.error("menu" + menu.toString());
             JSONArray selectedMenu = new JSONArray();
-            for (Integer id : ids) {
-                selectedMenu.put(menu.getJSONObject(id));
-            }
+            for (Integer id : ids) selectedMenu.put(menu.getJSONObject(id));
+            log.error("selected menu" + selectedMenu.toString());
             histJson.put("menu", selectedMenu);
             histKeeper.set(userId, histJson);
             log.info(String.format("Stored the user history of user %s in to the caches.", userId));
+            // Update weight in UserInfo table
+            JSONObject infoJson = userQuerier.get(userId);
+            infoJson.put("weight", weight);
+            userQuerier.update(infoJson);
+
         } catch (JSONException e) {
             log.error("Error encountered when parsing the MealJSON.", e);
         }
         menuKeeper.close();
         histKeeper.close();
+        userQuerier.close();
     }
 
     /**
@@ -161,7 +174,6 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
         }
 
         FormatterMessageJSON response = new FormatterMessageJSON(userId);
-        List<Integer> ids = new ArrayList<>();
         int portionSize = 0;
         int weight = 0;
         int state = states.get(userId);
@@ -173,13 +185,14 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
             response.appendTextMessage(getMenu(userId));
             states.put(userId, state+1);
         } else if (state == 1) {
+            ids = new ArrayList<>();
             String[] idxStrings = psr.get("textContent").split(";");
             for (String idxString : idxStrings) {
                 idxString = idxString.trim();
                 if (Validator.isInteger(idxString)) {
                     int x = Integer.parseInt(idxString);
                     if (x >= 1 && x <= menuCount.get(userId))
-                        ids.add(x - 1);
+                        ids.add(x-1);
                 }
             }
             if (ids.size() == 0) {
@@ -219,7 +232,10 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
                 weight = Integer.parseInt(textContent);
                 response.appendTextMessage(String.format("So your weight now is %d kg", weight))
                         .appendTextMessage("See you ^_^");
-                updateDatabase(userId, ids, portionSize, weight);
+
+                log.error("ids" + ids.toString());
+
+                updateDatabase(userId, portionSize, weight);
                 states.remove(userId);
                 if (controller != null) {
                     controller.setUserState(userId, State.IDLE);
