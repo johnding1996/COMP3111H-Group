@@ -241,16 +241,21 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
     private void parseNutrientHist(String userId, JSONArray histJSON) {
         try {
             nutrients = new HashMap<>();
+            log.error("HERE1");
             for (int i=0; i<histJSON.length(); i++) {
+                log.error("HERE2");
                 JSONObject hist = histJSON.getJSONObject(i);
                 JSONArray foodContent = hist.getJSONArray("menu").getJSONObject(0).getJSONArray("foodContent");
                 int portionSize = hist.getInt("portionSize");
                 JSONArray foodList = recommender.getFoodJSON(foodContent);
                 for (int j=0; j<FoodRecommender.nutrientDailyIntakes.length(); j++) {
+                    log.error("HERE3");
                     String nutrient = FoodRecommender.nutrientDailyIntakes.getJSONObject(j).getString("name");
                     double actualIntake = portionSize * recommender.getAverageNutrient(foodList, nutrient) / 100 * 3;
                     double expectedIntake = FoodRecommender.nutrientDailyIntakes.getJSONObject(j).getInt("y");
-                    if (!nutrients.containsKey(nutrient)) nutrients.put(nutrient, 0.0);
+                    log.info("actualIntake: " + actualIntake);
+                    log.info("expectedIntake: " + expectedIntake);
+                    nutrients.putIfAbsent(nutrient, 0.0);
                     nutrients.put(nutrient, actualIntake/expectedIntake/histJSON.length() + nutrients.get(nutrient));
                 }
             }
