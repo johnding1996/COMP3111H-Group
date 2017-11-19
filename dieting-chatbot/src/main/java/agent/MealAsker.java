@@ -1,5 +1,6 @@
 package agent;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -57,6 +58,23 @@ public class MealAsker extends Agent {
         } else {
             // query database for food content
             JsonUtility.getFoodContent(menuJSON);
+
+            // check empty food content
+            boolean valid = true;
+            JSONArray menu = menuJSON.getJSONArray("menu");
+            for (int i=0; i<menu.length(); ++i) {
+                JSONArray foodContent = menu.getJSONObject(i).getJSONArray("foodContent");
+                if (foodContent.length() == 0) {
+                    valid = false;
+                    break;
+                }
+            }
+            if (!valid) {
+                fmt.appendTextMessage("Your menu input is invalid. Session cancelled.");
+                publisher.publish(fmt);
+                controller.setUserState(userId, State.IDLE);
+                return END_STATE;
+            }
 
             fmt.appendTextMessage("Well, I got your menu.")
                .appendTextMessage("The Menu I got is\n" +

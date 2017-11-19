@@ -9,6 +9,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import org.json.JSONArray;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +37,7 @@ public class ImageMenuParserTester {
             .contains("spicy bean cured law minced pork served law rice");
     }
     
-    @Test
+    @Test @Ignore
     public void addBorderTester() {
         File file = new File(this.getClass().getClassLoader().getResource(sampleMenu).getFile());
         log.info("FILE: {}", file.toString());

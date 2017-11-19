@@ -119,7 +119,8 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
                 messages.add(new TextMessage(obj.getString("textContent")));
                 break;
             case "image":
-                messages.add(new ImageMessage(obj.getString("originalContentUrl"), obj.getString("previewContentUrl")));
+                messages.add(new ImageMessage(obj.getString("originalContentUrl"),
+                    obj.getString("previewContentUrl")));
                 break;
             default:
                 log.info("Invalid message type {}", obj.getString("type"));
@@ -205,9 +206,12 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
      */
     @EventMapping
     public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) {
-        log.info("Get IMAGE message from user: {}", event.getSource().getUserId());
+        String userId = event.getSource().getUserId();
         String messageId = event.getMessage().getId();
         String replyToken = event.getReplyToken();
+        userId = userId.substring(1);
+        log.info("Get IMAGE message from user: {}", userId);
+
         final MessageContentResponse response;
         try {
             response = lineMessagingClient.getMessageContent(messageId).get();
@@ -216,8 +220,6 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
             throw new RuntimeException(e);
         }
         
-        String userId = event.getSource().getUserId();
-        userId = userId.substring(1);
         ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
         String uri = ImageControl.saveContent(response, "TempFile")[0];
         psr.set("messageId", messageId).setState(getUserState(userId).toString())
