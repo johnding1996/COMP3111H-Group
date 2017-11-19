@@ -2,30 +2,30 @@ package agent;
 
 import database.keeper.HistKeeper;
 import database.keeper.MenuKeeper;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.lang.Integer;
 
 import database.querier.UserQuerier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import org.json.JSONArray;
 
-import controller.ChatbotController;
-import controller.Publisher;
 import controller.State;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import static reactor.bus.selector.Selectors.$;
-import reactor.fn.Consumer;
-import reactor.bus.Event;
-import reactor.bus.EventBus;
 import javax.annotation.PostConstruct;
 import utility.FormatterMessageJSON;
+import utility.JsonUtility;
 import utility.ParserMessageJSON;
 import utility.Validator;
 
@@ -33,49 +33,167 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * MealRecorder: record the dish user ate.
+ * 
+ * State mapping:
+ *      0 - ask dish
+ *      1 - ask portion size
+ *      2 - ask weight
+ *      3 - say goodbye
+ * 
  * @author cliubf, mcding, szhouan
- * @version v1.1.0
+ * @version v2.0.0
  */
 @Slf4j
 @Component
-public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
+public class MealRecorder extends Agent {
 
     @Autowired
-    private EventBus eventBus;
+    private UserManager userManager;
 
     @Autowired
-    private Publisher publisher;
-
-    @Autowired(required = false)
-    private ChatbotController controller;
+    private MenuManager menuManager;
 
     /**
-     * Register on eventBus.
+     * Initialize meal recorder agent.
      */
-    @PostConstruct
+    @Override
     public void init() {
-        if (eventBus != null) {
-            eventBus.on($("ParserMessageJSON"), this);
-            log.info("ConfirmFood register on event bus");
-        }
+        agentName = "MealRecorder";
+        agentStates = new HashSet<>(
+            Arrays.asList(State.RECORD_MEAL)
+        );
+        handleImage = false;
+        useSpellChecker = false;
+        this.addHandler(0, (psr) -> askDish(psr))
+            .addHandler(1, (psr) -> askPortion(psr))
+            .addHandler(2, (psr) -> askWeight(psr))
+            .addHandler(3, (psr) -> sayGoodbye(psr));
     }
 
     /**
-     * User states tracking for interaction.
-     * 0 stands for user did not confirm food list yet.
+     * Handler for asking dish.
+     * @param psr Input ParserMessageJSON
+     * @return next state
      */
-    private static Map<String, Integer> states = new HashMap<>();
-    private static Map<String, Integer> menuCount = new HashMap<>();
-    private static List<Integer> ids = new ArrayList<>();
+    public int askDish(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+        JSONObject menuJSON = menuManager.getMenuJSON(userId);
+        states.get(userId).put("menuJSON", menuJSON);
 
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage(
+            "Welcome back! Please choose what you just ate in this list:")
+           .appendTextMessage(JsonUtility.formatMenuJSON(menuJSON, false))
+           .appendTextMessage("Please choose one of them and input the number.");
+        publisher.publish(fmt);
+        return 1;
+    }
+
+    /**
+     * Handler for asking portion.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askPortion(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+        String text = psr.get("textContent");
+
+        boolean valid = true;
+        if (!Validator.isInteger(text)) {
+            valid = false;
+        } else {
+            int dishId = Integer.parseInt(text);
+            if (dishId < 1 || dishId > states.get(userId)
+                .getJSONObject("menuJSON").getJSONArray("menu")
+                .length()) valid = false;
+        }
+        if (!valid) {
+            rejectUserInput(psr, "Please choose among the dishes.");
+            return 1;
+        }
+
+        int dishId = Integer.parseInt(text) - 1;
+        states.get(userId).put("dishId", dishId);
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage("Great! " +
+                "I have recorded what you have just eaten!")
+            .appendTextMessage("And what is the portion size of it? (in gram)");
+        publisher.publish(fmt);
+
+        return 2;
+    }
+
+    /**
+     * Handler for asking weight.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askWeight(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+        String text = psr.get("textContent");
+
+        boolean valid = true;
+        if (!Validator.isInteger(text)) {
+            valid = false;
+        } else {
+            int portionSize = Integer.parseInt(text);
+            if (portionSize <= 0 || portionSize > 5000) {
+                valid = false;
+            }
+        }
+        if (!valid) {
+            rejectUserInput(psr, null);
+            return 2;
+        }
+
+        int portionSize = Integer.parseInt(text);
+        states.get(userId).put("portionSize", portionSize);
+        int dishId = states.get(userId).getInt("dishId");
+        String dishName = states.get(userId).getJSONObject("menuJSON")
+            .getJSONArray("menu").getJSONObject(dishId).getString("name");
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage(
+            String.format("So you have eaten %d gram of the dish %s",
+            portionSize, dishName))
+           .appendTextMessage("One more question: what is your weight now?");
+        publisher.publish(fmt);
+
+        return 3;
+    }
+
+    /**
+     * Handler for say goodbye.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int sayGoodbye(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+        String text = psr.get("textContent");
+
+        boolean valid = true;
+        if (!Validator.isInteger(text)) valid = false;
+        else if (!Validator.validateWeight(Integer.parseInt(text)))
+            valid = false;
+        if (!valid) {
+            rejectUserInput(psr, "This is not a valid weight.");
+            return 3;
+        }
+
+        int weight = Integer.parseInt(text);
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage(String.format("So your weight now is %d kg", weight))
+           .appendTextMessage("See you ^_^");
+        publisher.publish(fmt);
+
+        controller.setUserState(userId, State.IDLE);
+        return END_STATE;
+    }
 
     /**
      * add userInfo to history if everything is correct.
      * @param userId String of userId
-     * @param portionSize portion size
-     * @param weight weight
      */
-    public void updateDatabase (String userId, int portionSize, int weight) {
+    public void updateDatabase (String userId) {
         MenuKeeper menuKeeper = new MenuKeeper();
         HistKeeper histKeeper = new HistKeeper();
         UserQuerier userQuerier = new UserQuerier();
@@ -84,20 +202,20 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
             // Add hist to HistKeeper
             DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
             histJson.put("timestamp", dateTimeFormat.format(new Date()));
-            histJson.put("weight", weight);
-            histJson.put("portionSize", portionSize);
+            histJson.put("weight", states.get(userId).get("weight"));
+            histJson.put("portionSize", states.get(userId).get("portionSize"));
             log.error("all" + menuKeeper.get(userId, 1).toString());
             JSONArray menu = menuKeeper.get(userId, 1).getJSONObject(0).getJSONArray("menu");
             log.error("menu" + menu.toString());
             JSONArray selectedMenu = new JSONArray();
-            for (Integer id : ids) selectedMenu.put(menu.getJSONObject(id));
+            selectedMenu.put(menu.getJSONObject(states.get(userId).getInt("dishId")));
             log.error("selected menu" + selectedMenu.toString());
             histJson.put("menu", selectedMenu);
             histKeeper.set(userId, histJson);
             log.info(String.format("Stored the user history of user %s in to the caches.", userId));
             // Update weight in UserInfo table
             JSONObject infoJson = userQuerier.get(userId);
-            infoJson.put("weight", weight);
+            infoJson.put("weight", states.get(userId).get("weight"));
             userQuerier.update(infoJson);
 
         } catch (JSONException e) {
@@ -106,151 +224,5 @@ public class MealRecorder implements Consumer<Event<ParserMessageJSON>> {
         menuKeeper.close();
         histKeeper.close();
         userQuerier.close();
-    }
-
-    /**
-     * Get list of menu previously input by user.
-     * @param userId String of user Id.
-     * @return Menu list in String.
-     */
-    public String getMenu(String userId) {
-        MenuKeeper keeper = new MenuKeeper();
-        String reply = "";
-        try {
-            JSONArray menu = keeper.get(userId, 1)
-                .getJSONObject(0).getJSONArray("menu");
-            for(int j = 0; j < menu.length(); j++){
-                JSONObject food = menu.getJSONObject(j);
-                reply += String.format("%d - %s\n", j + 1,
-                    food.getString("name"));
-            }
-            reply += "Please choose one of them and enter the number";
-            menuCount.put(userId, menu.length());
-        } catch (JSONException e){
-            log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
-        }
-        return reply;
-    }
-
-    /**
-     * Event handler for ParserMessageJSON.
-     * @param ev Event object.
-     */
-    public void accept(Event<ParserMessageJSON> ev) {
-        ParserMessageJSON psr = ev.getData();
-
-        // only handle message if state is `RecordMeal`
-        String userId = psr.getUserId();
-        State globalState = psr.getState();
-        if (globalState != State.RECORD_MEAL) {
-            if (states.containsKey(userId)) {
-                states.remove(userId);
-                log.info("Remove state of user {}", userId);
-            }
-            if (menuCount.containsKey(userId)) {
-                menuCount.remove(userId);
-                log.info("Remove menu count of user {}", userId);
-            }
-            return;
-        }
-
-        log.info("Entering user meal confirm handler");
-        publisher.publish(new FormatterMessageJSON(userId));
-
-        // if the input is image
-        if(psr.getType().equals("image")) {
-            FormatterMessageJSON response = new FormatterMessageJSON(userId);
-            response.appendTextMessage(
-                        "Please input some text at this moment.");
-            publisher.publish(response);
-            log.info("Cannot handle image message");
-            return;
-        }
-
-        // register user if it is new
-        if (!states.containsKey(userId)) {
-            states.put(userId, 0);
-            log.info("register new user {}", userId);
-        }
-
-        FormatterMessageJSON response = new FormatterMessageJSON(userId);
-        int portionSize = 0;
-        int weight = 0;
-        int state = states.get(userId);
-        if (state == 0) {
-            if (!psr.getType().equals("transition")) return;
-            log.info("CONFIRM MEAL: conversation initiated");
-            response.appendTextMessage(
-                "Welcome back! Please choose among what you just ate in this list:");
-            response.appendTextMessage(getMenu(userId));
-            states.put(userId, state+1);
-        } else if (state == 1) {
-            ids = new ArrayList<>();
-            String[] idxStrings = psr.get("textContent").split(";");
-            for (String idxString : idxStrings) {
-                idxString = idxString.trim();
-                if (Validator.isInteger(idxString)) {
-                    int x = Integer.parseInt(idxString);
-                    if (x >= 1 && x <= menuCount.get(userId))
-                        ids.add(x-1);
-                }
-            }
-            if (ids.size() == 0) {
-                log.info("Invalid meal option");
-                response.appendTextMessage("Your input is invalid!");
-            } else {
-                response.appendTextMessage("Great! " +
-                        "I have recorded what you have just eaten!")
-                        .appendTextMessage("And what is the portion size of it? (in gram)");
-                states.put(userId, state+1);
-                menuCount.remove(userId);
-                log.info("CONFIRM MEAL: remove user {}", userId);
-            }
-        } else if (state == 2) {
-            String textContent = psr.get("textContent");
-            if (!Validator.isInteger(textContent)) {
-                response.appendTextMessage("Your input is not an integer");
-            } else {
-                portionSize = Integer.parseInt(textContent);
-                if (portionSize <= 0) {
-                    response.appendTextMessage("Your input is invalid");
-                } else {
-                    response.appendTextMessage(
-                        String.format("So you have eaten %d gram of the dish", portionSize))
-                            .appendTextMessage("One more question: what is your weight now?");
-                    states.put(userId, state+1);
-                }
-            }
-        } else if (state == 3) {
-            String textContent = psr.get("textContent");
-            boolean done = true;
-            if (!Validator.isInteger(textContent)) done = false;
-            else if (!Validator.validateWeight(Integer.parseInt(textContent))) done = false;
-            if (!done) {
-                response.appendTextMessage("This is not a valid weight, please input again");
-            } else {
-                weight = Integer.parseInt(textContent);
-                response.appendTextMessage(String.format("So your weight now is %d kg", weight))
-                        .appendTextMessage("See you ^_^");
-
-                log.error("ids" + ids.toString());
-
-                updateDatabase(userId, portionSize, weight);
-                states.remove(userId);
-                if (controller != null) {
-                    controller.setUserState(userId, State.IDLE);
-                }
-            }
-        }
-        publisher.publish(response);
-    }
-
-    /**
-     * Set internal state of a user.
-     * @param userId String of userId
-     * @param newState New state to set
-     */
-    protected void setUserState(String userId, int newState) {
-        states.put(userId, newState);
     }
 }

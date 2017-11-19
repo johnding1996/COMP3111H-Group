@@ -10,7 +10,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-public class UrlMenuParserTester {
+public class UrlMenuParserTest {
     @Test
     public void testBuildJSONUrl1() {
         JSONArray menu = new JSONArray();

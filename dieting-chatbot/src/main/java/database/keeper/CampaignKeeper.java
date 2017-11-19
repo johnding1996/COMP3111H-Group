@@ -32,7 +32,7 @@ public class CampaignKeeper extends Keeper {
         super();
     }
 
-    CampaignKeeper(Jedis jedids) {
+    CampaignKeeper(Jedis jedis) {
         this.jedis = jedis;
     }
 
@@ -84,7 +84,7 @@ public class CampaignKeeper extends Keeper {
     }
 
     /**
-     * Reset the coupon count to 1.
+     * Reset the coupon count to 0.
      * @return whether reset successfully or not
      */
     public boolean resetCouponCnt() {
@@ -147,5 +147,4 @@ public class CampaignKeeper extends Keeper {
             return null;
         }
     }
-
 }
