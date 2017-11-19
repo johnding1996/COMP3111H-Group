@@ -28,7 +28,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.stereotype.Repository;
 import reactor.Environment;
 import reactor.bus.EventBus;
 
@@ -67,9 +66,10 @@ public class DietingChatbotApplication {
             staticPath = Files.createDirectory(Paths.get("static")); 
         }
         catch(FileAlreadyExistsException e) {
-            
+            e.printStackTrace();
         }
         catch(IOException e) {
+            e.printStackTrace();
         }
     }
 

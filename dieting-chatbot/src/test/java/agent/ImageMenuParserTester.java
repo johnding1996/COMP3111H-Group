@@ -9,6 +9,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import org.json.JSONArray;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,43 +27,23 @@ public class ImageMenuParserTester {
     private static final String sampleMenu = "sample-menu.png";
     private static final String sampleMenu2 = "sample-menu2.jpg";
 
-    @Autowired
-    private ImageMenuParser imageMenuParser;
-    
-    @Test
-    public void testConstruct() {
-        assert imageMenuParser != null;
-    }
-
     @Test
     public void buildMenuTester() {
         String fileUrl = this.getClass().getClassLoader()
             .getResource(sampleMenu).toString(); 
-        JSONArray arr = imageMenuParser.buildMenu("uri", fileUrl);
+        JSONArray arr = ImageMenuParser.buildMenu("uri", fileUrl);
         log.info("get menu JSON Array: {}", arr);
         assert arr.getJSONObject(0).getString("name").toLowerCase()
             .contains("spicy bean cured law minced pork served law rice");
     }
     
-    @Test
+    @Test @Ignore
     public void addBorderTester() {
-        String outputFileUri = ImageControl.addBorder(new File(this.getClass()
-            .getClassLoader().getResource(sampleMenu).getFile()), "test"); 
-        JSONArray arr = imageMenuParser.buildMenu("path", outputFileUri);
+        File file = new File(this.getClass().getClassLoader().getResource(sampleMenu).getFile());
+        log.info("FILE: {}", file.toString());
+        String outputFileUri = ImageControl.addBorder(file, "test"); 
+        JSONArray arr = ImageMenuParser.buildMenu("path", outputFileUri);
         log.info("get menu JSON Array for menu 1 after bordered: {}", arr);
         log.info("Output border file for menu 1 with uri: {}", outputFileUri);
     }
-
-    // @Test
-    // public void borderedOCRTester() {
-    //     String outputFileUri = ImageControl.addBorder(new File(this.getClass()
-    //         .getClassLoader().getResource(sampleMenu2).getFile()), "test"); 
-    //     JSONArray arr = imageMenuParser.buildMenu("path", outputFileUri);
-    //     log.info("get menu JSON Array for menu 2 after bordered: {}", arr);
-    //     log.info("Output border file for menu 2 with uri: {}", outputFileUri);
-    //     assert false;
-    // }
-
-
-    
 }

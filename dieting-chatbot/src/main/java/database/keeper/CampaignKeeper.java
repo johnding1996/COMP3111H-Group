@@ -26,7 +26,10 @@ public class CampaignKeeper extends Keeper {
         super();
     }
 
-    CampaignKeeper(Jedis jedids) {
+    /**
+     * Constructor with jedis.
+     */
+    CampaignKeeper(Jedis jedis) {
         this.jedis = jedis;
     }
 
@@ -44,7 +47,7 @@ public class CampaignKeeper extends Keeper {
      * @param key key string
      * @return whether set successfully or not
      */
-    public Boolean setCouponImg(String key) {
+    public boolean setCouponImg(String key) {
         String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_IMG, key);
         return statusCodeReply.equals("OK");
     }
@@ -78,10 +81,10 @@ public class CampaignKeeper extends Keeper {
     }
 
     /**
-     * Reset the coupon count to 1.
+     * Reset the coupon count to 0.
      * @return whether reset successfully or not
      */
-    public Boolean resetCouponCnt() {
+    public boolean resetCouponCnt() {
         String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_CNT, "0");
         return statusCodeReply.equals("OK");
     }
@@ -90,7 +93,7 @@ public class CampaignKeeper extends Keeper {
      * Increment the coupon count by 1.
      * @return the new coupon count Long
      */
-    public Long incrCouponCnt() {
+    public long incrCouponCnt() {
 
         return jedis.incr(KEY_PREFIX + ":" + KEY_CNT);
     }
@@ -101,7 +104,7 @@ public class CampaignKeeper extends Keeper {
      * @param parentUserId parent User Id
      * @return whether set successfully or not
      */
-    public Boolean setParentUserId(String key, String parentUserId) {
+    public boolean setParentUserId(String key, String parentUserId) {
         if (!(checkValidityCode(key) && checkValidityUserId(parentUserId))) return false;
         String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_PARENT + ":" + key, parentUserId);
         return statusCodeReply.equals("OK");
@@ -116,6 +119,4 @@ public class CampaignKeeper extends Keeper {
         if (!checkValidityCode(key)) return null;
         return jedis.get(KEY_PREFIX + ":" + KEY_PARENT + ":" + key);
     }
-
-
 }
