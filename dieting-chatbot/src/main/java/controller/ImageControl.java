@@ -42,8 +42,6 @@ import utility.FormatterMessageJSON;
 @Component
 public class ImageControl {
 
-    private static File file;
-
     /**
      * store path or uri for the file.
      */
@@ -62,8 +60,7 @@ public class ImageControl {
         String fileName = LocalDateTime.now().toString() + '-' 
                         + UUID.randomUUID().toString() + '.' + ext;
         Path tempFilePath= DietingChatbotApplication.downloadedContentDir.resolve(fileName);
-        file = tempFilePath.toFile();
-        file.deleteOnExit();
+        tempFilePath.toFile().deleteOnExit();
         return new DownloadedContent(tempFilePath, createUri("/downloaded/" + tempFilePath.getFileName()));
     }
 
@@ -86,16 +83,15 @@ public class ImageControl {
             String fileName = LocalDateTime.now().toString() + '-' 
                 + UUID.randomUUID().toString() + '.' + extension;
             Path filePath= DietingChatbotApplication.downloadedContentDir.resolve(fileName);
-            file = filePath.toFile();
-            file.deleteOnExit();
+            filePath.toFile().deleteOnExit();
             try (OutputStream outputStream = Files.newOutputStream(filePath)) {
                 log.info("Trying to copy");
                 ByteStreams.copy(inputStream, outputStream);
-                log.info("Saved {} with name {} and path", extension, file.getName(), filePath);
+                log.info("Saved {} with name {} and path", extension, filePath.getFileName(), filePath);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             } 
-            String borderedImageUri = addBorder(file, "server");
+            String borderedImageUri = addBorder(filePath.toFile(), "server");
             log.info("Added border, will return borderedImageUri as: {}", borderedImageUri);
             return new String[] { borderedImageUri };
         } else if (type.equals("DB")) {
@@ -151,18 +147,10 @@ public class ImageControl {
             log.info("Default temporary file directory: {}", System.getProperty("java.io.tmpdir"));
             log.info("Creating bordered image...");
 
-            // create uri for this output file, if type is specified as test
-            // because local file starts with file://
+            // return path of this output file, if type is specified as test
             if(type.equals("test")) {
                 File outputFile = File.createTempFile(tempFile.getParent() + "/bordered_menu", ".png");
                 ImageIO.write(img, "png", ImageIO.createImageOutputStream(outputFile));
-                // String path = outputFile.getAbsolutePath ();
-                // if (File.separatorChar != '/')
-                //     path = path.replace (File.separatorChar, '/');
-                // if (!path.startsWith ("/"))
-                //     path = "/" + path;
-                // String outputFileUri = "file:" + path;
-                // return outputFileUri;
                 return outputFile.getAbsolutePath().toString();
             }
 
@@ -171,10 +159,9 @@ public class ImageControl {
                 String fileName = LocalDateTime.now().toString() + '-' 
                     + UUID.randomUUID().toString() + ".png";
                 Path tempFilePath= DietingChatbotApplication.downloadedContentDir.resolve(fileName);
-                file = tempFilePath.toFile();
-                file.deleteOnExit();
-                ImageIO.write(img, "png", ImageIO.createImageOutputStream(file));
-                log.info("Written into a new image file with file name: {}", file.getName());
+                ImageIO.write(img, "png", ImageIO.createImageOutputStream(tempFilePath.toFile()));
+                log.info("Written into a new image file with file name: {}", tempFilePath.getFileName());
+                tempFilePath.toFile().deleteOnExit();
                 return createUri("/downloaded/" + tempFilePath.getFileName());
             }
 

@@ -57,7 +57,7 @@ public abstract class SerializeKeeper extends Keeper {
      * Get the latest n records of a list with specific key.
      * @param prefix key field prefix
      * @param key key
-     * @param number the number of latest records to get
+     * @param number the number of latest records to get, positive integer
      * @return JSONArray as a list of latest several JSONObject records
      */
     protected JSONArray rangeList(String prefix, String key, int number) {
@@ -81,22 +81,19 @@ public abstract class SerializeKeeper extends Keeper {
      * @return JSONArray as a list of latest several JSONObject records
      */
     protected JSONArray rangeList(String prefix, String key, Date date) {
-        int count = 0;
-        Date curDate = new Date();
-        JSONArray jsonArray = null;
-        while (date.before(curDate)) {
-            count++;
-            jsonArray = this.rangeList(prefix, key, count);
-            try {
-                String dateString = jsonArray.getJSONObject(0).getString("timestamp");
+        try {
+            JSONArray completeArray = rangeList(prefix, key, 0);
+            JSONArray array = new JSONArray();
+            for (int i=0; i<completeArray.length(); i++) {
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-                curDate = dateFormat.parse(dateString);
-            } catch (JSONException | ParseException e) {
-                log.error("Failed to parse the timestamp in redis.", e);
-                return null;
+                if (date.before(dateFormat.parse(completeArray.getJSONObject(i).getString("timestamp"))))
+                    array.put(completeArray.getJSONObject(i));
             }
+            return array;
+        } catch (JSONException | ParseException e) {
+            log.error("Failed to parse the timestamp in redis.", e);
+            return null;
         }
-        return jsonArray;
     }
 
     /**
