@@ -165,7 +165,6 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
     public void drawPieChart(String userId) {
         PieChart chart = new PieChartBuilder().width(800).height(600).title(getClass().getSimpleName()).build();
         for (Map<String,Double> onePair: nutrients){
-            chart.addSeries("test",1.0);
             chart.addSeries(onePair.keySet().iterator().next(),onePair.values().iterator().next());
         }
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -240,12 +239,12 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             int i;
             for (i=0; i<histJSON.length(); i++) {
                 JSONObject hist = histJSON.getJSONObject(i);
-                JSONArray menu = new JSONArray(hist.getString("menu"));
+                JSONArray menu = hist.getJSONArray("menu");
                 for(int j = 0; j < menu.length(); j++) {
                     JSONArray food = menu.getJSONObject(j).getJSONArray("foodContent");
                     JSONObject result = foodRecommender.calculateNutrientIntakes(userId,food);
                     dishNum++;
-                    for (int m = 0; m< allNutrients.size(); ++m) {
+                    for (int m = 0; m < allNutrients.size(); ++m) {
                         JSONObject nutrientScore = result.getJSONObject(allNutrients.get(m));
                         double score = nutrientScore.getDouble("actual")/nutrientScore.getDouble("expect") + allScore.get(i);
                         allScore.set(m, score);
