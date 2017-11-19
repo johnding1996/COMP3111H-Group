@@ -65,6 +65,9 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
     @Autowired(required = false)
     private ChatbotController controller;
 
+    @Autowired
+    private FoodRecommender recommender;
+
     private List<Date> timestamps = new ArrayList<>();
     private List<Integer> weights = new ArrayList<>();
     private Map<String, Double> nutrients = new HashMap<>();
@@ -239,7 +242,6 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
      */
     private void parseNutrientHist(String userId, JSONArray histJSON) {
         try {
-            FoodRecommender foodRecommender = new FoodRecommender();
             int dishNum = 0;
             List<Double> allScore = new ArrayList<>();
             for (int i=0; i<histJSON.length(); i++) {
@@ -247,7 +249,7 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
                 JSONArray menu = hist.getJSONArray("menu");
                 for(int j = 0; j < menu.length(); j++) {
                     JSONArray foodContent = menu.getJSONObject(j).getJSONArray("foodContent");
-                    JSONObject result = foodRecommender.calculateNutrientIntakes(userId, foodContent);
+                    JSONObject result = recommender.calculateNutrientIntakes(userId, foodContent);
                     dishNum++;
                     for (int m = 0; m < allNutrients.size(); m++) {
                         JSONObject nutrientScore = result.getJSONObject(allNutrients.get(m));
