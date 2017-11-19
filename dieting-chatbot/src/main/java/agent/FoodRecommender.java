@@ -507,7 +507,7 @@ public class FoodRecommender extends Agent {
      */
     public JSONObject calculateNutrientIntakes(String userId, JSONArray foodContent) {
         JSONArray foodList = getFoodJSON(foodContent);
-        JSONObject userJSON = states.get(userId).getJSONObject("userJSON");
+        JSONObject userJSON = userManager.getUserJSON(userId);
         JSONObject intakeJSON = new JSONObject();
         double averageCalorie = getAverageNutrient(foodList, "energ_kcal");
         for (int i = 0; i< nutrientDailyIntakes.length(); ++i) {

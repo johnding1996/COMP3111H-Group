@@ -178,13 +178,15 @@ public class MealRecorder extends Agent {
             rejectUserInput(psr, "This is not a valid weight.");
             return 3;
         }
-
         int weight = Integer.parseInt(text);
+        states.get(userId).put("weight", weight);
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage(String.format("So your weight now is %d kg", weight))
            .appendTextMessage("See you ^_^");
         publisher.publish(fmt);
+        log.error("HERE1");
         updateDatabase(userId);
+        log.error("HERE2");
         controller.setUserState(userId, State.IDLE);
         return END_STATE;
     }
