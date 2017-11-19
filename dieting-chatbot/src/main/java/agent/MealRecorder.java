@@ -184,7 +184,7 @@ public class MealRecorder extends Agent {
         fmt.appendTextMessage(String.format("So your weight now is %d kg", weight))
            .appendTextMessage("See you ^_^");
         publisher.publish(fmt);
-
+        updateDatabase(userId);
         controller.setUserState(userId, State.IDLE);
         return END_STATE;
     }
