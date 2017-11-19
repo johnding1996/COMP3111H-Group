@@ -140,6 +140,11 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
                         controller.setUserState(userId, State.IDLE);
                     }
                 }
+                parseWeightHist(histJSON);
+                log.info("FEEDBACK: user timestamps" + timestamps.toString());
+                log.info("FEEDBACK: user weight histories" + weights.toString());
+                parseNutrientHist(userId, histJSON);
+                log.info("FEEDBACK: user nutrition hist" + nutrients.toString());
                 FormatterMessageJSON response = new FormatterMessageJSON(userId);
                 response.appendTextMessage("Great, We've analyzed the history of your weights and meals, " +
                         "and generated two charts for you. Which chart would you like to have a look at? " +
@@ -150,19 +155,18 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
         } else if (state==2) {
             String msg = psr.get("textContent");
             if (msg.equals("weight")) {
-                JSONArray histJSON = getHist(userId, resultDuration);
-                parseWeightHist(histJSON);
-                log.info("FEEDBACK: user timestamps" + timestamps.toString());
-                log.info("FEEDBACK: user weight histories" + weights.toString());
+                FormatterMessageJSON response = new FormatterMessageJSON(userId);
+                response.appendTextMessage("Loading your chart, please wait...");
+                publisher.publish(response);
                 drawLineChart(userId);
                 states.remove(userId);
                 if (controller != null) {
                     controller.setUserState(userId, State.IDLE);
                 }
             } else if (msg.equals("nutrient")) {
-                JSONArray histJSON = getHist(userId, resultDuration);
-                parseNutrientHist(userId, histJSON);
-                log.info("FEEDBACK: user nutrition hist" + nutrients.toString());
+                FormatterMessageJSON response = new FormatterMessageJSON(userId);
+                response.appendTextMessage("Loading your chart, please wait...");
+                publisher.publish(response);
                 drawPieChart(userId);
                 states.remove(userId);
                 if (controller != null) {
