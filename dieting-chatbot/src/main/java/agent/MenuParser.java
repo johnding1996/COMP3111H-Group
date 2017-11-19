@@ -18,6 +18,8 @@ import utility.FormatterMessageJSON;
 import utility.ParserMessageJSON;
 import org.springframework.util.ResourceUtils;
 
+import com.linecorp.bot.client.MessageContentResponse;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -38,7 +40,7 @@ public class MenuParser extends Agent {
         agentStates = new HashSet<>(
             Arrays.asList(State.PARSE_MENU)
         );
-        handleImage = false;
+        handleImage = true;
         useSpellChecker = false;
         this.addHandler(0, (psr) -> askMenu(psr))
             .addHandler(1, (psr) -> parseMenu(psr));
@@ -65,14 +67,21 @@ public class MenuParser extends Agent {
      */
     public int parseMenu(ParserMessageJSON psr) {
         String userId = psr.getUserId();
-        String text = psr.get("textContent");
+        String type = psr.getType();
 
         // parsing menu
         JSONArray menuArray = null;
-        if (ResourceUtils.isUrl(text)) {
-            menuArray = UrlMenuParser.buildMenu(text);
+        if (type.equals("text")) {
+            String text = psr.get("textContent");
+            if (ResourceUtils.isUrl(text)) {
+                menuArray = UrlMenuParser.buildMenu(text);
+            } else {
+                menuArray = TextMenuParser.buildMenu(text);
+            }
         } else {
-            menuArray = TextMenuParser.buildMenu(text);
+            String uri = psr.get("imageContent");
+            log.info("{}: get image with URI: {}", agentName, uri);
+            menuArray = ImageMenuParser.buildMenu("uri", uri); 
         }
 
         // check parsed menu and reply
