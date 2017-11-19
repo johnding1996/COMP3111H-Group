@@ -149,13 +149,18 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             }
         } else if (state==2) {
             String msg = psr.get("textContent");
-            if (getMatch(TextProcessor.getTokens(msg),
-                    Arrays.asList("weight", "nutrient")) != null) {
+            if (msg.equals("weight")) {
                 JSONArray histJSON = getHist(userId, resultDuration);
                 parseWeightHist(histJSON);
                 log.info("FEEDBACK: user timestamps" + timestamps.toString());
                 log.info("FEEDBACK: user weight histories" + weights.toString());
-                //drawLineChart(userId);
+                drawLineChart(userId);
+                states.remove(userId);
+                if (controller != null) {
+                    controller.setUserState(userId, State.IDLE);
+                }
+            } else if (msg.equals("nutrient")) {
+                JSONArray histJSON = getHist(userId, resultDuration);
                 parseNutrientHist(userId, histJSON);
                 log.info("FEEDBACK: user nutrition hist" + nutrients.toString());
                 drawPieChart(userId);
@@ -311,20 +316,4 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             return -1;
         }
     }
-
-    /**
-     * Helper function for deciding whether two iterable has one match.
-     * @param it1 Input that needs to be matched
-     * @param it2 Template that input matched against
-     * @return matched item in it2, or null if no match found
-     */
-    String getMatch(Iterable<String> it1, Iterable<String> it2) {
-        for (String s1 : it1) for (String s2 : it2) {
-            if (s1.equals(s2)) return s2;
-        }
-        return null;
-    }
-
-
-
 }
