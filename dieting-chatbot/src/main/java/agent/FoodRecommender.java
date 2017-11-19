@@ -166,7 +166,7 @@ public class FoodRecommender extends Agent {
     }
 
     /**
-     * Handler for asking exercise rate
+     * Handler for asking exercise rate.
      * @param psr Input ParserMessageJSON
      * @return next state
      */
@@ -176,11 +176,11 @@ public class FoodRecommender extends Agent {
 
         // validate meal type
         boolean valid = false;
-        if (getMatch(TextProcessor.getTokens(text),
+        if (TextProcessor.getMatch(TextProcessor.getTokens(text),
             Arrays.asList("confirm", "yes", "right", "true", "yep")) != null) {
             valid = true;
         } else {
-            String mealType = getMatch(TextProcessor.getTokens(text),
+            String mealType = TextProcessor.getMatch(TextProcessor.getTokens(text),
                 mealTypeToPortions.keySet());
             if (mealType != null) {
                 states.get(userId).put("mealPortion",
@@ -214,7 +214,7 @@ public class FoodRecommender extends Agent {
         String text = psr.get("textContent");
 
         // validate exercise rate
-        String exerciseRate = getMatch(TextProcessor.getTokens(text),
+        String exerciseRate = TextProcessor.getMatch(TextProcessor.getTokens(text),
             exerciseRateToIntakeRatios.keySet());
         if (exerciseRate == null) {
             rejectUserInput(psr, "This is not a valid exercise rate..");
@@ -255,7 +255,7 @@ public class FoodRecommender extends Agent {
         String text = psr.get("textContent");
 
         // finish meal?
-        if (getMatch(TextProcessor.getTokens(text),
+        if (TextProcessor.getMatch(TextProcessor.getTokens(text),
             Arrays.asList("yes", "right", "true", "yep",
             "finished", "finish", "done"))!= null) {
             controller.setUserState(userId, State.RECORD_MEAL);
@@ -263,7 +263,7 @@ public class FoodRecommender extends Agent {
         }
 
         // want to know algorithm?
-        if (getMatch(TextProcessor.getTokens(text),
+        if (TextProcessor.getMatch(TextProcessor.getTokens(text),
             Arrays.asList("reference", "how", "why")) != null) {
 
             FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
@@ -303,19 +303,6 @@ public class FoodRecommender extends Agent {
         else if (hours > 14 && hours < 17 ) return "afternoon tea";
         else if (hours > 16.5 && hours < 20.5) return "dinner";
         else return "supper";
-    }
-
-    /**
-     * Helper function for deciding whether two iterable has one match.
-     * @param it1 Input that needs to be matched
-     * @param it2 Template that input matched against
-     * @return matched item in it2, or null if no match found
-     */
-    String getMatch(Iterable<String> it1, Iterable<String> it2) {
-        for (String s1 : it1) for (String s2 : it2) {
-            if (s1.equals(s2)) return s2;
-        }
-        return null;
     }
 
     /**

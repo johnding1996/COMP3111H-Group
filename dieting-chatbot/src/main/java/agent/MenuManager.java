@@ -19,7 +19,7 @@ public class MenuManager {
      * @return A MenuJSON
      */
     public JSONObject getMenuJSON(String userId) {
-        MenuKeeper keeper = new MenuKeeper();
+        MenuKeeper keeper = getMenuKeeper();
         JSONObject menuJSON = keeper.get(userId, 1).getJSONObject(0);
         keeper.close();
         return menuJSON;
@@ -31,8 +31,16 @@ public class MenuManager {
      * @param menuJSON MenuJSON to store
      */
     public void storeMenuJSON(String userId, JSONObject menuJSON) {
-        MenuKeeper keeper = new MenuKeeper();
+        MenuKeeper keeper = getMenuKeeper();
         keeper.set(userId, menuJSON);
         keeper.close();
+    }
+
+    /**
+     * Get MenuKeeper.
+     * @return A MenuKeeper
+     */
+    public MenuKeeper getMenuKeeper() {
+        return new MenuKeeper();
     }
 }

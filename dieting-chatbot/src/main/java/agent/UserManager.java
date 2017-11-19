@@ -79,7 +79,7 @@ public class UserManager extends Agent {
      * @return A UserJSON
      */
     public JSONObject getUserJSON(String userId) {
-        UserQuerier querier = new UserQuerier();
+        UserQuerier querier = getUserQuerier();
         JSONObject userJSON = querier.get(userId);
         querier.close();
         return userJSON;
@@ -91,12 +91,20 @@ public class UserManager extends Agent {
      * @param userJSON userJSON to store
      */
     public void storeUserJSON(String userId, JSONObject userJSON) {
-        UserQuerier querier = new UserQuerier();
+        UserQuerier querier = getUserQuerier();
         if (getUserJSON(userId) == null) {
             querier.add(userJSON);
         } else {
             querier.update(userJSON);
         }
         querier.close();
+    }
+
+    /**
+     * Get UserQuerier.
+     * @return A UserQuerier
+     */
+    public UserQuerier getUserQuerier() {
+        return new UserQuerier();
     }
 }

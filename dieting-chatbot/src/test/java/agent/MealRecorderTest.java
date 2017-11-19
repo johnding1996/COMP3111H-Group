@@ -18,12 +18,15 @@ import utility.JazzySpellChecker;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {MealRecorder.class, JazzySpellChecker.class, UserManager.class})
-@ContextConfiguration(classes = {TestConfiguration.class, FoodRecommenderTest.class})
+@SpringBootTest(classes = {MealRecorder.class, JazzySpellChecker.class})
+@ContextConfiguration(classes = {TestConfiguration.class, DatabaseMocker.class})
 public class MealRecorderTest extends AgentTest {
 
     @Autowired
     private MealRecorder recorder;
+
+    @Autowired
+    private MenuManager menuManager;
 
     @PostConstruct
     public void init() {
@@ -43,7 +46,7 @@ public class MealRecorderTest extends AgentTest {
             menu.put(dish);
         }
         menuJSON.put("menu", menu);
-        FoodRecommenderTest.menus.put(userId, menuJSON);
+        menuManager.storeMenuJSON(userId, menuJSON);
     }
 
     @Test
