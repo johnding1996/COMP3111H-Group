@@ -201,6 +201,7 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             String tempFileUri = ImageControl.inputToTempFile("bmp", inputStream);
             FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
             fmt.appendImageMessage(tempFileUri, tempFileUri);
+            publisher.publish(fmt);
         } catch (IOException e) {
             log.error("Error encountered when saving charts in feedback handler.", e);
         }
