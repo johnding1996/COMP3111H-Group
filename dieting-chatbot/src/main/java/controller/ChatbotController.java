@@ -1,5 +1,7 @@
 package controller;
 
+import com.linecorp.bot.client.MessageContentResponse;
+import edu.cmu.sphinx.result.WordResult;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,7 @@ import com.linecorp.bot.model.event.MessageEvent;
 import com.linecorp.bot.model.event.UnfollowEvent;
 import com.linecorp.bot.model.event.message.ImageMessageContent;
 import com.linecorp.bot.model.event.message.TextMessageContent;
+import com.linecorp.bot.model.event.message.AudioMessageContent;
 import com.linecorp.bot.model.message.ImageMessage;
 import com.linecorp.bot.model.message.Message;
 import com.linecorp.bot.model.message.TextMessage;
@@ -22,6 +25,8 @@ import com.linecorp.bot.spring.boot.annotation.EventMapping;
 import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
 import database.keeper.StateKeeper;
 import agent.IntentionClassifier;
+
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -30,8 +35,10 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -50,6 +57,17 @@ import reactor.fn.Consumer;
 
 import static reactor.bus.selector.Selectors.$;
 import javax.annotation.PostConstruct;
+import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.UnsupportedAudioFileException;
+
+import edu.cmu.sphinx.api.Configuration;
+import edu.cmu.sphinx.api.SpeechResult;
+import edu.cmu.sphinx.api.StreamSpeechRecognizer;
 
 /**
  * ChatbotController: interfacing with LINE API, handle global state transition.
@@ -80,6 +98,13 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
 
     private static final int NO_REPLY_TIMEOUT = 1;
 
+    private Configuration sphinxConfiguration;
+
+    /**
+     * Set of global key words escaping used by various handlers.
+     */
+    HashSet<String> keyWords = new HashSet<>(Arrays.asList("CANCEL"));
+
     /**
      * Register on eventBus.
      */
@@ -89,6 +114,11 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
             eventBus.on($("FormatterMessageJSON"), this);
             log.info("ChatbotController register on eventBus");
         }
+        // Config the CMU Sphinx data path
+        sphinxConfiguration = new Configuration();
+        sphinxConfiguration.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
+        sphinxConfiguration.setDictionaryPath("resource:/language/chatbot.dic");
+        sphinxConfiguration.setLanguageModelPath("resource:/language/chatbot.lm");
     }
 
     /**
@@ -174,6 +204,88 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
             }
         }
     }
+
+    /**
+     * Event handler for LINE audio message.
+     * Making use of the CMU Sphinx recognition package to do speech recognition.
+     * The dictionary and language model files are at /resources/language folder.
+     * @param event LINE image message event
+     */
+    @EventMapping
+    public void handleAudioMessageEvent(MessageEvent<AudioMessageContent> event) {
+
+        String userId = event.getSource().getUserId();
+        String messageId = event.getMessage().getId();
+
+        // remove first letter 'U' from userId
+        userId = userId.substring(1);
+
+        MessageContentResponse response;
+        List<String> messages = new ArrayList<>();
+        try {
+            // Prompt recognition in progress
+            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+            fmt.appendTextMessage("Speech recognition in progress, please wait...");
+            publisher.publish(fmt);
+
+            // Initialization
+            StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);
+            response = lineMessagingClient.getMessageContent(messageId).get();
+
+            // Conversion to correct format
+            InputStream inputStream = new BufferedInputStream(response.getStream());
+            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(inputStream);
+            AudioFormat oldFormat = audioInputStream.getFormat();
+            AudioFormat newFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 16000, 16, 1, 2, 16000, false);
+            log.info("Old audio format:" + oldFormat.toString());
+            log.info("New audio format:" + newFormat.toString());
+            AudioInputStream recognitionInputStream = AudioSystem.getAudioInputStream(newFormat, audioInputStream);
+
+            // Recognition
+            recognizer.startRecognition(recognitionInputStream);
+            SpeechResult result;
+            log.info("Entered recognition part.");
+            while ((result = recognizer.getResult()) != null) {
+                String word = result.getHypothesis();
+                messages.add(word);
+            }
+            // Close all possible buffers
+            recognizer.stopRecognition();
+            response.getStream().close();
+            inputStream.close();
+            audioInputStream.close();
+            recognitionInputStream.close();
+            response.close();
+            // Force garbage collection
+            System.gc();
+        } catch (InterruptedException | ExecutionException | IOException | UnsupportedAudioFileException e) {
+            log.error("Error in recognition.", e);
+        }
+
+        // Join results
+        String msg = String.join(" ", messages).trim();
+        // Escape lowing for the key words
+        if (!keyWords.contains(msg)) msg = msg.toLowerCase();
+        // Try parsing number
+        if (TextProcessor.sentenceToNumber(msg) != null) msg = TextProcessor.sentenceToNumber(msg);
+        log.info("Speech recognized message: " + msg);
+
+        // Show recognition result
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage("RECOGNIZED: " + msg);
+        publisher.publish(fmt);
+
+        // Sleep to pursue the order of replied messages
+        sleep(500);
+
+        // Pack into text message content and call text handler
+        TextMessageContent textContent = new TextMessageContent(event.getMessage().getId(), msg);
+        MessageEvent<TextMessageContent> textEvent = new MessageEvent<>(
+                event.getReplyToken(), event.getSource(), textContent, event.getTimestamp()
+        );
+        this.handleTextMessageEvent(textEvent);
+    }
+
 
     /**
      * Event handler for LINE unfollow event.
@@ -358,5 +470,17 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
             }
         }, new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));
         log.info("Register new no reply callback for user {}", userId);
+    }
+
+    /**
+     * Sleep for a few milliseconds, used for pursuing the order or messages.
+     * @param milliseconds the number of seconds to sleep.
+     */
+    public void sleep(int milliseconds) {
+        try {
+            TimeUnit.MILLISECONDS.sleep(milliseconds);
+        } catch (InterruptedException e ) {
+            log.warn("Sleeping in controller got interrupted.");
+        }
     }
 }

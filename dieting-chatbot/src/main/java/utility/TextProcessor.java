@@ -1,9 +1,7 @@
 package utility;
 
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import edu.stanford.nlp.ling.Word; 
@@ -50,6 +48,52 @@ public class TextProcessor {
             }
         }
         return words;
+    }
+
+    /**
+     * Try parsing an English number to numeric number.
+     * @param sentence input sentence probably is a english number
+     * @return string of numeric number
+     */
+    public static String sentenceToNumber(String sentence) {
+        Map<String, String> mapping = new HashMap<>();
+        mapping.put("hundred", "");
+        mapping.put("and", "");
+        mapping.put("zero", "0");
+        mapping.put("one", "1");
+        mapping.put("two", "2");
+        mapping.put("three", "3");
+        mapping.put("four", "4");
+        mapping.put("five", "5");
+        mapping.put("six", "6");
+        mapping.put("seven", "7");
+        mapping.put("eight", "8");
+        mapping.put("nine", "9");
+        mapping.put("ten", "1");
+        mapping.put("eleven", "11");
+        mapping.put("twelve", "12");
+        mapping.put("thirteen", "13");
+        mapping.put("fourteen", "14");
+        mapping.put("fifteen", "15");
+        mapping.put("sixteen", "16");
+        mapping.put("seventeen", "17");
+        mapping.put("eighteen", "18");
+        mapping.put("nineteen", "19");
+        mapping.put("twenty", "2");
+        mapping.put("thirty", "3");
+        mapping.put("forty", "4");
+        mapping.put("fifty", "5");
+        mapping.put("sixty", "6");
+        mapping.put("seventy", "7");
+        mapping.put("eighty", "8");
+        mapping.put("ninety", "9");
+        List<String> words = getTokens(sentence);
+        List<String> numbers = new ArrayList<>();
+        for (String word : words) {
+            if (!mapping.keySet().contains(word)) return null;
+            numbers.add(mapping.get(word));
+        }
+        return String.join("", numbers);
     }
 
     /**
