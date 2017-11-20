@@ -300,7 +300,7 @@ public class FoodRecommender extends Agent {
         if (hours > 4.5 && hours < 9.5) return "breakfast";
         else if (hours > 9 && hours < 11) return "brunch";
         else if (hours > 10.5 && hours < 14.5) return "lunch";
-        else if (hours > 14 && hours < 17 ) return "afternoon tea";
+        // else if (hours > 14 && hours < 17 ) return "afternoon tea";
         else if (hours > 16.5 && hours < 20.5) return "dinner";
         else return "supper";
     }
@@ -342,8 +342,8 @@ public class FoodRecommender extends Agent {
             results.put(dishResult);
         }
         foodScoreJSON.put("results", results);
-        log.info("Calculated food score JSON:\n{}",
-            foodScoreJSON.toString(4));
+        // log.info("Calculated food score JSON:\n{}",
+        //     foodScoreJSON.toString(4));
         return foodScoreJSON;
     }
 
@@ -566,8 +566,8 @@ public class FoodRecommender extends Agent {
      */
     public double getMealIntake(JSONObject userJSON) {
         String userId = userJSON.getString("id");
-        log.info(userJSON.toString(4));
-        log.info("BMR: " + getUserBMR(userJSON));
+        // log.info(userJSON.toString(4));
+        // log.info("BMR: " + getUserBMR(userJSON));
         return getUserBMR(userJSON) * states.get(userId).getDouble("intakeRatio")
             * states.get(userId).getDouble("mealPortion");
     }

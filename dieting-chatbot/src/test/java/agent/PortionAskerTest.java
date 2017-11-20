@@ -1,39 +1,25 @@
 package agent;
 
-import controller.Publisher;
 import controller.State;
 import controller.TestConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import reactor.bus.Event;
-import utility.FormatterMessageJSON;
 import utility.JazzySpellChecker;
-import utility.ParserMessageJSON;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 
 import javax.annotation.PostConstruct;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {FoodRecommender.class, JazzySpellChecker.class})
+@SpringBootTest(classes = {PortionAsker.class, JazzySpellChecker.class})
 @ContextConfiguration(classes = {TestConfiguration.class, DatabaseMocker.class})
 public class PortionAskerTest extends AgentTest {
 
