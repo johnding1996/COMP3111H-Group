@@ -26,6 +26,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class DebugReceiver implements Consumer<Event<MessageJSON>> {
+    /**
+     * THis is a private attribute EvnetBus handling event.
+     */
     @Autowired
     private EventBus eventBus;
 
