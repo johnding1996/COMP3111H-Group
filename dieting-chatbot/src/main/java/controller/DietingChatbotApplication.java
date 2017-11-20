@@ -17,9 +17,10 @@
 package controller;
 
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
+import java.nio.file.Paths;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -27,7 +28,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.stereotype.Repository;
 import reactor.Environment;
 import reactor.bus.EventBus;
 
@@ -60,6 +60,18 @@ public class DietingChatbotApplication {
      * Path to downloaded contents.
      */
     static Path downloadedContentDir;
+    static Path staticPath;
+    static {
+        try {
+            staticPath = Files.createDirectory(Paths.get("static")); 
+        }
+        catch(FileAlreadyExistsException e) {
+            e.printStackTrace();
+        }
+        catch(IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * Entry point of the application.

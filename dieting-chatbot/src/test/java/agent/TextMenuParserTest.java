@@ -9,7 +9,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-public class TextMenuParserTester {
+public class TextMenuParserTest {
     @Test
     public void testBuildTextMenu1() {
         String[] menu = {"dish1", "dish2", "dish3"};

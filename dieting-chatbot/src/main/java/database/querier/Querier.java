@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Abstract base-class of all Queriers.
  * Handles sql JDBC connections and provide I/O method interfaces.
- * A set of operations is implemented here, including: get, set, add, update, delete, has, search.
+ * A set of operations are implemented here, including: get, set, add, update, delete, has, search.
  * @author mcding
  * @version 1.2.1
  */
@@ -354,6 +354,7 @@ abstract class Querier {
                     }
                     if (value.equals("t") || value.equals("f")) {
                         jsonObject.put(field, value.equals("t"));
+                        continue;
                     }
                     Object valueObject;
                     Scanner scanner = new Scanner(value);

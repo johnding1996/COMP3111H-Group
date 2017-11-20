@@ -7,11 +7,15 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import com.google.common.io.ByteStreams;
 import com.linecorp.bot.client.LineMessagingClient;
+import com.linecorp.bot.client.MessageContentResponse;
 import com.linecorp.bot.model.PushMessage;
 import com.linecorp.bot.model.event.FollowEvent;
 import com.linecorp.bot.model.event.MessageEvent;
 import com.linecorp.bot.model.event.UnfollowEvent;
+import com.linecorp.bot.model.event.message.ImageMessageContent;
 import com.linecorp.bot.model.event.message.TextMessageContent;
 import com.linecorp.bot.model.event.message.AudioMessageContent;
 import com.linecorp.bot.model.message.ImageMessage;
@@ -24,8 +28,19 @@ import agent.IntentionClassifier;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
@@ -62,9 +77,7 @@ import edu.cmu.sphinx.api.StreamSpeechRecognizer;
 @Slf4j
 @Service
 @LineMessageHandler
-public class ChatbotController
-    implements Consumer<reactor.bus.Event<
-        FormatterMessageJSON>> {
+public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMessageJSON>> {
 
     private HashMap<String, ScheduledFuture<?>> noReplyFutures = new HashMap<>();
 
@@ -90,7 +103,7 @@ public class ChatbotController
     /**
      * Set of global key words escaping used by various handlers.
      */
-    Set<String> keyWords = new HashSet<>(Arrays.asList("CANCEL"));
+    HashSet<String> keyWords = new HashSet<>(Arrays.asList("CANCEL"));
 
     /**
      * Register on eventBus.
@@ -116,9 +129,11 @@ public class ChatbotController
     public void accept(Event<FormatterMessageJSON> ev) {
         FormatterMessageJSON fmt = ev.getData();
         String userId = fmt.getUserId();
+
         if (noReplyFutures.containsKey(userId)) {
             ScheduledFuture<?> future = noReplyFutures.remove(userId);
-            if (future != null) future.cancel(false);
+            if (future != null)
+                future.cancel(false);
             log.info("No reply future cancelled for user {}", userId);
         }
 
@@ -128,22 +143,22 @@ public class ChatbotController
         if (arr.length() == 0) {
             return;
         }
-        for (int i=0; i<arr.length(); ++i) {
+        for (int i = 0; i < arr.length(); ++i) {
             JSONObject obj = arr.getJSONObject(i);
             switch (obj.getString("type")) {
-                case "text":
-                    messages.add(new TextMessage(obj.getString("textContent")));
-                    break;
-                case "image":
-                    messages.add(new ImageMessage(obj.getString("originalContentUrl"),
-                        obj.getString("previewContentUrl")));
-                    break;
-                default:
-                    log.info("Invalid message type {}", obj.getString("type"));
+            case "text":
+                messages.add(new TextMessage(obj.getString("textContent")));
+                break;
+            case "image":
+                messages.add(new ImageMessage(obj.getString("originalContentUrl"),
+                    obj.getString("previewContentUrl")));
+                break;
+            default:
+                log.info("Invalid message type {}", obj.getString("type"));
             }
         }
         log.info("CONTROLLER: Send push message");
-        PushMessage pushMessage = new PushMessage("U"+userId, messages);
+        PushMessage pushMessage = new PushMessage("U" + userId, messages);
         if (lineMessagingClient != null)
             lineMessagingClient.pushMessage(pushMessage);
     }
@@ -154,7 +169,7 @@ public class ChatbotController
      */
     @EventMapping
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event) {
-
+        ImageControl.servletUriComponentsBuilder = ServletUriComponentsBuilder.fromCurrentContextPath();
         String userId = event.getSource().getUserId();
         String textContent = event.getMessage().getText();
         String messageId = event.getMessage().getId();
@@ -177,9 +192,7 @@ public class ChatbotController
 
         // publish message
         ParserMessageJSON psr = new ParserMessageJSON(userId, "text");
-        psr.set("messageId", messageId)
-           .set("textContent", textContent)
-           .setState(getUserState(userId).toString());
+        psr.set("messageId", messageId).set("textContent", textContent).setState(getUserState(userId).toString());
         registerNoReplyCallback(userId);
         if (getUserState(userId) != State.IDLE) {
             publisher.publish(psr);
@@ -301,12 +314,46 @@ public class ChatbotController
     }
 
     /**
+     * Event handler for LINE image message.
+     * @param event LINE image message event
+     */
+    @EventMapping
+    public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) {
+        ImageControl.servletUriComponentsBuilder = ServletUriComponentsBuilder.fromCurrentContextPath();
+        String userId = event.getSource().getUserId();
+        String messageId = event.getMessage().getId();
+        String replyToken = event.getReplyToken();
+        userId = userId.substring(1);
+        log.info("Get IMAGE message from user: {}", userId);
+
+        final MessageContentResponse response;
+        try {
+            response = lineMessagingClient.getMessageContent(messageId).get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.info("cannot get image: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+        
+        ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
+        String uri = ImageControl.saveContent(response, "TempFile")[0];
+        psr.set("messageId", messageId).setState(getUserState(userId).toString())
+           .set("imageContent", uri);
+        publisher.publish(psr);
+        // String temp[] = ImageControl.saveContent(response, "DB");
+        // String uri = ImageControl.getCouponImageUri(userId, temp[1], temp[0]);
+        // FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        // fmt.appendImageMessage(uri, uri);
+        // publisher.publish(fmt);
+    }
+
+    /**
      * Get state of a user.
      * @param userId String of user Id
      * @return State of the user. State.INVALID is returned if there
      *         is no record for this user
      */
     public State getUserState(String userId) {
+
         StateKeeper keeper = new StateKeeper();
         String stateName = keeper.get(userId);
         keeper.close();
@@ -338,16 +385,14 @@ public class ChatbotController
         // publish state transition
         ParserMessageJSON psr = new ParserMessageJSON(userId, "transition");
         // prevent null value
-        psr.set("textContent", "")
-           .set("messageId", "")
-           .setState(getUserState(userId).toString());
+        psr.set("textContent", "").set("messageId", "").setState(getUserState(userId).toString());
         publisher.publish(psr);
 
         // timeout callback if new state is not IDLE
         if (newState != State.IDLE) {
-            taskScheduler.schedule(getTimeoutCallback(userId,
-                newState, newState==State.RECOMMEND?State.RECORD_MEAL:State.IDLE),
-                State.getTimeoutDate());
+            taskScheduler.schedule(
+                    getTimeoutCallback(userId, newState, newState == State.RECOMMEND ? State.RECORD_MEAL : State.IDLE),
+                    State.getTimeoutDate());
         }
         return true;
     }
@@ -371,24 +416,23 @@ public class ChatbotController
      * @param nextState The next state of the user when timeout happens.
      * @return A runnable object as callback function.
      */
-    private Runnable getTimeoutCallback(String userId,
-        State currentState, State nextState) {
+    private Runnable getTimeoutCallback(String userId, State currentState, State nextState) {
         return new Runnable() {
             @Override
             public void run() {
                 State state = getUserState(userId);
-                if (currentState != state) return;
+                if (currentState != state)
+                    return;
                 setUserState(userId, nextState);
             }
         };
+
     }
 
-    private static final String[] replies = {
-        "Sorry, but I don't understand what you said.",
-        "Oops, that is complicated for me.",
-        "Well, that doesn't make sense to me.",
-        "Well, I really do not understand that."
-    };
+    private static final String[] replies = { "Sorry, but I don't understand what you said.",
+            "Oops, that is complicated for me.", "Well, that doesn't make sense to me.",
+            "Well, I really do not understand that." };
+
     /**
      * Register no-reply callback for user input.
      * If no agent module replies the user, the controller will reply default message.
@@ -398,35 +442,33 @@ public class ChatbotController
         // cancel previous callback
         if (noReplyFutures.containsKey(userId)) {
             ScheduledFuture<?> future = noReplyFutures.get(userId);
-            if (future != null) future.cancel(false);
+            if (future != null)
+                future.cancel(false);
             log.info("Cancel previous no reply callback for user {}", userId);
         }
-        noReplyFutures.put(userId, taskScheduler.schedule(
-            new Runnable() {
-                @Override
-                public void run() {
-                    FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-                    int randomNum = ThreadLocalRandom.current()
-                        .nextInt(0, replies.length);
-                    fmt.appendTextMessage(replies[randomNum]); // general reply
-                    State state = getUserState(userId);
-                    switch (state) {
-                        case IDLE:
-                        fmt.appendTextMessage("To set your personal info, " +
-                            "send 'setting'.\nIf you want to obtain recommendation, " +
-                            "please say 'recommendation'.\n" +
-                            "You can aways cancel an operation by saying 'CANCEL'");
-                        break;
+        noReplyFutures.put(userId, taskScheduler.schedule(new Runnable() {
+            @Override
+            public void run() {
+                FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+                int randomNum = ThreadLocalRandom.current().nextInt(0, replies.length);
+                fmt.appendTextMessage(replies[randomNum]); // general reply
+                State state = getUserState(userId);
+                switch (state) {
+                case IDLE:
+                    fmt.appendTextMessage(
+                            "To set your personal info, " + "send 'setting'.\nIf you want to obtain recommendation, "
+                            + "please say 'recommendation'.\n"
+                            + "You can aways cancel an operation by saying 'CANCEL'");
+                    break;
 
-                        default:
-                        fmt.appendTextMessage("You could cancel the session by saying CANCEL");
-                        break;
-                    }
-                    publisher.publish(fmt);
-                    noReplyFutures.remove(userId);
+                default:
+                    fmt.appendTextMessage("You could cancel the session by saying CANCEL");
+                    break;
                 }
-            },
-            new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));
+                publisher.publish(fmt);
+                noReplyFutures.remove(userId);
+            }
+        }, new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));
         log.info("Register new no reply callback for user {}", userId);
     }
 

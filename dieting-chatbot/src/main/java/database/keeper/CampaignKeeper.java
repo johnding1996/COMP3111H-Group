@@ -2,6 +2,11 @@ package database.keeper;
 import lombok.extern.slf4j.Slf4j;
 import redis.clients.jedis.Jedis;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * Campaign Keeper to store coupon image and number of coupon already claimed in the redis cache.
  * Campaign Keeper to store the sharing Code and Parent User Id
@@ -18,6 +23,7 @@ public class CampaignKeeper extends Keeper {
     private static final String KEY_CNT = "count";
     private static final String KEY_EXT = "extension";
     private static final String KEY_PARENT = "parent";
+    private static final String KEY_DATE = "date";
 
     /**
      * Default constructor.
@@ -26,7 +32,7 @@ public class CampaignKeeper extends Keeper {
         super();
     }
 
-    CampaignKeeper(Jedis jedids) {
+    CampaignKeeper(Jedis jedis) {
         this.jedis = jedis;
     }
 
@@ -44,7 +50,7 @@ public class CampaignKeeper extends Keeper {
      * @param key key string
      * @return whether set successfully or not
      */
-    public Boolean setCouponImg(String key) {
+    public boolean setCouponImg(String key) {
         String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_IMG, key);
         return statusCodeReply.equals("OK");
     }
@@ -63,7 +69,7 @@ public class CampaignKeeper extends Keeper {
      * @param key key string
      * @return whether set successfully or not
      */
-    public Boolean setCouponExt(String key) {
+    public boolean setCouponExt(String key) {
         String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_EXT, key);
         return statusCodeReply.equals("OK");
     }
@@ -78,10 +84,10 @@ public class CampaignKeeper extends Keeper {
     }
 
     /**
-     * Reset the coupon count to 1.
+     * Reset the coupon count to 0.
      * @return whether reset successfully or not
      */
-    public Boolean resetCouponCnt() {
+    public boolean resetCouponCnt() {
         String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_CNT, "0");
         return statusCodeReply.equals("OK");
     }
@@ -90,8 +96,7 @@ public class CampaignKeeper extends Keeper {
      * Increment the coupon count by 1.
      * @return the new coupon count Long
      */
-    public Long incrCouponCnt() {
-
+    public long incrCouponCnt() {
         return jedis.incr(KEY_PREFIX + ":" + KEY_CNT);
     }
 
@@ -101,7 +106,7 @@ public class CampaignKeeper extends Keeper {
      * @param parentUserId parent User Id
      * @return whether set successfully or not
      */
-    public Boolean setParentUserId(String key, String parentUserId) {
+    public boolean setParentUserId(String key, String parentUserId) {
         if (!(checkValidityCode(key) && checkValidityUserId(parentUserId))) return false;
         String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_PARENT + ":" + key, parentUserId);
         return statusCodeReply.equals("OK");
@@ -117,5 +122,29 @@ public class CampaignKeeper extends Keeper {
         return jedis.get(KEY_PREFIX + ":" + KEY_PARENT + ":" + key);
     }
 
+    /**
+     * Set the campaign start date.
+     * @param date date
+     * @return whether set successful or not
+     */
+    public boolean setCampaignStartDate(Date date) {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_DATE, dateFormat.format(date));
+        return statusCodeReply.equals("OK");
+    }
 
+    /**
+     * Get the campaign start date.
+     * @return date
+     */
+    public Date getCampaignStartDate() {
+        try {
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+            String dateString = jedis.get(KEY_PREFIX + ":" + KEY_DATE);
+            return dateFormat.parse(dateString);
+        } catch (ParseException | NullPointerException e) {
+            log.error("Failed to get campaign start date from redis.", e);
+            return null;
+        }
+    }
 }

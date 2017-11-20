@@ -51,7 +51,7 @@ public class TextProcessor {
     }
 
     /**
-     * Try parsing a english number to numeric number.
+     * Try parsing an English number to numeric number.
      * @param sentence input sentence probably is a english number
      * @return string of numeric number
      */
@@ -89,10 +89,23 @@ public class TextProcessor {
         mapping.put("ninety", "9");
         List<String> words = getTokens(sentence);
         List<String> numbers = new ArrayList<>();
-        for (String word: words) {
+        for (String word : words) {
             if (!mapping.keySet().contains(word)) return null;
             numbers.add(mapping.get(word));
         }
         return String.join("", numbers);
+    }
+
+    /**
+     * Utility function for deciding whether two String iterable has one match.
+     * @param it1 Input that needs to be matched
+     * @param it2 Template that input matched against
+     * @return matched item in it2, or null if no match found
+     */
+    public static String getMatch(Iterable<String> it1, Iterable<String> it2) {
+        for (String s1 : it1) for (String s2 : it2) {
+            if (s1.equals(s2)) return s2;
+        }
+        return null;
     }
 }
