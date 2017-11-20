@@ -83,6 +83,7 @@ public abstract class AgentTest {
         }).when(publisher).publish(Matchers.any(FormatterMessageJSON.class));
         assert agent.getUserState(userId) == state;
         agent.accept(ev);
+        log.info("agent state {}, expect {}", agent.getUserState(userId), newState);
         assert agent.getUserState(userId) == newState;
         Mockito.reset(publisher);
     }
