@@ -59,7 +59,7 @@ public class JsonUtility {
             for (String word : keyWords) {
                 JSONObject candidate = querier.search(word)
                     .getJSONObject(0);
-                log.info("candidate:\n{}", candidate.toString(4));
+                // log.info("candidate:\n{}", candidate.toString(4));
                 int index = candidate.getInt("ndb_no");
                 String description = candidate.getString("shrt_desc");
                 JSONObject item = new JSONObject();

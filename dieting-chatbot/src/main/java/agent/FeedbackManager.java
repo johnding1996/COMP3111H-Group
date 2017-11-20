@@ -41,146 +41,117 @@ import utility.TextProcessor;
 
 /**
  * Generate user weight line chart and nutrient pie chart.
- * @author mcding, wguoaa
- * @version v2.0.0
+ * 
+ * State map:
+ *      0 - Ask feedback duration
+ *      1 - Ask chart type
+ *      2 - Send chart to user
+ * 
+ * @author mcding, wguoaa, szhouan
+ * @version v2.1.0
  */
 @Slf4j
 @Component
-public class Feedback implements Consumer<Event<ParserMessageJSON>> {
-
-    @Autowired
-    private EventBus eventBus;
-
-    @Autowired
-    private Publisher publisher;
-
-    @Autowired
-    private JazzySpellChecker spellChecker;
-
-    @Autowired(required = false)
-    private ChatbotController controller;
+public class FeedbackManager extends Agent {
 
     @Autowired
     private FoodRecommender recommender;
 
-    private List<Date> timestamps = new ArrayList<>();
-    private List<Integer> weights = new ArrayList<>();
-    private Map<String, Double> nutrients = new HashMap<>();
-
     /**
-     * Register on eventBus.
+     * Initialize initial input recorder agent.
      */
-    @PostConstruct
+    @Override
     public void init() {
-        if (eventBus != null) {
-            eventBus.on($("ParserMessageJSON"), this);
-            log.info("InitialInputRecorder register on event bus");
-        }
+        agentName = "FeedbackManager";
+        agentStates = new HashSet<>(
+            Arrays.asList(State.FEEDBACK)
+        );
+        handleImage = false;
+        useSpellChecker = false;
+        this.addHandler(0, (psr) -> askDuration(psr))
+            .addHandler(1, (psr) -> askChartType(psr))
+            .addHandler(2, (psr) -> sendChart(psr));
     }
 
-    // User state tracking for interaction
-    private static HashMap<String, Integer> states = new HashMap<>();
+    /**
+     * Handler for asking feedback duration.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askDuration(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
 
-    private int resultDuration;
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage("Ok, how many dates do you want for feedback? Please input a positive integer.");
+        publisher.publish(fmt);
+        return 1;
+    }
 
     /**
-     * Event handler for ParserMessageJSON.
-     * @param ev Event object
+     * Handler for asking chart type.
+     * @param psr Input ParserMessageJSON
+     * @return next state
      */
-    public void accept(Event<ParserMessageJSON> ev) {
-        ParserMessageJSON psr = ev.getData();
-        // Is it my duty?
+    public int askChartType(ParserMessageJSON psr) {
         String userId = psr.getUserId();
-        State globalState = psr.getState();
-        if (globalState != State.FEEDBACK) {
-            // not my duty, clean up if needed
-            if (states.containsKey(userId)) {
-                states.remove(userId);
-                log.info("Clear user {}", userId);
-            }
-            return;
+        String text = psr.get("textContent");
+
+        int resultDuration = parseFeedbackDuration(userId, text);
+        if (resultDuration == -1) { // invalid input
+            rejectUserInput(psr, "Your input for duration is invalid.");
+            return 1;
         }
-        log.info("FEEDBACK:\n{}", psr.toString());
-        // Acknowledge that the psr is handled
-        log.info("Entering feedback handler");
-        publisher.publish(new FormatterMessageJSON(userId));
-        // if the input is image
-        if(psr.getType().equals("image")) {
-            FormatterMessageJSON response = new FormatterMessageJSON(userId);
-            response.appendTextMessage("Please input some text at this moment");
-            publisher.publish(response);
-            log.info("Cannot handle image message");
-            return;
-        }
-        // register user if it is new
-        if (!states.containsKey(userId)) {
-            log.info("register new user {}", userId);
-            states.put(userId, 0);
+        states.get(userId).put("resultDuration", resultDuration);
+
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        JSONArray histJSON = getHist(userId, resultDuration);
+        if (histJSON == null || histJSON.length() == 0) {
+            fmt.appendTextMessage("Sorry you don't have any recorded history, session cancelled.");
+            publisher.publish(fmt);
+            controller.setUserState(userId, State.IDLE);
+            return END_STATE;
         }
 
-        // main interaction
-        int state = states.get(userId);
-        if (state==0) {
-            FormatterMessageJSON response = new FormatterMessageJSON(userId);
-            response.appendTextMessage("Ok, how many dates do you want for feedback? Please input an positive integer.");
-            publisher.publish(response);
-            states.put(userId, 1);
-        } else if (state==1) {
-            String msg = psr.get("textContent");
-            resultDuration = parseFeedbackDuration(userId, msg);
-            if (resultDuration != -1) {
-                JSONArray histJSON = getHist(userId, resultDuration);
-                if (histJSON.length() == 0) {
-                    log.info(String.format("Empty hist json for user %s", userId));
-                    FormatterMessageJSON response = new FormatterMessageJSON(userId);
-                    response.appendTextMessage("Sorry you don't have any recorded history, session cancelled.");
-                    publisher.publish(response);
-                    states.remove(userId);
-                    if (controller != null) {
-                        controller.setUserState(userId, State.IDLE);
-                    }
-                }
-                parseWeightHist(histJSON);
-                log.info("FEEDBACK: user timestamps" + timestamps.toString());
-                log.info("FEEDBACK: user weight histories" + weights.toString());
-                parseNutrientHist(userId, histJSON);
-                log.info("FEEDBACK: user nutrition hist" + nutrients.toString());
-                FormatterMessageJSON response = new FormatterMessageJSON(userId);
-                response.appendTextMessage("Great, We've analyzed the history of your weights and meals, " +
-                        "and generated two charts for you. Which chart would you like to have a look at? " +
-                        "Please reply \'weight\' or \'nutrient\'.");
-                publisher.publish(response);
-                states.put(userId, 2);
-            }
-        } else if (state==2) {
-            String msg = psr.get("textContent");
-            if (msg.equals("weight")) {
-                FormatterMessageJSON response = new FormatterMessageJSON(userId);
-                response.appendTextMessage("Loading your chart, please wait...");
-                publisher.publish(response);
-                drawLineChart(userId);
-                states.remove(userId);
-                if (controller != null) {
-                    controller.setUserState(userId, State.IDLE);
-                }
-            } else if (msg.equals("nutrient")) {
-                FormatterMessageJSON response = new FormatterMessageJSON(userId);
-                response.appendTextMessage("Loading your chart, please wait...");
-                publisher.publish(response);
-                drawPieChart(userId);
-                states.remove(userId);
-                if (controller != null) {
-                    controller.setUserState(userId, State.IDLE);
-                }
-            } else {
-                FormatterMessageJSON response = new FormatterMessageJSON(userId);
-                response.appendTextMessage("Invalid chart type. " +
-                        "Please reply \'weight\' or \'nutrient\'.");
-                publisher.publish(response);
-            }
+        parseWeightHist(userId, histJSON);
+        JSONArray timestamps = states.get(userId).getJSONArray("timestamps");
+        JSONArray weights = states.get(userId).getJSONArray("weights");
+        log.info("FEEDBACK: user timestamps" + timestamps.toString(4));
+        log.info("FEEDBACK: user weight histories" + weights.toString(4));
+        parseNutrientHist(userId, histJSON);
+        JSONObject nutrients = states.get(userId).getJSONObject("nutrients");
+        log.info("FEEDBACK: user nutrition hist" + nutrients.toString(4));
+        fmt.appendTextMessage("Great, We've analyzed the history of your weights and meals, " +
+                "and generated two charts for you. Which chart would you like to have a look at? " +
+                "Please reply \'weight\' or \'nutrient\'.");
+        publisher.publish(fmt);
+        return 2;
+    }
+
+    /**
+     * Handler for sending chart to user.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int sendChart(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+        String text = psr.get("textContent").trim().toLowerCase();
+
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        if (text.equals("weight")) {
+            fmt.appendTextMessage("Loading your chart, please wait...");
+            publisher.publish(fmt);
+            drawLineChart(userId);
+        } else if (text.equals("nutrient")) {
+            fmt.appendTextMessage("Loading your chart, please wait...");
+            publisher.publish(fmt);
+            drawPieChart(userId);
         } else {
-            log.error("Invalid internal state in feedback handler.");
+            rejectUserInput(psr, "Invalid chart type. " +
+                    "Please reply \'weight\' or \'nutrient\'.");
+            return 2;
         }
+        controller.setUserState(userId, State.IDLE);
+        return END_STATE;
     }
 
     /**
@@ -190,8 +161,10 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
     public void drawPieChart(String userId) {
         PieChart chart = new PieChartBuilder().width(800).height(600).
                 title("Nutrient Pie Chart").build();
-        for (String nutrient: nutrients.keySet()){
-            chart.addSeries(nutrient, nutrients.get(nutrient));
+        JSONObject nutrients = states.get(userId).getJSONObject("nutrients");
+        for (Object o : nutrients.keySet()){
+            String nutrient = (String) o;
+            chart.addSeries(nutrient, nutrients.getDouble(nutrient));
         }
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
@@ -199,7 +172,8 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             sendChart(userId, outputStream);
         } catch (IOException e) {
             log.error("Error encountered when saving charts in feedback handler.", e);
-        }    }
+        }
+    }
 
     /**
      * Draw line chart of user's weight.
@@ -210,9 +184,19 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
                 .title("Weight Line Chart")
                 .xAxisTitle("Time")
                 .yAxisTitle("Weight").build();
+        JSONArray timestamps = states.get(userId).getJSONArray("timestamps");
+        JSONArray weights = states.get(userId).getJSONArray("weights");
+        List<Date> timestampList = new ArrayList<>();
+        List<Integer> weightList = new ArrayList<>();
+        for (int i=0; i<timestamps.length(); ++i) {
+            timestampList.add(new Date(timestamps.getLong(i)));
+        }
+        for (int i=0; i<weights.length(); ++i) {
+            weightList.add(weights.getInt(i));
+        }
         chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNE);
         chart.getStyler().setDefaultSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Area);
-        chart.addSeries("weight", timestamps, weights);
+        chart.addSeries("weight", timestampList, weightList);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             BitmapEncoder.saveBitmap(chart, outputStream, BitmapEncoder.BitmapFormat.BMP);
@@ -238,11 +222,12 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
 
     /**
      * Get the weight history list from hist JSONArray.
+     * @param userId String of user Id
      * @param histJSON user hist JSONArray
      */
-    private void parseWeightHist(JSONArray histJSON) {
-        timestamps = new ArrayList<>();
-        weights = new ArrayList<>();
+    private void parseWeightHist(String userId, JSONArray histJSON) {
+        JSONArray timestamps = new JSONArray();
+        JSONArray weights = new JSONArray();
         try {
             int i;
             for (i=0; i<histJSON.length(); i++) {
@@ -250,9 +235,11 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
                 Date timestamp = format.parse(hist.getString("timestamp"));
                 int weight = hist.getInt("weight");
-                timestamps.add(timestamp);
-                weights.add(weight);
+                timestamps.put(timestamp.getTime());
+                weights.put(weight);
             }
+            states.get(userId).put("timestamps", timestamps);
+            states.get(userId).put("weights", weights);
             log.info(String.format("Successfully fetched user hist from hist keeper, %d records were found.", i));
         } catch (JSONException | ParseException e) {
             log.error("Error encountered when fetching user weight hist from hist keeper.", e);
@@ -263,8 +250,8 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
      * Get the nutrient consumption statistics from hist JSONArray.
      */
     private void parseNutrientHist(String userId, JSONArray histJSON) {
+        JSONObject nutrients = new JSONObject();
         try {
-            nutrients = new HashMap<>();
             for (int i=0; i<histJSON.length(); i++) {
                 JSONObject hist = histJSON.getJSONObject(i);
                 JSONArray foodContent = hist.getJSONArray("menu").getJSONObject(0).getJSONArray("foodContent");
@@ -275,10 +262,14 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
                     String desc = FoodRecommender.nutrientDailyIntakes.getJSONObject(j).getString("desc");
                     double actualIntake = portionSize * recommender.getAverageNutrient(foodList, nutrient) / 100 * 3;
                     double expectedIntake = FoodRecommender.nutrientDailyIntakes.getJSONObject(j).getInt("y");
-                    nutrients.putIfAbsent(desc, 0.0);
-                    nutrients.put(desc, actualIntake/expectedIntake/histJSON.length() + nutrients.get(desc));
+                    if (!nutrients.keySet().contains(desc)) {
+                        nutrients.put(desc, 0.0);
+                    }
+                    double x = nutrients.getDouble(desc);
+                    nutrients.put(desc, actualIntake/expectedIntake/histJSON.length() + nutrients.getDouble(desc));
                 }
             }
+            states.get(userId).put("nutrients", nutrients);
             log.info("Successfully calculated the user nutrient consumptions.");
         } catch (JSONException e) {
             log.error("Error encountered when fetching user hist from hist keeper.", e);
@@ -313,10 +304,6 @@ public class Feedback implements Consumer<Event<ParserMessageJSON>> {
             if (duration<=0) throw new NumberFormatException();
             return duration;
         } catch (NumberFormatException e) {
-            log.info("Invalid input when parsing duration in feedback handler.", e);
-            FormatterMessageJSON response = new FormatterMessageJSON(userId);
-            response.appendTextMessage("Invalid input, please give me a positive integer.");
-            publisher.publish(response);
             return -1;
         }
     }
