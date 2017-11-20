@@ -66,8 +66,8 @@ public class PortionAsker extends Agent {
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("Okay, here is your menu:")
            .appendTextMessage(JsonUtility.formatMenuJSON(menuJSON, false))
-           .appendTextMessage("Would you like to tell me what is the portion " +
-                "size of each dish? Key in 'Yes' or 'No'");
+           .appendTextMessage("Would you like to tell me the portion " +
+                "size of each dish? Please input 'Yes' or 'No'");
         publisher.publish(fmt);
         return 1;
     }
@@ -83,11 +83,11 @@ public class PortionAsker extends Agent {
 
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         if (text.equals("yes")) {
-            fmt.appendTextMessage("Okay, so give me your update in this format: " +
+            fmt.appendTextMessage("Okay, please give me your update in this format: " +
                     "<dish index>:<portion in gram>, such as '1:100'")
                .appendTextMessage("Typically, an apple is around 100g")
                .appendTextMessage("Note that if you finish all updates you desired, " +
-                    "you just need to type 'leave' to end the session");
+                    "you could type 'leave' to end the session");
             publisher.publish(fmt);
             return 2;
         } else if (text.equals("no")) {
@@ -96,7 +96,7 @@ public class PortionAsker extends Agent {
             controller.setUserState(userId, State.RECOMMEND);
             return END_STATE;
         } else {
-            rejectUserInput(psr, "You should simply tell me yes or no.");
+            rejectUserInput(psr, "You could simply tell me yes or no.");
             return 1;
         }
     }

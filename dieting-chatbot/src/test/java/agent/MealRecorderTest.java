@@ -79,8 +79,6 @@ public class MealRecorderTest extends AgentTest {
             Arrays.asList("So you have", "One more"),
             2, 3);
         checkHandler("whatever", "", 3, 3);
-        checkHandler("50",
-            Arrays.asList("So your weight", "See you"),
-            3, Agent.END_STATE);
+        checkHandler("50", Arrays.asList("Ok, your weight", "See you"), 3, Agent.END_STATE);
     }
 }

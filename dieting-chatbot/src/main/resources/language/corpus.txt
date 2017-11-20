@@ -8,7 +8,6 @@ disable
 male
 female
 yes
-yep
 no
 fine
 confrim
@@ -81,7 +80,6 @@ leaf
 spices
 garic
 pepper
-pumpkin
 poultry
 fruit
 juice
@@ -92,7 +90,6 @@ apple
 grape
 watermelon
 beverage
-
 zero
 one
 two
@@ -120,7 +117,15 @@ fifty
 sixty
 seventy
 eighty
-nighty
+ninety
 hundred
 one hundred and
 two hundred and
+friend
+code
+coupon
+admin
+mode
+weight
+nutrient
+

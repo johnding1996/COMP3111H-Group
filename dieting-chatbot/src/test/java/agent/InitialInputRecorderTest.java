@@ -60,7 +60,7 @@ public class InitialInputRecorderTest extends AgentTest {
         checkHandler("What?", "", 2, 2);
         checkHandler("maale", "Hey, what is", 2, 3);
         checkHandler("Foo", "", 3, 3);
-        checkHandler("60", "How about the", 3, 4);
+        checkHandler("60", "How about your", 3, 4);
         checkHandler("Bar", "", 4, 4);
         checkHandler("180", "Emmm...", 4, 5);
         checkHandler("Baz", "", 5, 5);
