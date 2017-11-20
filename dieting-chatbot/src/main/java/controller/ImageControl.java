@@ -83,21 +83,32 @@ public class ImageControl {
         log.info("Input Stream: {}", inputStream);
         if (type.equals("TempFile")) {
             log.info("Store temporary file");
-            // return the uri of the downloaded image
-            String fileName = LocalDateTime.now().toString() + '-' 
-                + UUID.randomUUID().toString() + '.' + extension;
-            Path filePath= DietingChatbotApplication.downloadedContentDir.resolve(fileName);
-            filePath.toFile().deleteOnExit();
-            try (OutputStream outputStream = Files.newOutputStream(filePath)) {
+            DownloadedContent tempFile = createTempFile(extension);
+            try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {
                 log.info("Trying to copy");
                 ByteStreams.copy(inputStream, outputStream);
-                log.info("Saved {} with name {} and path", extension, filePath.getFileName(), filePath);
+                log.info("Saved {}: {}", extension, tempFile);
+                return new String[] {tempFile.getUri()};
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            } 
-            String borderedImageUri = addBorder(filePath.toFile(), "server");
-            log.info("Added border, will return borderedImageUri as: {}", borderedImageUri);
-            return new String[] { borderedImageUri };
+                // throw new UncheckedIOException(e);
+                return null;
+            }
+            // return the uri of the downloaded image
+            // String fileName = LocalDateTime.now().toString() + '-' 
+            //     + UUID.randomUUID().toString() + '.' + extension;
+            // Path filePath= DietingChatbotApplication.downloadedContentDir.resolve(fileName);
+            // filePath.toFile().deleteOnExit();
+            // createUri(filePath);
+            // try (OutputStream outputStream = Files.newOutputStream(filePath)) {
+            //     log.info("Trying to copy");
+            //     ByteStreams.copy(inputStream, outputStream);
+            //     log.info("Saved {} with name {} and path", extension, filePath.getFileName(), filePath);
+            // } catch (IOException e) {
+            //     throw new UncheckedIOException(e);
+            // } 
+            // String borderedImageUri = addBorder(filePath.toFile(), "server");
+            // log.info("Added border, will return borderedImageUri as: {}", borderedImageUri);
+            // return new String[] { borderedImageUri };
         } else if (type.equals("DB")) {
             log.info("Store image uploaded by administrator to DB");
             ByteArrayOutputStream bos = new ByteArrayOutputStream();

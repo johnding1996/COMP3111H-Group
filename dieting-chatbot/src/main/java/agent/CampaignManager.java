@@ -1,13 +1,20 @@
 package agent;
 
+import org.apache.commons.codec.binary.Base64;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
+import com.google.common.io.ByteStreams;
+import controller.ImageControl;
 import controller.State;
 import database.keeper.CampaignKeeper;
 import lombok.extern.slf4j.Slf4j;
-
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URL;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -215,14 +222,34 @@ public class CampaignManager extends Agent {
         keeper.incrCouponCnt();
         keeper.close();
 
-        fmt.appendTextMessage("Congratulations! This is the coupon you claimed:")
-           .appendTextMessage(couponTextContent);
+        keeper = getCampaignKeeper();
+        String encodedString = keeper.getCouponImg();
+        keeper.close();
+
+        boolean hasImage = encodedString != null;
+        String uri = null;
+        if (hasImage)
+            uri = ImageControl.getCouponImageUri(userId, encodedString, "png");
+
+        fmt.appendTextMessage("Congratulations! This is the coupon you claimed:");
+        if (hasImage) {
+            fmt.appendImageMessage(uri, uri);
+        } else {
+            fmt.appendTextMessage("NO IMAGE FOR COUPON YET");
+        }
         publisher.publish(fmt);
+        sleep();
+
         fmt = new FormatterMessageJSON(parentUserId);
         fmt.appendTextMessage("Hey, one more user follows our chatbot by your promotion ~")
-           .appendTextMessage("This coupon is rewarded to you:")
-           .appendTextMessage(couponTextContent);
+           .appendTextMessage("This coupon is rewarded to you:");
+        if (hasImage) {
+            fmt.appendImageMessage(uri, uri);
+        } else {
+            fmt.appendTextMessage("NO IMAGE FOR COUPON YET");
+        }
         publisher.publish(fmt);
+        sleep();
 
         controller.setUserState(userId, State.IDLE);
         return END_STATE;
@@ -337,9 +364,11 @@ public class CampaignManager extends Agent {
         }
 
         states.get(userId).put("usePrefix", true);
-        fmt.appendTextMessage("Now do you want to update the text content of the coupon? " +
-            "If yes, say 'UPDATE: <text>'. Otherwise, I will assume you skip this part.");
+        fmt.appendTextMessage("Now do you want to update the image of the coupon? " +
+            "If yes, send an image to me. Otherwise, please say 'CANCEL'.");
         publisher.publish(fmt);
+        handleImage = true;
+        log.info("{}: enable image handling", agentName);
         return 4;
     }
 
@@ -360,8 +389,10 @@ public class CampaignManager extends Agent {
                 states.get(userId).put("usePrefix", false);
                 campaignStartInstant = Instant.now();
                 fmt.appendTextMessage("Start campaign with a total of " + num + " coupon(s).");
-                fmt.appendTextMessage("Now please set the text content of the coupon:");
+                fmt.appendTextMessage("Now please set the image of the coupon. You can say 'CANCEL' to skip.");
                 publisher.publish(fmt);
+                handleImage = true;
+                log.info("{}: enable image handling", agentName);
 
                 CampaignKeeper keeper = getCampaignKeeper();
                 keeper.resetCouponCnt();
@@ -393,25 +424,46 @@ public class CampaignManager extends Agent {
      */
     public int setCouponImage(ParserMessageJSON psr) {
         String userId = psr.getUserId();
-        String text = psr.get("textContent");
-        boolean usePrefix = states.get(userId).getBoolean("usePrefix");
+        String type = psr.getType();
 
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        if (usePrefix) {
-            if (text.startsWith("UPDATE: ")) {
-                couponTextContent = text.replaceFirst("UPDATE: ", "");
-                fmt.appendTextMessage("Update coupon text content to " + couponTextContent +".");
-            } else {
-                fmt.appendTextMessage("Cancel to update coupon text content.");
-            }
-        } else {
-            couponTextContent = text;
-            fmt.appendTextMessage("Set coupon text content to " + couponTextContent +".");
+        if (type.equals("text")) {
+            rejectUserInput(psr, "Please send me a photo or say 'CANCEL'.");
+            return 4;
         }
 
-        fmt.appendTextMessage("Leaving admin mode for campaign management.");
+        String uriString = psr.get("imageContent");
+        log.info("URI {}", uriString);
+        String encodedString = null;
+        try {
+            InputStream is = (new URI(uriString)).toURL().openStream();
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            long numOfBytes = ByteStreams.copy(is, bos);
+            log.info("copied " + numOfBytes + " bytes");
+            byte[] buf = bos.toByteArray();
+            encodedString = Base64.encodeBase64URLSafeString(buf);
+            // log.info("Encoded String in Base64: {}", encodedString);
+        } catch (Exception e) {
+            log.info(e.toString());
+        }
+
+        if (encodedString == null) {
+            fmt.appendTextMessage("ERROR in getting the image, session cancelled");
+            publisher.publish(fmt);
+            controller.setUserState(userId, State.IDLE);
+            return END_STATE;
+        }
+
+        CampaignKeeper keeper = getCampaignKeeper();
+        keeper.setCouponImg(encodedString);
+        keeper.close();
+
+        fmt.appendTextMessage("Set image of the coupon succeeded.")
+           .appendTextMessage("Leaving admin mode for campaign management.");
         publisher.publish(fmt);
         controller.setUserState(userId, State.IDLE);
+        handleImage = false;
+        log.info("{}: disable image handling", agentName);
         return END_STATE;
     }
 
