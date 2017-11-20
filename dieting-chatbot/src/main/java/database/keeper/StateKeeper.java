@@ -37,7 +37,7 @@ public class StateKeeper extends Keeper {
     }
 
     /**
-     * Constuctor with input parameter
+     * Constuctor with input parameter.
      * @param jedids input Jedis object
      * @param lifeTime input lifetime of the cache
      */

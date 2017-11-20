@@ -53,6 +53,7 @@ public class DietingChatbotApplication {
 
     /**
      * This method is used to create eventBus.
+     * @param env environment
      * @return EventBus.
      */
     @Bean

@@ -19,6 +19,10 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 public class RedisPool {
+
+    /**
+     * private attribute Jedispool.
+     */
     private static JedisPool pool;
 
     static {

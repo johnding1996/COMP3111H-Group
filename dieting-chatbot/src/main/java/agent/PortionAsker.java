@@ -30,6 +30,9 @@ import utility.Validator;
 @Component
 public class PortionAsker extends Agent {
 
+    /**
+     * THis is a private attibute MenuManager object.
+     */
     @Autowired
     private MenuManager menuManager;
 

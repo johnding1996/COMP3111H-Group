@@ -54,6 +54,9 @@ import utility.TextProcessor;
 @Component
 public class FeedbackManager extends Agent {
 
+    /**
+     * Private attribute food recommender.
+     */
     @Autowired
     private FoodRecommender recommender;
 
@@ -248,6 +251,8 @@ public class FeedbackManager extends Agent {
 
     /**
      * Get the nutrient consumption statistics from hist JSONArray.
+     * @param userId user id
+     * @param histJSON user hist jsonArray
      */
     private void parseNutrientHist(String userId, JSONArray histJSON) {
         JSONObject nutrients = new JSONObject();
@@ -296,6 +301,7 @@ public class FeedbackManager extends Agent {
     /**
      * Parse the duration from input message.
      * @param msg message
+     * @param userId user id
      * @return int of duration
      */
     private int parseFeedbackDuration(String userId, String msg) {
