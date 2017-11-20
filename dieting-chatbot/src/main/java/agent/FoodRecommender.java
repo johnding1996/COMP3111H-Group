@@ -125,7 +125,7 @@ public class FoodRecommender extends Agent {
         JSONObject menuJSON = menuManager.getMenuJSON(userId);
         if (menuJSON == null) {
             FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-            fmt.appendTextMessage("Seems that I don't have your menu yet. " +
+            fmt.appendTextMessage("Seems that I don't have your menu yet." +
                 "Session cancelled.");
             publisher.publish(fmt);
             controller.setUserState(userId, State.IDLE);
@@ -138,8 +138,8 @@ public class FoodRecommender extends Agent {
         if (userJSON == null) {
             FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
             fmt.appendTextMessage("Sorry, I don't have your personal " +
-               "information yet, so I could not give you recommendation. " +
-               "Please set your personal information first. " +
+               "information yet, so I could not give you recommendations. " +
+               "Please set your personal information first. ^_^ " +
                "Session cancelled.");
             publisher.publish(fmt);
             controller.setUserState(userId, State.IDLE);
@@ -153,7 +153,7 @@ public class FoodRecommender extends Agent {
 
         // ask meal type
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("Ok, let us analyze what you should eat for this meal. " +
+        fmt.appendTextMessage("Ok, let me analyze what you should eat for this meal. " +
                 "Before that, could you tell me which meal you are eating?")
            .appendTextMessage(String.format("According to the time, " +
             "I guess you are eating %s. Is that correct?", getDefaultMealType()))
@@ -196,7 +196,7 @@ public class FoodRecommender extends Agent {
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("Great, I've recorded your meal type!")
            .appendTextMessage("Another question is about you exercise rate. " +
-                "Could you tell me how much physical exercises you are doing recently?")
+                "Could you tell me how much physical exercise you have been doing recently?")
            .appendTextMessage("Valid options include " + VALID_EXERCISE_RATE + ".");
         publisher.publish(fmt);
         sleep();
@@ -223,8 +223,8 @@ public class FoodRecommender extends Agent {
         states.get(userId).put("intakeRatio", exerciseRateToIntakeRatios.get(exerciseRate));
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("Thanks a lot, I've recorded your exercise rate!")
-           .appendTextMessage("That's all the information we want. Hold tight, " +
-                "we are generating a personalized recommendation for you!\n... ... ...");
+           .appendTextMessage("That's all the information I want. Hold tight, " +
+                "I am thinking about some personalized recommendations for you!\n... ... ...");
         publisher.publish(fmt);
         sleep();
 
@@ -234,11 +234,11 @@ public class FoodRecommender extends Agent {
         sleep();
 
         fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("Above are all the recommendations I give. " +
-                "Please tell me when you finish your meal so that I can record it for later analysis.")
-           .appendTextMessage("If you are curious about how I generate this recommendation, and the mechanism behind, " +
+        fmt.appendTextMessage("These are all my recommendations. " +
+                "Please input FINISH when you finish your meal so that I can record it for later analysis.")
+           .appendTextMessage("If you are curious about how I generate these recommendations and the mechanism behind, " +
                 "feel free to let me know!")
-           .appendTextMessage("Wish you have a good meal!");
+           .appendTextMessage("Enjoy your meal!");
         publisher.publish(fmt);
         sleep();
 
@@ -267,13 +267,13 @@ public class FoodRecommender extends Agent {
             Arrays.asList("reference", "how", "why")) != null) {
 
             FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-            fmt.appendTextMessage("Thanks a lot for your interests!");
+            fmt.appendTextMessage("Thank you for your interests!");
             fmt.appendTextMessage("We generate recommendation by assigning each dish with a score and order them.");
-            fmt.appendTextMessage("The score of each dish is calculated based on the well-known formula basal metabolic rate (BMR) " +
+            fmt.appendTextMessage("The score of each dish is calculated based on the well-known formula called basal metabolic rate (BMR) " +
                     "(which makes use of the your age, recent weight, and height), " +
                     "and the recommended daily intake of 9 nutrients " +
                     "(fat, carbohydrate, sugar, protein, dietary fiber, vitamin C, and 3 kinds of minerals).");
-            fmt.appendTextMessage("To give more personalized recommendation, we also takes your exercise rate and current meal type in to consideration, " +
+            fmt.appendTextMessage("To give more personalized recommendation, we also take your exercise rate and current meal type into consideration, " +
                     "to calculate your expected meal energy intake.");
             fmt.appendTextMessage("Generally, the higher the score a dish has, the more nutrients it supplies meet our recommended value. " +
                     "We also carefully analyze 9 sub-scores for each dish you input, and generate persuasive reasons based on them.");
@@ -283,7 +283,7 @@ public class FoodRecommender extends Agent {
 
         // don't know what user wants
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("Did you mean you have finished your meal? " +
+        fmt.appendTextMessage("Do you mean that you have finished your meal? " +
                 "If yes, please tell me and I will record what you have eaten.");
         publisher.publish(fmt);
         return 3;
@@ -385,9 +385,9 @@ public class FoodRecommender extends Agent {
         // Reason for the portion size
         fmt.appendTextMessage(String.format("According to your age, weight and height, your BMR is around %d kcal/day. " +
                 "Based on yout exercise rate, your daily intake should be %d kcal, " +
-                "and you should intake %d kcal for this meal, " +
+                "and you should obtain %d kcal from this meal, " +
                 "since %s has on average %d kcal energy per 100 g, " +
-                "you should take around %d gram of it.",
+                "you should have around %d gram of it.",
                 (int)bestDish.getJSONObject("energy").getDouble("BMR"),
                 (int)bestDish.getJSONObject("energy").getDouble("dailyIntake"),
                 (int)bestDish.getJSONObject("energy").getDouble("mealIntake"),

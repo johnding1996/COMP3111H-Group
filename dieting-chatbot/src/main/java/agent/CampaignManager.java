@@ -87,8 +87,8 @@ public class CampaignManager extends Agent {
 
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         if (availableCoupon <= 0) {
-            fmt.appendTextMessage("Sorry, the campaign is not open at this stage. " +
-                "Please keep an eye on this so that you won't miss it!");
+            fmt.appendTextMessage("Sorry, the campaign is not ongoing at this stage. " +
+                "Please keep an eye on this so that you won't miss it! ^_^");
             publisher.publish(fmt);
             controller.setUserState(userId, State.IDLE);
             return END_STATE;
@@ -97,15 +97,15 @@ public class CampaignManager extends Agent {
         CampaignKeeper keeper = getCampaignKeeper();
         int couponCount = Integer.parseInt(keeper.getCouponCnt());
         if (couponCount >= availableCoupon) {
-            fmt.appendTextMessage("Sorry, but we don't have more available coupon now. " +
-                "Please be earlier next time!");
+            fmt.appendTextMessage("I am sorry that we do not have available coupons now. " +
+                "Please come earlier next time! ^_^");
             publisher.publish(fmt);
             controller.setUserState(userId, State.IDLE);
             keeper.close();
             return END_STATE;
         }
 
-        fmt.appendTextMessage("Thank you for promoting our service!")
+        fmt.appendTextMessage("Thank you for promoting our service! ^_^")
            .appendTextMessage(String.format("This is your sharing code: %06d", currentCouponId));
         keeper.setParentUserId(String.format("%06d", currentCouponId), userId);
         keeper.close();
@@ -125,8 +125,8 @@ public class CampaignManager extends Agent {
         String userId = psr.getUserId();
         
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("Great! What is your code for the coupon? " +
-            "Please input only the 6 digit code.");
+        fmt.appendTextMessage("Great! What is your sharing code for the coupon? " +
+            "Please input the 6 digit code only.");
         publisher.publish(fmt);
         return 5;
     }
@@ -142,15 +142,15 @@ public class CampaignManager extends Agent {
 
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         if (text.length() != 6 || !Validator.isInteger(text)) {
-            fmt.appendTextMessage("Sorry, the format for claiming coupon is invalid")
-               .appendTextMessage("The correct format is 'code <6-digit number>'.");
+            fmt.appendTextMessage("Sorry, the format for the coupon claimed is invalid")
+               .appendTextMessage("The correct format should be 'code <6-digit number>'.");
             publisher.publish(fmt);
             controller.setUserState(userId, State.IDLE);
             return END_STATE;
         }
 
         if (availableCoupon <= 0) {
-            fmt.appendTextMessage("Sorry, the campaign is not open at this stage. " +
+            fmt.appendTextMessage("Sorry, the campaign is not ongoing at this stage. " +
                 "Please stay tuned on this :)");
             publisher.publish(fmt);
             controller.setUserState(userId, State.IDLE);
@@ -402,7 +402,7 @@ public class CampaignManager extends Agent {
                 couponTextContent = text.replaceFirst("UPDATE: ", "");
                 fmt.appendTextMessage("Update coupon text content to " + couponTextContent +".");
             } else {
-                fmt.appendTextMessage("Cancel to update coupon text content.");
+                fmt.appendTextMessage("Please cancel to update the coupon text content.");
             }
         } else {
             couponTextContent = text;

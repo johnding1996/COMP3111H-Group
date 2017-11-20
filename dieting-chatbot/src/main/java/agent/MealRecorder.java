@@ -79,7 +79,7 @@ public class MealRecorder extends Agent {
 
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage(
-            "Welcome back! Please choose what you just ate in this list:")
+            "Welcome back! Please choose what you ate in this list:")
            .appendTextMessage(JsonUtility.formatMenuJSON(menuJSON, false))
            .appendTextMessage("Please choose one of them and input the number.");
         publisher.publish(fmt);
@@ -113,8 +113,8 @@ public class MealRecorder extends Agent {
         states.get(userId).put("dishId", dishId);
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("Great! " +
-                "I have recorded what you have just eaten!")
-            .appendTextMessage("And what is the portion size of it? (in gram)");
+                "I have recorded what you have eaten!")
+            .appendTextMessage("And what is the portion size of it (in gram)?");
         publisher.publish(fmt);
 
         return 2;
@@ -178,8 +178,8 @@ public class MealRecorder extends Agent {
         int weight = Integer.parseInt(text);
         states.get(userId).put("weight", weight);
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage(String.format("So your weight now is %d kg", weight))
-           .appendTextMessage("See you ^_^");
+        fmt.appendTextMessage(String.format("Ok, your weight now is %d kg", weight))
+           .appendTextMessage("See you! ^_^");
         publisher.publish(fmt);
         updateDatabase(userId);
         controller.setUserState(userId, State.IDLE);

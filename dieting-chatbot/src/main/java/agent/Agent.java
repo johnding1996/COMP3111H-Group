@@ -152,7 +152,7 @@ public abstract class Agent implements Consumer<Event<ParserMessageJSON>> {
         if (psr.getType().equals("image") && !handleImage) {
             log.info("Agent {} does not handle image", agentName);
             FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-            fmt.appendTextMessage("Sorry but you cannot use image at this step :(");
+            fmt.appendTextMessage("I am sorry that you cannot use image at this step :(");
             publisher.publish(fmt);
             return;
         }
@@ -197,11 +197,11 @@ public abstract class Agent implements Consumer<Event<ParserMessageJSON>> {
         String userId = psr.getUserId();
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage(String.format(
-            "OOPS, your input \"%s\" is invalid :(", psr.get("textContent")));
+            "OOPS, your input \"%s\" is invalid : o", psr.get("textContent")));
         if (hint != null) {
             fmt.appendTextMessage(hint);
         }
-        fmt.appendTextMessage("Please do it again >_<");
+        fmt.appendTextMessage("Please do it again ^_^");
         publisher.publish(fmt);
     }
 
