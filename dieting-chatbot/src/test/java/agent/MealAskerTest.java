@@ -51,6 +51,9 @@ public class MealAskerTest extends AgentTest {
         checkHandler("", Arrays.asList("Well, I got",
             "The menu I got", "And this is the", "", "Do you want"),
             0, 1);
+        checkHandler("1:apple", "", 1, 1);
+        checkHandler("faijdsof", "", 1, 1);
+        checkHandler("0:irweo", "", 1, 1);
         checkHandler("confirm", Arrays.asList("Bravo! Your update",
             "Is there any missing"), 1, 2);
         checkHandler("yes", "So what is", 2, 3);
