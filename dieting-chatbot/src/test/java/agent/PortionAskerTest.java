@@ -71,6 +71,19 @@ public class PortionAskerTest extends AgentTest {
         asker.registerUser(userId);
         checkHandler("", Arrays.asList("Okay, here is",
             "", "Would you like"), 0, 1);
+        checkHandler("asdf", "You should simply", 1, 1);
+        checkHandler("no", "Alright", 1, Agent.END_STATE);
+
+        asker.registerUser(userId);
+        checkHandler("", "Okay, here is", 0, 1);
+        checkHandler("yes", "Okay, so give me your", 1, 2);
+        checkHandler("fjakds", "", 2, 2);
+        checkHandler("123:fa", "", 2, 2);
+        checkHandler("123:3124:432", "", 2, 2);
+        checkHandler("-324:34892", "", 2, 2);
+        checkHandler("1:-4321", "", 2, 2);
+        checkHandler("1:100", "", 2, 2);
+        checkHandler("leave", "", 2, Agent.END_STATE);
     }
 
     // @Bean

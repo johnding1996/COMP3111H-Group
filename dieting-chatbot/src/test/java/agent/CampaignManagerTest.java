@@ -2,6 +2,7 @@ package agent;
 
 import controller.State;
 import controller.TestConfiguration;
+import database.keeper.CampaignKeeper;
 import lombok.extern.slf4j.Slf4j;
 import java.util.Arrays;
 import javax.annotation.PostConstruct;
@@ -40,6 +41,10 @@ public class CampaignManagerTest extends AgentTest {
         adminJSON.put("userId", "admin")
                  .put("isAdmin", true);
         userManager.storeUserJSON("admin", adminJSON);
+
+        CampaignKeeper keeper = new CampaignKeeper();
+        keeper.incrCouponCnt();
+        keeper.close();
     }
 
     @Test
@@ -119,5 +124,18 @@ public class CampaignManagerTest extends AgentTest {
         // campaignManager.setUserState(userId, 5);
         // checkHandler(correctCode, Arrays.asList("Well, I don't have",
         //     "Please do so by"), 5, Agent.END_STATE);
+    }
+
+    @Test
+    public void testInviteFriend() {
+        campaignManager.availableCoupon = 0;
+
+        agentState = State.INVITE_FRIEND;
+        campaignManager.registerUser(userId);
+        checkHandler("", "Sorry, the campaign is not", 0, Agent.END_STATE);
+
+        campaignManager.registerUser(userId);
+        campaignManager.availableCoupon = 100000;
+        checkHandler("", "Thank you for", 0, Agent.END_STATE);
     }
 }
