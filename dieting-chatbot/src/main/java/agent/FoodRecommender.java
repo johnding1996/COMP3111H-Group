@@ -48,7 +48,7 @@ public class FoodRecommender extends Agent {
     @Autowired
     private UserManager userManager;
     
-    private static JSONArray nutrientDailyIntakes;
+    public static JSONArray nutrientDailyIntakes;
     static {
         nutrientDailyIntakes = new JSONArray();
         nutrientDailyIntakes
@@ -566,8 +566,6 @@ public class FoodRecommender extends Agent {
      */
     public double getMealIntake(JSONObject userJSON) {
         String userId = userJSON.getString("id");
-        // log.info(userJSON.toString(4));
-        // log.info("BMR: " + getUserBMR(userJSON));
         return getUserBMR(userJSON) * states.get(userId).getDouble("intakeRatio")
             * states.get(userId).getDouble("mealPortion");
     }

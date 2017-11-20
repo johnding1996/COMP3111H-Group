@@ -139,7 +139,7 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
      */
     @EventMapping
     public void handleTextMessageEvent(MessageEvent<TextMessageContent> event) {
-
+        ImageControl.servletUriComponentsBuilder = ServletUriComponentsBuilder.fromCurrentContextPath();
         String userId = event.getSource().getUserId();
         String textContent = event.getMessage().getText();
         String messageId = event.getMessage().getId();
@@ -207,6 +207,7 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
      */
     @EventMapping
     public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) {
+        ImageControl.servletUriComponentsBuilder = ServletUriComponentsBuilder.fromCurrentContextPath();
         String userId = event.getSource().getUserId();
         String messageId = event.getMessage().getId();
         String replyToken = event.getReplyToken();
@@ -344,8 +345,8 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
                 case IDLE:
                     fmt.appendTextMessage(
                             "To set your personal info, " + "send 'setting'.\nIf you want to obtain recommendation, "
-                                    + "please say 'recommendation'.\n"
-                                    + "You can aways cancel an operation by saying 'CANCEL'");
+                            + "please say 'recommendation'.\n"
+                            + "You can aways cancel an operation by saying 'CANCEL'");
                     break;
 
                 default:

@@ -31,18 +31,20 @@ public class HistKeeperTester {
         histKeeper = new HistKeeper(jedis);
 
         goodHistJson = new JSONObject();
-        goodHistJson.put("date", "2017-10-29");
-        goodHistJson.put("number_of_meal", 2);
+        goodHistJson.put("timestamp", "2017-10-29T13:30:52.123Z");
+
+        goodHistJson.put("weight", 60);
         JSONArray food = new JSONArray();
         food.put(0);
         food.put(1);
-        goodHistJson.put("food", food);
-        goodHistJson.put("time_created", "2017-10-29T13:30:52.123Z");
+        goodHistJson.put("portionSize", 100);
+        goodHistJson.put("menu", food);
+
 
         badHistJson = new JSONObject();
         badHistJson.put("date", "2017-10-29");
         badHistJson.put("number_of_meal", 2);
-        badHistJson.put("time_created", "2017-10-29T13:30:52.123Z");
+        badHistJson.put("timestamp", "2017-10-29T13:30:52.123Z");
 
     }
 

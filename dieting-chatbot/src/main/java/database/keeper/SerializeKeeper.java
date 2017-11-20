@@ -1,7 +1,11 @@
 package database.keeper;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
@@ -36,7 +40,6 @@ public abstract class SerializeKeeper extends Keeper {
      */
     public abstract JSONArray get(String key, int number);
 
-
     /**
      * Append a JSONObject to a list with specific key.
      * @param prefix key field prefix
@@ -51,10 +54,10 @@ public abstract class SerializeKeeper extends Keeper {
     }
 
     /**
-     * Get the latest several records of a list with specific key.
+     * Get the latest n records of a list with specific key.
      * @param prefix key field prefix
      * @param key key
-     * @param number the number of latest records to get
+     * @param number the number of latest records to get, positive integer
      * @return JSONArray as a list of latest several JSONObject records
      */
     protected JSONArray rangeList(String prefix, String key, int number) {
@@ -68,6 +71,29 @@ public abstract class SerializeKeeper extends Keeper {
             jsonArray.put(jsonObject);
         }
         return jsonArray;
+    }
+
+    /**
+     * Get the latest several records before a timestamp of a list with specific key.
+     * @param prefix key field prefix
+     * @param key key
+     * @param date timestamp
+     * @return JSONArray as a list of latest several JSONObject records
+     */
+    protected JSONArray rangeList(String prefix, String key, Date date) {
+        try {
+            JSONArray completeArray = rangeList(prefix, key, 0);
+            JSONArray array = new JSONArray();
+            for (int i=0; i<completeArray.length(); i++) {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+                if (date.before(dateFormat.parse(completeArray.getJSONObject(i).getString("timestamp"))))
+                    array.put(completeArray.getJSONObject(i));
+            }
+            return array;
+        } catch (JSONException | ParseException e) {
+            log.error("Failed to parse the timestamp in redis.", e);
+            return null;
+        }
     }
 
     /**

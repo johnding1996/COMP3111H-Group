@@ -28,11 +28,22 @@ public class MealRecorderTest extends AgentTest {
     @Autowired
     private MenuManager menuManager;
 
+    @Autowired
+    private UserManager userManager;
+
     @PostConstruct
     public void init() {
         agent = recorder;
         agentState = State.RECORD_MEAL;
         userId = "cliubfxiaoxigua";
+
+        JSONObject userJSON = new JSONObject();
+        userJSON.put("id", userId)
+                .put("age", 21)
+                .put("gender", "male")
+                .put("weight", 65)
+                .put("height", 180);
+        userManager.storeUserJSON(userId, userJSON);
     }
 
     @Before

@@ -2,6 +2,7 @@ package agent;
 
 import database.keeper.HistKeeper;
 import database.keeper.MenuKeeper;
+import database.querier.UserQuerier;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -143,6 +144,7 @@ public class MealRecorder extends Agent {
         }
 
         int portionSize = Integer.parseInt(text);
+        states.get(userId).put("portionSize", portionSize);
         int dishId = states.get(userId).getInt("dishId");
         String dishName = states.get(userId).getJSONObject("menuJSON")
             .getJSONArray("menu").getJSONObject(dishId).getString("name");
@@ -173,48 +175,48 @@ public class MealRecorder extends Agent {
             rejectUserInput(psr, "This is not a valid weight.");
             return 3;
         }
-
         int weight = Integer.parseInt(text);
+        states.get(userId).put("weight", weight);
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage(String.format("So your weight now is %d kg", weight))
            .appendTextMessage("See you ^_^");
         publisher.publish(fmt);
-
+        updateDatabase(userId);
         controller.setUserState(userId, State.IDLE);
         return END_STATE;
     }
 
     /**
      * add userInfo to history if everything is correct.
-     * @param idxs list of indices.
-     * @param userId String of userId.
+     * @param userId String of userId
      */
-    private void updateDatabase (List<Integer> idxs, String userId) {
-        List<String> foodNames = new ArrayList<>();
+    public void updateDatabase (String userId) {
         MenuKeeper menuKeeper = new MenuKeeper();
         HistKeeper histKeeper = new HistKeeper();
-        try {
-            JSONArray menu = menuKeeper.get(userId, 1)
-                .getJSONObject(0).getJSONArray("menu");
-            for(int j = 0; j < menu.length(); j++){
-                foodNames.add(menu.getJSONObject(j).getString("name"));
-            }
-        } catch (JSONException e){
-            log.warn("MenuKeeper returns an empty or invalid JSONArray", e);
-        }
-        for (Integer idx : idxs) {
-            JSONObject foodJson = new JSONObject();
-            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            foodJson.put("date", dateFormat.format(new Date()));
-            foodJson.put("number_of_meal", 1);
-            foodJson.put("food", foodNames.get(idx));
+        JSONObject histJson = new JSONObject();
+        try{
+            // Add hist to HistKeeper
             DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-            foodJson.put("timestamp", dateTimeFormat.format(new Date()));
-            histKeeper.set(userId, foodJson);
-            log.info("Food JSON:\n{}", foodJson.toString(4));
-        }
+            histJson.put("timestamp", dateTimeFormat.format(new Date()));
+            histJson.put("weight", states.get(userId).get("weight"));
+            histJson.put("portionSize", states.get(userId).get("portionSize"));
+            log.error("all" + menuKeeper.get(userId, 1).toString());
+            JSONArray menu = menuKeeper.get(userId, 1).getJSONObject(0).getJSONArray("menu");
+            log.error("menu" + menu.toString());
+            JSONArray selectedMenu = new JSONArray();
+            selectedMenu.put(menu.getJSONObject(states.get(userId).getInt("dishId")));
+            log.error("selected menu" + selectedMenu.toString());
+            histJson.put("menu", selectedMenu);
+            histKeeper.set(userId, histJson);
+            log.info(String.format("Stored the user history of user %s in to the caches.", userId));
+            // Update weight in UserInfo table
+            JSONObject userJSON = userManager.getUserJSON(userId);
+            userJSON.put("weight", states.get(userId).get("weight"));
+            userManager.storeUserJSON(userId, userJSON);
 
-        log.info(String.format("Stored the meal history of user %s in to the caches.", userId));
+        } catch (JSONException e) {
+            log.error("Error encountered when parsing the MealJSON.", e);
+        }
         menuKeeper.close();
         histKeeper.close();
     }
