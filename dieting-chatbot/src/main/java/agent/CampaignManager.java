@@ -15,8 +15,10 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import utility.FormatterMessageJSON;
 import utility.ParserMessageJSON;
@@ -214,6 +216,24 @@ public class CampaignManager extends Agent {
         }
 
         // check whether is new user
+        String followTime = userJSON.getString("followTime");
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        long follow = 0;
+        try {
+            Date timestamp = format.parse(followTime);
+            follow = timestamp.getTime();
+        } catch (Exception e) {
+            log.info(e.toString());
+        }
+        long start = campaignStartInstant.getEpochSecond() * 1000;
+        log.info("follow string: {}", followTime);
+        log.info(String.format("Follow: %d Start: %d", follow, start));
+        if (follow < start) {
+            fmt.appendTextMessage("Sorry, you are not a user following us after the campaign start.");
+            publisher.publish(fmt);
+            controller.setUserState(userId, State.IDLE);
+            return END_STATE;
+        }
 
         // update database
         userJSON.put("parentUserId", parentUserId);
