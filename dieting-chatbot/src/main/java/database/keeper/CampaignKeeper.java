@@ -5,7 +5,6 @@ import redis.clients.jedis.Jedis;
 /**
  * Campaign Keeper to store coupon image and number of coupon already claimed in the redis cache.
  * Campaign Keeper to store the sharing Code and Parent User Id
- * The valid JSONObject format is CampaignJSON defined by database APIs.
  * @author wguoaa
  * @version 1.3.1
  */
@@ -17,6 +16,7 @@ public class CampaignKeeper extends Keeper {
     private static final String KEY_PREFIX = "campaign";
     private static final String KEY_IMG = "image";
     private static final String KEY_CNT = "count";
+    private static final String KEY_EXT = "extension";
     private static final String KEY_PARENT = "parent";
 
     /**
@@ -26,7 +26,10 @@ public class CampaignKeeper extends Keeper {
         super();
     }
 
-    CampaignKeeper(Jedis jedids) {
+    /**
+     * Constructor with jedis.
+     */
+    CampaignKeeper(Jedis jedis) {
         this.jedis = jedis;
     }
 
@@ -44,8 +47,27 @@ public class CampaignKeeper extends Keeper {
      * @param key key string
      * @return whether set successfully or not
      */
-    public Boolean setCouponImg(String key) {
+    public boolean setCouponImg(String key) {
         String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_IMG, key);
+        return statusCodeReply.equals("OK");
+    }
+
+    /**
+     * Get the coupon extension.
+     * @return couponExt string
+     */
+    public String getCouponExt() {
+        String couponExt = jedis.get(KEY_PREFIX + ":" + KEY_EXT);
+        return couponExt;
+    }
+
+    /**
+     * Set the coupon image extension according to the dumped image type.
+     * @param key key string
+     * @return whether set successfully or not
+     */
+    public Boolean setCouponExt(String key) {
+        String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_EXT, key);
         return statusCodeReply.equals("OK");
     }
 
@@ -59,10 +81,10 @@ public class CampaignKeeper extends Keeper {
     }
 
     /**
-     * Reset the coupon count to 1.
+     * Reset the coupon count to 0.
      * @return whether reset successfully or not
      */
-    public Boolean resetCouponCnt() {
+    public boolean resetCouponCnt() {
         String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_CNT, "0");
         return statusCodeReply.equals("OK");
     }
@@ -71,7 +93,7 @@ public class CampaignKeeper extends Keeper {
      * Increment the coupon count by 1.
      * @return the new coupon count Long
      */
-    public Long incrCouponCnt() {
+    public long incrCouponCnt() {
 
         return jedis.incr(KEY_PREFIX + ":" + KEY_CNT);
     }
@@ -82,7 +104,7 @@ public class CampaignKeeper extends Keeper {
      * @param parentUserId parent User Id
      * @return whether set successfully or not
      */
-    public Boolean setParentUserId(String key, String parentUserId) {
+    public boolean setParentUserId(String key, String parentUserId) {
         if (!(checkValidityCode(key) && checkValidityUserId(parentUserId))) return false;
         String statusCodeReply = jedis.set(KEY_PREFIX + ":" + KEY_PARENT + ":" + key, parentUserId);
         return statusCodeReply.equals("OK");
@@ -97,6 +119,4 @@ public class CampaignKeeper extends Keeper {
         if (!checkValidityCode(key)) return null;
         return jedis.get(KEY_PREFIX + ":" + KEY_PARENT + ":" + key);
     }
-
-
 }

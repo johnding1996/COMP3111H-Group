@@ -71,10 +71,10 @@ public enum State {
      */
     CLAIM_COUPON("ClaimCoupon"),
     /**
-     * Upload coupon state.
-     * State for handling coupon image upload for admin user.
+     * Manage campaign state.
+     * State for handling admin user managing campaign.
      */
-    UPLOAD_COUPON("UploadCoupon"),
+    MANAGE_CAMPAIGN("ManageCampaign"),
     /**
      * Following state.
      * State when user follows the chatbot.

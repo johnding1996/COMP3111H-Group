@@ -36,6 +36,7 @@ public class CampaignKeeperTester {
     public void setUp() {
         jedis.del("campaign:image");
         jedis.del("campaign:count");
+        jedis.del("campaign:extension");
         jedis.del("campaign:parent:" + code);
         jedis.del("campaign:parent:" + badCode);
     }
@@ -44,6 +45,7 @@ public class CampaignKeeperTester {
     public void tearDown() {
         jedis.del("campaign:image");
         jedis.del("campaign:count");
+        jedis.del("campaign:extension");
         jedis.del("campaign:parent:" + code);
         jedis.del("campaign:parent:" + badCode);
     }
@@ -53,6 +55,13 @@ public class CampaignKeeperTester {
         boolean result = campaignKeeper.setCouponImg("foobar");
         String actual = campaignKeeper.getCouponImg();
         assertTrue(result && actual.equals("foobar"));
+    }
+
+    @Test
+    public void testSetCouponExtSuccess(){
+        boolean result = campaignKeeper.setCouponExt("jpg");
+        String actual = campaignKeeper.getCouponExt();
+        assertTrue(result && actual.equals("jpg"));
     }
 
     @Test

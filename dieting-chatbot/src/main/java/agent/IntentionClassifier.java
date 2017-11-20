@@ -1,105 +1,43 @@
 package agent;
 
-import javax.annotation.PostConstruct;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import controller.ChatbotController;
-import controller.Publisher;
 import controller.State;
 import lombok.extern.slf4j.Slf4j;
-import reactor.bus.Event;
-import reactor.bus.EventBus;
-import reactor.fn.Consumer;
-import static reactor.bus.selector.Selectors.$;
 
 import java.util.Arrays;
 import java.util.HashSet;
 
-import utility.FormatterMessageJSON;
 import utility.ParserMessageJSON;
 import utility.TextProcessor;
 
 /**
  * IntentionClassifier: classifier intention of the user and change global state.
  * @author szhouan
- * @version v1.0.0
+ * @version v1.1.0
  */
 @Slf4j
 @Component
-public class IntentionClassifier 
-    implements Consumer<Event<ParserMessageJSON>> {
+public class IntentionClassifier extends Agent {
 
-    @Autowired
-    private EventBus eventBus;
-
-    @Autowired
-    private Publisher publisher;
-
-    @Autowired(required = false)
-    private ChatbotController controller;
+    private HashSet<String> recommendKeywords;
+    private HashSet<String> initialInputKeywords;
+    private HashSet<String> feedbackKeywords;
 
     /**
-     * Register on eventBus.
+     * Initialize intention classifier agent.
      */
-    @PostConstruct
+    @Override
     public void init() {
-        if (eventBus != null) {
-            eventBus.on($("ParserMessageJSON"), this);
-            log.info("IntentionClassifier register on event bus");
-        }
-    }
+        agentName = "IntentionClassifier";
+        agentStates = new HashSet<>(
+            Arrays.asList(State.IDLE)
+        );
+        handleImage = false;
+        useSpellChecker = false;
+        acknowledgeController = false;
+        this.addHandler(0, (psr) -> parseIntention(psr));
 
-    /**
-     * Event handler for ParserMessageJSON.
-     * @param ev Event object
-     */
-    public void accept(Event<ParserMessageJSON> ev) {
-        ParserMessageJSON psr = ev.getData();
-
-        String userId = psr.getUserId();
-        State globalState = psr.getState();
-        if (globalState != State.IDLE ||
-            psr.getType().equals("transition")) return;
-
-        log.info("Entering user intention classifier");
-
-        // if the input is not text
-        if(!psr.getType().equals("text")) {
-            FormatterMessageJSON response = new FormatterMessageJSON(userId);
-            response.appendTextMessage("Oops, please tell me your intention in another way");
-            publisher.publish(response);
-            return;
-        }
-
-        String msg = psr.get("textContent");
-        State state = getUserIntention(msg);
-        if (state != State.IDLE && controller != null) {
-            controller.setUserState(userId, state);
-        }
-    }
-
-    /**
-     * Get the intention of the user given a sentence.
-     * @param msg User input sentence.
-     * @return The state should change to given user's intention.
-     */
-    private State getUserIntention(String msg) {
-        for (String word : TextProcessor.getTokens(msg)) {
-            if (recommendKeywords.contains(word)) return State.PARSE_MENU;
-            if (initialInputKeywords.contains(word)) return State.INITIAL_INPUT;
-            if (feedbackKeywords.contains(word)) return State.FEEDBACK;
-        }
-        if (msg.toLowerCase().startsWith("friend")) return State.INVITE_FRIEND;
-        if (msg.toLowerCase().startsWith("code")) return State.CLAIM_COUPON;
-        if (msg.toLowerCase().startsWith("upload")) return State.UPLOAD_COUPON;
-        return State.IDLE;
-    }
-    private static HashSet<String> recommendKeywords;
-    private static HashSet<String> initialInputKeywords;
-    private static HashSet<String> feedbackKeywords;
-    static {
         recommendKeywords = new HashSet<>(
             Arrays.asList(
                 "recommendation", "recommendations", "recommend",
@@ -116,5 +54,28 @@ public class IntentionClassifier
                 "feedback", "report", "digest"
             )
         );
+    }
+
+    /**
+     * Handler for intention input.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int parseIntention(ParserMessageJSON psr) {
+        if (psr.getType().equals("transition")) return END_STATE;
+        String text = psr.get("textContent");
+        State globalState = State.IDLE;
+        for (String word : TextProcessor.getTokens(text)) {
+            if (recommendKeywords.contains(word)) globalState = State.PARSE_MENU;
+            if (initialInputKeywords.contains(word)) globalState = State.INITIAL_INPUT;
+            if (feedbackKeywords.contains(word)) globalState = State.FEEDBACK;
+        }
+        if (text.toLowerCase().startsWith("friend")) globalState = State.INVITE_FRIEND;
+        if (text.toLowerCase().startsWith("code")) globalState = State.CLAIM_COUPON;
+        if (text.toLowerCase().startsWith("admin mode")) globalState = State.MANAGE_CAMPAIGN;
+        if (globalState != State.IDLE) {
+            controller.setUserState(psr.getUserId(), globalState);
+        }
+        return END_STATE;
     }
 }
