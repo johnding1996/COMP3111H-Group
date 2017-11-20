@@ -17,6 +17,9 @@ import utility.ParserMessageJSON;
  */
 @Service
 public class Publisher {
+    /**
+     * This is a private EventBus Object handling events.
+     */
     @Autowired
     private EventBus eventBus;
 

@@ -3,6 +3,10 @@ package agent;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.TimeZone;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import org.json.JSONObject;
@@ -39,6 +43,9 @@ import utility.Validator;
 @Component
 public class InitialInputRecorder extends Agent {
 
+    /**
+     * This is a private UserManager attribute.
+     */
     @Autowired
     private UserManager userManager;
 
@@ -191,6 +198,7 @@ public class InitialInputRecorder extends Agent {
         JSONObject state = states.get(userId);
         state.put("goalDate", psr.get("textContent"));
 
+        JSONObject prevJSON = userManager.getUserJSON(userId);
         JSONObject userJSON = new JSONObject();
         userJSON.put("id", userId);
         userJSON.put("age", state.getInt("age"));
@@ -199,6 +207,19 @@ public class InitialInputRecorder extends Agent {
         userJSON.put("height", state.getInt("height"));
         userJSON.put("goal_weight", state.getInt("desiredWeight"));
         userJSON.put("due_date", state.getString("goalDate"));
+
+        Instant now = Instant.now();
+        Timestamp current = Timestamp.from(now);
+        DateFormat df = DateFormat.getDateTimeInstance();
+        df.setTimeZone(TimeZone.getDefault());
+        String followTime = df.format(current);
+        log.info("Current time: {}", followTime);
+        String prevFollowTime = null;
+        if (prevJSON != null && prevJSON.keySet().contains("followTime")) {
+            prevFollowTime = prevJSON.getString("followTime");
+        }
+        userJSON.put("followTime",
+            prevFollowTime==null?followTime:prevFollowTime);
         log.info("Storing UserJSON: {}", userJSON.toString(4));
 
         userManager.storeUserJSON(userId, userJSON);

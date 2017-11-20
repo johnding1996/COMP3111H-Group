@@ -20,13 +20,22 @@ import java.util.HashSet;
  */
 @Slf4j
 public class ParserMessageJSON extends MessageJSON {
+
+    /**
+     * private HashSet storing the key.
+     */
     private static final HashSet<String> keySet;
+
+    /**
+     * private HashSet storing the type.
+     */
     private static final HashSet<String> typeSet;
     static {
         keySet = new HashSet<>(
             Arrays.asList(
                 "userId", "type", "state",
                 "messageId", "textContent", "imageContent"
+                // "extension", "imageBase64"
             )
         );
         typeSet = new HashSet<>(

@@ -44,9 +44,15 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class MealRecorder extends Agent {
 
+    /**
+     * This is a private attribute userManager.
+     */
     @Autowired
     private UserManager userManager;
 
+    /**
+     * This is a private attribute MenuManager.
+     */
     @Autowired
     private MenuManager menuManager;
 

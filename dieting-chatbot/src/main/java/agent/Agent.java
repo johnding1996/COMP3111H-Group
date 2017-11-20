@@ -41,18 +41,33 @@ public abstract class Agent implements Consumer<Event<ParserMessageJSON>> {
         public int handleMessage(ParserMessageJSON psr);
     }
 
+    /**
+     * This is a private attribute EventBus.
+     */
     @Autowired
     private EventBus eventBus;
 
+    /**
+     * This is a private attribute Publisher.
+     */
     @Autowired
     Publisher publisher;
 
+    /**
+     * This is a private attribute Controller.
+     */
     @Autowired
     ChatbotController controller;
 
+    /**
+     * This is a private attribute JazzySpellChecker.
+     */
     @Autowired
     JazzySpellChecker spellChecker;
 
+    /**
+     * This is a hasMap storing the handler index.
+     */
     HashMap<Integer, MessageHandler> handlers = new HashMap<>();
 
     /**
@@ -88,9 +103,13 @@ public abstract class Agent implements Consumer<Event<ParserMessageJSON>> {
     );
 
     /**
-     * Special integer for start and end of responsibility of the agent.
+     * Special integer for start  of responsibility of the agent.
      */
     static final int START_STATE = 0;
+
+    /**
+     * Special integer for end of send of responsibility of the agent.
+     */
     static final int END_STATE = -1;
 
     /**
