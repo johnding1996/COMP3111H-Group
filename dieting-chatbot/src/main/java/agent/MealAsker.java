@@ -262,7 +262,10 @@ public class MealAsker extends Agent {
         storeNewFood(userId);
 
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("Alright, I have recorded the new food.");
+        fmt.appendTextMessage("Alright, I have recorded the new food.")
+           .appendTextMessage("And this is the updated menu:")
+           .appendTextMessage(JsonUtility.formatMenuJSON(
+               menuManager.getMenuJSON(userId) ,true));
         publisher.publish(fmt);
 
         controller.setUserState(userId, State.ASK_PORTION);
@@ -290,9 +293,11 @@ public class MealAsker extends Agent {
         JSONObject foodContent = new JSONObject();
         foodContent.put("idx", id);
         foodContent.put("description", name);
+        JSONArray arr = new JSONArray();
+        arr.put(foodContent);
         JSONObject newFood = new JSONObject();
         newFood.put("name", name);
-        newFood.put("foodContent", foodContent);
+        newFood.put("foodContent", arr);
         JSONObject menuJSON = states.get(userId).getJSONObject("menuJSON");
         menuJSON.getJSONArray("menu").put(newFood);
 
