@@ -2,6 +2,9 @@ package agent;
 
 import controller.State;
 import controller.TestConfiguration;
+
+import java.util.Arrays;
+
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -42,10 +45,27 @@ public class MealAskerTest extends AgentTest {
     }
 
     @Test
-    public void testAccept() {
+    public void testTransition() {
         controller.setUserState(userId, agentState);
         asker.registerUser(userId);
-        checkHandler("", "Well, I got", 0, Agent.END_STATE);
+        checkHandler("", Arrays.asList("Well, I got",
+            "The menu I got", "And this is the", "", "Do you want"),
+            0, 1);
+        checkHandler("confirm", Arrays.asList("Bravo! Your update",
+            "Is there any missing"), 1, 2);
+        checkHandler("yes", "So what is", 2, 3);
+        checkHandler("Foo", "Okay, so what is the energy", 3, 4);
+        checkHandler("adfkj", "", 4, 4);
+        checkHandler("-13", "", 4, 4);
+        checkHandler("100000", "", 4, 4);
+        checkHandler("100", "Okay, so what is the protein", 4, 5);
+        checkHandler("bdskj", "", 5, 5);
+        checkHandler("-190", "", 5, 5);
+        checkHandler("200000", "", 5, 5);
+        checkHandler("100", "Okay, so what is the lipid", 5, 6);
+        checkHandler("afkj", "", 6, 6);
+        checkHandler("-133", "", 6, 6);
+        checkHandler("10000", "", 6, 6);
     }
 
     @Test

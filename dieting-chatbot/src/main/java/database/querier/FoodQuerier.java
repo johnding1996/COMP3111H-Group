@@ -20,7 +20,7 @@ public class FoodQuerier extends Querier {
     /**
      * Default constructor.
      */
-    FoodQuerier() {
+    public FoodQuerier() {
         super();
         table = "foodnutrition";
         idx_field = "ndb_no";
