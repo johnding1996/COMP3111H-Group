@@ -55,7 +55,7 @@ public class MenuParser extends Agent {
         String userId = psr.getUserId();
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("Long time no see! What is your menu today? " +
-            "You could use text or URL.");
+            "You could use text or URL, or an image.");
         publisher.publish(fmt);
         return 1;
     }

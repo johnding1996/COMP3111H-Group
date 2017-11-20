@@ -99,6 +99,7 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
     public void accept(Event<FormatterMessageJSON> ev) {
         FormatterMessageJSON fmt = ev.getData();
         String userId = fmt.getUserId();
+
         if (noReplyFutures.containsKey(userId)) {
             ScheduledFuture<?> future = noReplyFutures.remove(userId);
             if (future != null)
@@ -239,6 +240,7 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
      *         is no record for this user
      */
     public State getUserState(String userId) {
+
         StateKeeper keeper = new StateKeeper();
         String stateName = keeper.get(userId);
         keeper.close();
@@ -311,6 +313,7 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
                 setUserState(userId, nextState);
             }
         };
+
     }
 
     private static final String[] replies = { "Sorry, but I don't understand what you said.",

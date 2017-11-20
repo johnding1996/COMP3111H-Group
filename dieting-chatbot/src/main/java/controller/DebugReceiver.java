@@ -29,9 +29,11 @@ public class DebugReceiver implements Consumer<Event<MessageJSON>> {
     @Autowired
     private EventBus eventBus;
 
+
     /**
      * FormatterMessageJSON object for debug usage.
      */
+
     public FormatterMessageJSON formatterMessageJSON = null;
     /**
      * ParserMessageJSON object for debug usage.
