@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextMenuParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">agent</a> &gt; <span class="el_source">TextMenuParser.java</span></div><h1>TextMenuParser.java</h1><pre class="source lang-java linenums">package agent;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import org.springframework.stereotype.Component;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * TextMenuParser: handles text menu.
+ * @author cliubf, szhouan
+ * @version v1.0.0
+ */
+<span class="fc" id="L15">@Slf4j</span>
+@Component
+<span class="nc" id="L17">public class TextMenuParser {</span>
+    /**
+     * Build menu information from text.
+     * @param text String of user input text.
+     * @return A JSON array; null if no dish is successfully parsed.
+     */
+    public static JSONArray buildMenu(String text) {
+<span class="fc" id="L24">        JSONArray arr = new JSONArray();</span>
+<span class="fc" id="L25">        String[] lines = text.split(&quot;\n&quot;);</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        for (String line : lines) {</span>
+<span class="fc" id="L27">            JSONObject dish = new JSONObject();</span>
+<span class="fc" id="L28">            dish.put(&quot;name&quot;, line);</span>
+<span class="fc" id="L29">            arr.put(dish);</span>
+        }
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">        return arr.length()==0 ? null : arr;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

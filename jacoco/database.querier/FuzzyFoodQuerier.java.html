@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FuzzyFoodQuerier.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">database.querier</a> &gt; <span class="el_source">FuzzyFoodQuerier.java</span></div><h1>FuzzyFoodQuerier.java</h1><pre class="source lang-java linenums">package database.querier;
+
+import org.json.JSONArray;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Food Querier which implement Levenshtein fuzzy serarch.
+ */
+<span class="fc" id="L13">@Slf4j</span>
+public class FuzzyFoodQuerier extends FoodQuerier {
+    /**
+     * levenshtein algorithm parameters, {insert cost, delete cost, replace cost}.
+     */
+<span class="pc" id="L18">    private int[] levenshteinCosts = {1, 10, 10};</span>
+
+    /**
+     * Default constructor.
+     */
+    public FuzzyFoodQuerier() {
+<span class="fc" id="L24">        super();</span>
+<span class="fc" id="L25">    }</span>
+
+    /**
+     * Constructor which uses external sql connection.
+     * @param sql external sql connection
+     */
+    FuzzyFoodQuerier(Connection sql) {
+<span class="fc" id="L32">        super(sql);</span>
+<span class="fc" id="L33">    }</span>
+
+    /**
+     * Set the query limit and levenshtein algorithm parameters.
+     * @param queryLimit number of rows to return when searching
+     * @param levenshteinCosts levenshtein algorithm parameters, {insert cost, delete cost, replace cost}
+     */
+    public FuzzyFoodQuerier(int queryLimit, int[] levenshteinCosts) {
+<span class="nc" id="L41">        super(queryLimit);</span>
+<span class="nc" id="L42">        System.arraycopy(levenshteinCosts, 0, this.levenshteinCosts, 0, 3);</span>
+<span class="nc" id="L43">    }</span>
+
+    /**
+     * Fuzzy search for a food.
+     * @param key string to search
+     * @return JSONArray an array of FoodJSON
+     */
+    @Override
+    public JSONArray search(String key) {
+<span class="fc" id="L52">        String query = String.format(&quot;SELECT * FROM %s ORDER BY LEAST(LEVENSHTEIN('%s', %s, %d, %d, %d), LEVENSHTEIN('%s', %s, %d, %d, %d)) LIMIT %d;&quot;,</span>
+                table,
+<span class="fc" id="L54">                key.toLowerCase(), desc_field, levenshteinCosts[0], levenshteinCosts[1], levenshteinCosts[2],</span>
+<span class="fc" id="L55">                key.toUpperCase(), desc_field, levenshteinCosts[0], levenshteinCosts[1], levenshteinCosts[2],</span>
+<span class="fc" id="L56">                queryLimit);</span>
+<span class="fc" id="L57">        ResultSet rs = executeQuery(query);</span>
+<span class="fc" id="L58">        return parseResult(rs, fields, critical_fields);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

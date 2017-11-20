@@ -10,11 +10,15 @@ Develop Branch: [![Develop Branch Build Status](https://travis-ci.com/johnding19
 
 Code Factor (Master): [![CodeFactor](https://www.codefactor.io/repository/github/johnding1996/comp3111h-group/badge)](https://www.codefactor.io/repository/github/johnding1996/comp3111h-group)
 
-Code Coverage (Master): [![codecov](https://codecov.io/gh/johnding1996/COMP3111H-Group/branch/master/graph/badge.svg?token=GpDXgOnBCK)](https://codecov.io/gh/johnding1996/COMP3111H-Group)
+<!--Code Coverage (Master): [![codecov](https://codecov.io/gh/johnding1996/COMP3111H-Group/branch/master/graph/badge.svg?token=GpDXgOnBCK)](https://codecov.io/gh/johnding1996/COMP3111H-Group)-->
 
 ### JavaDoc
 
 [JavaDoc](https://johnding1996.github.io/COMP3111H-Group/javadoc/index.html)
+
+### Jacoco
+
+[Jacoco](https://johnding1996.github.io/COMP3111H-Group/jacoco/index.html)
 
 ### JavaDoc CheckStyle
 

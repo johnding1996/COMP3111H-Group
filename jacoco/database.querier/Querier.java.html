@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Querier.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">database.querier</a> &gt; <span class="el_source">Querier.java</span></div><h1>Querier.java</h1><pre class="source lang-java linenums">package database.querier;
+
+import database.connection.SQLPool;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import java.util.*;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import lombok.extern.slf4j.Slf4j;
+
+
+/**
+ * Abstract base-class of all Queriers.
+ * Handles sql JDBC connections and provide I/O method interfaces.
+ * A set of operations are implemented here, including: get, set, add, update, delete, has, search.
+ * @author mcding
+ * @version 1.2.1
+ */
+<span class="fc" id="L26">@Slf4j</span>
+abstract class Querier {
+
+    /**
+     * protected connection object.
+     */
+    protected Connection sql;
+    /**
+     * Table name of a specific Querier.
+     */
+    protected String table;
+
+    /**
+     * Name of index field of the table.
+     */
+    protected String idx_field;
+
+    /**
+     * Name of description field of the table.
+     */
+    protected String desc_field;
+
+    /**
+     * List of all fields of the table.
+     */
+    protected List&lt;String&gt; fields;
+
+    /**
+     * Set of all not-nullable fields of the table.
+     * Also the set of minimum fields in the corresponding JSONObject.
+     */
+    protected Set&lt;String&gt; critical_fields;
+
+    /**
+     * The maximum number of rows returned when use search method.
+     */
+    protected int queryLimit;
+
+    /**
+     * Connect to redis server and create the instance's jedis instance.
+     */
+<span class="fc" id="L67">    Querier() {</span>
+<span class="fc" id="L68">        sql = SQLPool.getConnection();</span>
+        try {
+<span class="fc" id="L70">            sql.setAutoCommit(true);</span>
+<span class="nc" id="L71">        } catch (SQLException e) {</span>
+<span class="nc" id="L72">            log.error(&quot;Failed to add SQL connection to auto-commit.&quot;, e);</span>
+<span class="nc" id="L73">        } catch (NullPointerException e) {</span>
+<span class="nc" id="L74">            log.error(&quot;&quot;);</span>
+<span class="pc" id="L75">        }</span>
+<span class="fc" id="L76">    }</span>
+
+    /**
+     * Close the connection once it is not used anymore.
+     */
+    public void close() {
+<span class="fc" id="L82">        SQLPool.closeConnection(sql);</span>
+<span class="fc" id="L83">    }</span>
+
+    /**
+     * Base get all method.
+     * @return JSONArray of all rows in the table
+     */
+    public JSONArray get() {
+<span class="nc" id="L90">        String query = String.format(&quot;SELECT * FROM %s&quot;, table);</span>
+<span class="nc" id="L91">        ResultSet rs = executeQuery(query);</span>
+<span class="nc" id="L92">        return parseResult(rs, fields, critical_fields);</span>
+    }
+
+    /**
+     * Base get method.
+     * @param key index int
+     * @return JSONObject of the corresponding row
+     */
+    public JSONObject get(int key) {
+<span class="fc" id="L101">        String keyString = Integer.toString(key);</span>
+<span class="fc" id="L102">        return get(keyString);</span>
+    }
+
+    /**
+     * Base get method.
+     * @param key index string
+     * @return JSONObject of the corresponding row
+     */
+    public JSONObject get(String key) {
+<span class="fc" id="L111">        String query = String.format(&quot;SELECT * FROM %s WHERE %s = '%s' LIMIT %d;&quot;, table, idx_field, key, 1);</span>
+<span class="fc" id="L112">        ResultSet rs = executeQuery(query);</span>
+        try {
+<span class="fc" id="L114">            return parseResult(rs, fields, critical_fields).getJSONObject(0);</span>
+<span class="nc" id="L115">        } catch (JSONException e) {</span>
+<span class="nc" id="L116">            log.warn(String.format(&quot;Failed to get row where %s = '%s' in table %s since not found.&quot;, idx_field, key, table), e);</span>
+<span class="nc" id="L117">            return null;</span>
+        }
+    }
+
+    /**
+     * Base search method, to be override by sub-class methods.
+     * @param desc description string
+     * @return JSONArray as the search result
+     */
+    public JSONArray search(String desc) {
+<span class="fc" id="L127">        String query = String.format(&quot;SELECT * FROM %s WHERE %s = '%s' LIMIT %d;&quot;, table, desc_field, desc, queryLimit);</span>
+<span class="fc" id="L128">        ResultSet rs = executeQuery(query);</span>
+<span class="fc" id="L129">        return parseResult(rs, fields, critical_fields);</span>
+    }
+
+    /**
+     * Base add method, to be override by sub-class methods.
+     * @param jsonObject JSONObject as the information to store
+     * @return whether add successfully or not
+     */
+    public boolean add (JSONObject jsonObject) {
+<span class="nc" id="L138">        JSONArray jsonArray = new JSONArray();</span>
+<span class="nc" id="L139">        jsonArray.put(jsonObject);</span>
+<span class="nc" id="L140">        return add(jsonArray);</span>
+    }
+
+
+    /**
+     * Base add method, to be override by sub-class methods.
+     * @param jsonArray JSONArray as the information to store
+     * @return whether add successfully or not
+     */
+    public boolean add(JSONArray jsonArray) {
+<span class="fc" id="L150">        List&lt;String&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        for (int i=0; i&lt;jsonArray.length(); i++) {</span>
+            JSONObject jsonObject;
+            try {
+<span class="fc" id="L154">                jsonObject = jsonArray.getJSONObject(i);</span>
+<span class="fc" id="L155">            } catch (JSONException e) {</span>
+<span class="fc" id="L156">                log.error(&quot;Parsing JSONArray failed when get JSONObject.&quot;, e);</span>
+<span class="fc" id="L157">                return false;</span>
+<span class="fc" id="L158">            }</span>
+<span class="fc" id="L159">            Map&lt;String, String&gt; map = parseInput(jsonObject, fields, critical_fields, true);</span>
+<span class="fc bfc" id="L160" title="All 2 branches covered.">            if (map == null) {</span>
+<span class="fc" id="L161">                log.error(String.format(&quot;Add row %s to table %s failed when parsing.&quot;, jsonObject.toString(), table));</span>
+<span class="fc" id="L162">                return false;</span>
+            }
+<span class="fc" id="L164">            List&lt;String&gt; values = new ArrayList&lt;&gt;(map.values());</span>
+<span class="fc" id="L165">            rows.add(&quot;(&quot; + String.join(&quot;, &quot;, values) + &quot;)&quot;);</span>
+        }
+<span class="fc" id="L167">        String query = String.format(&quot;INSERT INTO %s (%s) VALUES %s;&quot;,</span>
+<span class="fc" id="L168">                table, String.join(&quot;, &quot;, fields), String.join(&quot;, &quot;, rows));</span>
+<span class="fc" id="L169">        return executeUpdate(query);</span>
+    }
+
+    /**
+     * Base delete method.
+     * @param key index int
+     * @return whether deleting successfully or not
+     */
+    public boolean delete(int key) {
+<span class="nc" id="L178">        String keyString = Integer.toString(key);</span>
+<span class="nc" id="L179">        return delete(keyString);</span>
+    }
+
+    /**
+     * Base delete method.
+     * @param key index string
+     * @return whether deleting successfully or not
+     */
+    public boolean delete(String key) {
+<span class="fc" id="L188">        String query = String.format(&quot;DELETE FROM %s WHERE %s = '%s';&quot;, table, idx_field, key);</span>
+<span class="fc" id="L189">        return executeUpdate(query);</span>
+    }
+
+    /**
+     * Base update method, to be override by sub-class methods.
+     * @param jsonObject JSONObject as the information to update
+     * @return whether update successfully or not
+     */
+    public boolean update(JSONObject jsonObject) {
+<span class="fc" id="L198">        JSONArray jsonArray = new JSONArray();</span>
+<span class="fc" id="L199">        jsonArray.put(jsonObject);</span>
+<span class="fc" id="L200">        return update(jsonArray);</span>
+    }
+
+    /**
+     * Base update method, to be override by sub-class methods.
+     * @param jsonArray JSONArray as the information to update
+     * @return whether update successfully or not
+     */
+    public boolean update(JSONArray jsonArray) {
+<span class="fc bfc" id="L209" title="All 2 branches covered.">        for (int i=0; i&lt;jsonArray.length(); i++) {</span>
+            JSONObject jsonObject;
+            try {
+<span class="fc" id="L212">                jsonObject = jsonArray.getJSONObject(i);</span>
+<span class="nc" id="L213">            } catch (JSONException e) {</span>
+<span class="nc" id="L214">                log.error(&quot;Parsing JSONArray failed when get JSONObject.&quot;, e);</span>
+<span class="nc" id="L215">                return false;</span>
+<span class="fc" id="L216">            }</span>
+<span class="fc" id="L217">            Map&lt;String, String&gt; map = parseInput(jsonObject, fields, new HashSet&lt;&gt;(Arrays.asList(idx_field)), false);</span>
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">            if (map == null) {</span>
+<span class="nc" id="L219">                log.error(String.format(&quot;Update row %s of table %s failed when parsing.&quot;, jsonObject.toString(), table));</span>
+<span class="nc" id="L220">                return false;</span>
+            }
+<span class="fc" id="L222">            List&lt;String&gt; assignments = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">            for (Map.Entry&lt;String, String&gt; entry : map.entrySet()) {</span>
+<span class="fc bfc" id="L224" title="All 2 branches covered.">                if(!idx_field.equals(entry.getKey())) {</span>
+<span class="fc" id="L225">                    assignments.add(entry.getKey() + &quot; = &quot; + entry.getValue());</span>
+                }
+<span class="fc" id="L227">            }</span>
+            // Note that id string here should not be enclosed by quotation marks, since they are already enclosed in parseInpute
+<span class="fc" id="L229">            String query = String.format(&quot;UPDATE %s SET %s WHERE %s=%s;&quot;,</span>
+<span class="fc" id="L230">                    table, String.join(&quot;, &quot;, assignments), idx_field, map.get(idx_field));</span>
+<span class="pc bpc" id="L231" title="1 of 2 branches missed.">            if (!executeUpdate(query)){</span>
+<span class="nc" id="L232">                log.error(String.format(&quot;Failed to update row with index %s of table %s when executing SQL query.&quot;,</span>
+<span class="nc" id="L233">                        map.get(idx_field), table));</span>
+            }
+        }
+<span class="fc" id="L236">        return true;</span>
+    }
+
+    /**
+     * Check whether row with specific key exists in the table or not.
+     * @param key key int
+     * @return whether row with specific key exists or not
+     */
+    public boolean has(int key) {
+<span class="nc" id="L245">        String keyString = Integer.toString(key);</span>
+<span class="nc" id="L246">        return has(keyString);</span>
+    }
+
+    /**
+     * Check whether row with specific key exists in the table or not.
+     * @param key key string
+     * @return whether row with specific key exists or not
+     */
+    public boolean has(String key) {
+        try {
+<span class="nc" id="L256">            String query = String.format(&quot;SELECT * FROM %s WHERE %s = '%s';&quot;, table, idx_field, key);</span>
+<span class="nc" id="L257">            ResultSet rs = executeQuery(query);</span>
+<span class="nc" id="L258">            boolean has = rs.next();</span>
+<span class="nc" id="L259">            rs.close();</span>
+<span class="nc" id="L260">            return has;</span>
+<span class="nc" id="L261">        } catch (SQLException e) {</span>
+<span class="nc" id="L262">            log.error(String.format(&quot;Failed to check whether row where %s = '%s' in %s table exists or not.&quot;, idx_field, key, table), e);</span>
+<span class="nc" id="L263">            return false;</span>
+        }
+    }
+
+    /**
+     * Utility method to execute arbitrary query which returns result add.
+     * @param query statement to execute
+     * @return ResultSet containing the result
+     */
+    protected ResultSet executeQuery(String query) {
+        try {
+<span class="fc" id="L274">            PreparedStatement stmt = sql.prepareStatement(query);</span>
+<span class="fc" id="L275">            ResultSet rs = stmt.executeQuery();</span>
+<span class="fc" id="L276">            stmt.closeOnCompletion();</span>
+<span class="fc" id="L277">            return rs;</span>
+<span class="nc" id="L278">        } catch (SQLException e) {</span>
+<span class="nc" id="L279">            log.error(String.format(&quot;Failed to execute query: %s.&quot;, query), e);</span>
+<span class="nc" id="L280">            return null;</span>
+        }
+    }
+
+    /**
+     * Utility method to execute arbitrary query which does not return result add.
+     * @param query statement to execute
+     * @return whether the statement is executed successfully or not
+     */
+    protected boolean executeUpdate(String query) {
+        try{
+<span class="fc" id="L291">            PreparedStatement stmt = sql.prepareStatement(query);</span>
+<span class="fc" id="L292">            stmt.executeUpdate();</span>
+<span class="fc" id="L293">            stmt.close();</span>
+<span class="fc" id="L294">            return true;</span>
+<span class="fc" id="L295">        } catch (SQLException e) {</span>
+<span class="fc" id="L296">            log.error(String.format(&quot;Failed to execute query: %s.&quot;, query), e);</span>
+<span class="fc" id="L297">            return false;</span>
+        }
+    }
+
+    /**
+     * Utility method to parse input flat JSONObject to a map of fields to SQL literals.
+     * @param jsonObject input JSONObject
+     * @param fields list of fields
+     * @param critical_fields set of not-nullable fields
+     * @param isStrict Boolean check if isStrict
+     * @return map of fileds to values
+     */
+    protected Map&lt;String, String&gt; parseInput(JSONObject jsonObject, List&lt;String&gt; fields, Set&lt;String&gt; critical_fields, boolean isStrict) {
+<span class="fc" id="L310">        Map&lt;String, String&gt; map = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L311" title="All 2 branches covered.">        for (String field: fields) {</span>
+<span class="fc bfc" id="L312" title="All 2 branches covered.">            if (jsonObject.has(field)) {</span>
+<span class="fc" id="L313">                Object value = jsonObject.get(field);</span>
+<span class="fc bfc" id="L314" title="All 2 branches covered.">                if (value instanceof String) {</span>
+<span class="fc" id="L315">                    map.put(field, &quot;'&quot; + jsonObject.getString(field)+ &quot;'&quot;);</span>
+<span class="fc bfc" id="L316" title="All 2 branches covered.">                } else if (value instanceof Integer) {</span>
+<span class="fc" id="L317">                    map.put(field, Integer.toString(jsonObject.getInt(field)));</span>
+<span class="pc bpc" id="L318" title="1 of 2 branches missed.">                } else if (value instanceof Long) {</span>
+<span class="nc" id="L319">                    map.put(field, Long.toString(jsonObject.getLong(field)));</span>
+<span class="fc bfc" id="L320" title="All 2 branches covered.">                } else if (value instanceof Double) {</span>
+<span class="fc" id="L321">                    map.put(field, Double.toString(jsonObject.getDouble(field)));</span>
+<span class="fc bfc" id="L322" title="All 2 branches covered.">                } else if (value instanceof Boolean) {</span>
+<span class="pc bpc" id="L323" title="1 of 2 branches missed.">                    map.put(field, jsonObject.getBoolean(field) ? &quot;TRUE&quot; : &quot;FALSE&quot;);</span>
+                } else {
+<span class="fc" id="L325">                    log.error(String.format(&quot;Encountered invalid value (%s) when parsing input Json.&quot;, value.toString()));</span>
+<span class="fc" id="L326">                    return null;</span>
+                }
+<span class="fc bfc" id="L328" title="All 2 branches covered.">            } else if (critical_fields.contains(field)) {</span>
+<span class="fc" id="L329">                log.error(String.format(&quot;Missing critical field (%s) when parsing input Json.&quot;, field));</span>
+<span class="fc" id="L330">                return null;</span>
+<span class="fc bfc" id="L331" title="All 2 branches covered.">            } else if (isStrict) {</span>
+<span class="fc" id="L332">                map.put(field, &quot;NULL&quot;);</span>
+            }
+<span class="fc" id="L334">        }</span>
+<span class="fc" id="L335">        return map;</span>
+    }
+
+    /**
+     * Utility method to parse ResultSet into a JSONArray of flat JSONObjects.
+     * @param rs ResultSet of query
+     * @param fields list of fields
+     * @param critical_fields set of not-nullable fields
+     * @return JSONArray as the parsed results
+     */
+    protected JSONArray parseResult(ResultSet rs, List&lt;String&gt; fields, Set&lt;String&gt; critical_fields) {
+<span class="fc" id="L346">        JSONArray jsonArray = new JSONArray();</span>
+        try{
+<span class="fc bfc" id="L348" title="All 2 branches covered.">            while (rs.next()) {</span>
+<span class="fc" id="L349">                JSONObject jsonObject = new JSONObject();</span>
+<span class="fc bfc" id="L350" title="All 2 branches covered.">                for (String field: fields) {</span>
+<span class="fc" id="L351">                    String value = rs.getString(field);</span>
+<span class="fc bfc" id="L352" title="All 2 branches covered.">                    if (value == null) {</span>
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">                        if (critical_fields.contains(field)) {</span>
+<span class="nc" id="L354">                            log.error(String.format(&quot;Failed to parse result set due to missing filed %s.&quot;, field));</span>
+<span class="nc" id="L355">                            return null;</span>
+                        } else {
+                            continue;
+                        }
+                    }
+<span class="pc bpc" id="L360" title="2 of 4 branches missed.">                    if (value.equals(&quot;t&quot;) || value.equals(&quot;f&quot;)) {</span>
+<span class="nc" id="L361">                        jsonObject.put(field, value.equals(&quot;t&quot;));</span>
+<span class="nc" id="L362">                        continue;</span>
+                    }
+                    Object valueObject;
+<span class="fc" id="L365">                    Scanner scanner = new Scanner(value);</span>
+<span class="fc bfc" id="L366" title="All 2 branches covered.">                    if (scanner.hasNextInt()) {</span>
+<span class="fc" id="L367">                        valueObject = scanner.nextInt();</span>
+<span class="pc bpc" id="L368" title="1 of 2 branches missed.">                    } else if (scanner.hasNextLong()) {</span>
+<span class="nc" id="L369">                        valueObject = scanner.nextLong();</span>
+<span class="fc bfc" id="L370" title="All 2 branches covered.">                    } else if (scanner.hasNextDouble()) {</span>
+<span class="fc" id="L371">                        valueObject = scanner.nextDouble();</span>
+                    } else {
+<span class="fc" id="L373">                        valueObject = value;</span>
+                    }
+                    // Check if there is some characters left, since we are parsing a single value
+<span class="fc bfc" id="L376" title="All 2 branches covered.">                    if (!scanner.hasNext()) {</span>
+<span class="fc" id="L377">                        jsonObject.put(field, valueObject);</span>
+                    } else {
+<span class="fc" id="L379">                        jsonObject.put(field, value);</span>
+                    }
+<span class="fc" id="L381">                }</span>
+<span class="fc" id="L382">                jsonArray.put(jsonObject);</span>
+<span class="fc" id="L383">            }</span>
+<span class="fc" id="L384">            rs.close();</span>
+<span class="fc" id="L385">            return jsonArray;</span>
+<span class="nc" id="L386">        } catch (SQLException e) {</span>
+<span class="nc" id="L387">            log.error(&quot;Failed to parse result set due to SQL exception.&quot; , e);</span>
+            try{
+<span class="nc" id="L389">                rs.close();</span>
+<span class="nc" id="L390">                return null;</span>
+<span class="nc" id="L391">            } catch (SQLException e0) {</span>
+<span class="nc" id="L392">                log.error(&quot;Failed to close result set due to SQL exception.&quot; , e0);</span>
+<span class="nc" id="L393">                return null;</span>
+            }
+        }
+    }
+
+    /**
+     * Change the query limit.
+     * @param queryLimit number of rows to return when searching
+     */
+    public void setQueryLimit(int queryLimit) {
+<span class="fc" id="L403">        this.queryLimit = queryLimit;</span>
+<span class="fc" id="L404">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ImageControl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">controller</a> &gt; <span class="el_source">ImageControl.java</span></div><h1>ImageControl.java</h1><pre class="source lang-java linenums">package controller;
+
+import com.google.common.io.ByteStreams;
+import com.linecorp.bot.client.MessageContentResponse;
+
+import database.keeper.CampaignKeeper;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.awt.image.WritableRaster;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import javax.annotation.PostConstruct;
+import javax.imageio.ImageIO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.apache.commons.codec.binary.Base64;
+import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
+import utility.FormatterMessageJSON;
+
+/**
+ * ImageControl: deal with all image matters.
+ * @author agong
+ * @version v2.0.0
+ */
+<span class="fc" id="L43">@Slf4j</span>
+@Component
+<span class="fc" id="L45">public class ImageControl {</span>
+
+    /**
+     * store path or uri for the file.
+     */
+<span class="nc bnc" id="L50" title="All 20 branches missed.">    @Value</span>
+    public static class DownloadedContent {
+        /**
+         * THis is a Path object.
+         */
+<span class="nc" id="L55">        Path path;</span>
+
+        /**
+         * THis is a String storing uri.
+         */
+<span class="nc" id="L60">        String uri;</span>
+    }
+
+    /**
+     * This is a ServletUriComponentsBuilder.
+     */
+    public static ServletUriComponentsBuilder servletUriComponentsBuilder;
+    
+    /**
+     * Create a temporary file on the current server directory.
+     * @param ext extension string, could be jpeg, jpg, png...
+     * @return a DownloadedContent instance created
+     */
+    private static DownloadedContent createTempFile(String ext) {
+<span class="nc" id="L74">        String fileName = LocalDateTime.now().toString() + '-' </span>
+<span class="nc" id="L75">                        + UUID.randomUUID().toString() + '.' + ext;</span>
+<span class="nc" id="L76">        Path tempFilePath= DietingChatbotApplication.downloadedContentDir.resolve(fileName);</span>
+<span class="nc" id="L77">        tempFilePath.toFile().deleteOnExit();</span>
+<span class="nc" id="L78">        return new DownloadedContent(tempFilePath, createUri(&quot;/downloaded/&quot; + tempFilePath.getFileName()));</span>
+    }
+
+    /**
+     * Controller use this static method to save content from the InputStream specified in the response body.
+     * @param responseBody the response body get from LINE Messaging Client
+     * @param type can either be TempFile (will return uri of the temp image) or DB (the extension and encoded string) 
+     * @return will either return the bordered image's uri or extension + encoded string          
+     */
+    public static String[] saveContent(MessageContentResponse responseBody, String type) {
+<span class="nc" id="L88">        log.info(&quot;Got content-type: {}&quot;, responseBody);</span>
+<span class="nc" id="L89">        String mimeType = responseBody.getMimeType();</span>
+<span class="nc" id="L90">        String extension = mimeType.substring(6);   // image/jpeg or image/png</span>
+<span class="nc" id="L91">        log.info(&quot;extension: {}&quot;, extension);</span>
+<span class="nc" id="L92">        InputStream inputStream = responseBody.getStream();</span>
+<span class="nc" id="L93">        log.info(&quot;Input Stream: {}&quot;, inputStream);</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (type.equals(&quot;TempFile&quot;)) {</span>
+<span class="nc" id="L95">            log.info(&quot;Store temporary file&quot;);</span>
+<span class="nc" id="L96">            DownloadedContent tempFile = createTempFile(extension);</span>
+<span class="nc" id="L97">            try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {</span>
+<span class="nc" id="L98">                log.info(&quot;Trying to copy&quot;);</span>
+<span class="nc" id="L99">                ByteStreams.copy(inputStream, outputStream);</span>
+<span class="nc" id="L100">                log.info(&quot;Saved {}: {}&quot;, extension, tempFile);</span>
+<span class="nc" id="L101">                return new String[] {tempFile.getUri()};</span>
+<span class="nc bnc" id="L102" title="All 8 branches missed.">            } catch (IOException e) {</span>
+                // throw new UncheckedIOException(e);
+<span class="nc" id="L104">                return null;</span>
+            }
+            // return the uri of the downloaded image
+            // String fileName = LocalDateTime.now().toString() + '-' 
+            //     + UUID.randomUUID().toString() + '.' + extension;
+            // Path filePath= DietingChatbotApplication.downloadedContentDir.resolve(fileName);
+            // filePath.toFile().deleteOnExit();
+            // createUri(filePath);
+            // try (OutputStream outputStream = Files.newOutputStream(filePath)) {
+            //     log.info(&quot;Trying to copy&quot;);
+            //     ByteStreams.copy(inputStream, outputStream);
+            //     log.info(&quot;Saved {} with name {} and path&quot;, extension, filePath.getFileName(), filePath);
+            // } catch (IOException e) {
+            //     throw new UncheckedIOException(e);
+            // } 
+            // String borderedImageUri = addBorder(filePath.toFile(), &quot;server&quot;);
+            // log.info(&quot;Added border, will return borderedImageUri as: {}&quot;, borderedImageUri);
+            // return new String[] { borderedImageUri };
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        } else if (type.equals(&quot;DB&quot;)) {</span>
+<span class="nc" id="L123">            log.info(&quot;Store image uploaded by administrator to DB&quot;);</span>
+<span class="nc" id="L124">            ByteArrayOutputStream bos = new ByteArrayOutputStream();</span>
+            try {
+<span class="nc" id="L126">                long numOfBytes = ByteStreams.copy(responseBody.getStream(), bos);</span>
+<span class="nc" id="L127">                log.info(&quot;copied &quot; + numOfBytes + &quot; bytes&quot;);</span>
+<span class="nc" id="L128">                byte[] buf = bos.toByteArray();</span>
+<span class="nc" id="L129">                String encodedString = Base64.encodeBase64URLSafeString(buf);</span>
+<span class="nc" id="L130">                log.info(&quot;Encoded String in Base64: {}&quot;, encodedString);</span>
+<span class="nc" id="L131">                return new String[] { extension, encodedString };</span>
+            }
+<span class="nc" id="L133">            catch (IOException e) {</span>
+<span class="nc" id="L134">                log.info(&quot;Caught IOException when testing DB part&quot;);</span>
+            }
+        }
+<span class="nc" id="L137">        return null;</span>
+    }
+        
+        
+    /**
+     * Create URI from current context path.
+     * @param path the desired sub directory path
+     * @return uri from the current context path
+     */
+    private static String createUri(String path) {
+<span class="nc" id="L147">        return servletUriComponentsBuilder.path(path).build().toString();</span>
+    }
+
+    /**
+     * Add border to a image file to facilitate OCR recognization.
+     * @param tempFile temporary file stored on server or local machine
+     * @param type can either be test or server
+     * @return uri of the bordered image file
+     */
+    public static String addBorder(File tempFile, String type) {
+<span class="nc" id="L157">        String tempFileName = tempFile.getName();</span>
+<span class="nc" id="L158">        String extension = tempFileName.substring(tempFileName.lastIndexOf('.'));</span>
+        BufferedImage bimg;
+		try {
+<span class="nc" id="L161">			bimg = ImageIO.read(tempFile);</span>
+<span class="nc" id="L162">            int width = bimg.getWidth();</span>
+<span class="nc" id="L163">            int height = bimg.getHeight();</span>
+<span class="nc" id="L164">            int borderedImageWidth = width + 20;</span>
+<span class="nc" id="L165">            int borderedImageHeight = height + 20;</span>
+<span class="nc" id="L166">            BufferedImage img = new BufferedImage(borderedImageWidth, borderedImageHeight, BufferedImage.TYPE_3BYTE_BGR);</span>
+<span class="nc" id="L167">            img.createGraphics();</span>
+<span class="nc" id="L168">            Graphics2D g = (Graphics2D) img.getGraphics();</span>
+<span class="nc" id="L169">            g.setColor(Color.BLACK);</span>
+<span class="nc" id="L170">            g.fillRect(0, 0, borderedImageWidth, borderedImageHeight);</span>
+<span class="nc" id="L171">            g.drawImage(bimg, 10, 10, width + 10, height + 10, 0, 0, width, height, Color.BLACK, null);</span>
+<span class="nc" id="L172">            log.info(&quot;Default temporary file directory: {}&quot;, System.getProperty(&quot;java.io.tmpdir&quot;));</span>
+<span class="nc" id="L173">            log.info(&quot;Creating bordered image...&quot;);</span>
+
+            // return path of this output file, if type is specified as test
+<span class="nc bnc" id="L176" title="All 2 branches missed.">            if(type.equals(&quot;test&quot;)) {</span>
+<span class="nc" id="L177">                File outputFile = File.createTempFile(tempFile.getParent() + &quot;/bordered_menu&quot;, &quot;.png&quot;);</span>
+<span class="nc" id="L178">                ImageIO.write(img, &quot;png&quot;, ImageIO.createImageOutputStream(outputFile));</span>
+<span class="nc" id="L179">                return outputFile.getAbsolutePath().toString();</span>
+            }
+
+            //create uri for file stored on server, if type is specified as server
+<span class="nc bnc" id="L183" title="All 2 branches missed.">            if(type.equals(&quot;server&quot;)) {</span>
+<span class="nc" id="L184">                String fileName = LocalDateTime.now().toString() + '-' </span>
+<span class="nc" id="L185">                    + UUID.randomUUID().toString() + &quot;.png&quot;;</span>
+<span class="nc" id="L186">                Path tempFilePath= DietingChatbotApplication.downloadedContentDir.resolve(fileName);</span>
+<span class="nc" id="L187">                ImageIO.write(img, &quot;png&quot;, ImageIO.createImageOutputStream(tempFilePath.toFile()));</span>
+<span class="nc" id="L188">                log.info(&quot;Written into a new image file with file name: {}&quot;, tempFilePath.getFileName());</span>
+<span class="nc" id="L189">                tempFilePath.toFile().deleteOnExit();</span>
+<span class="nc" id="L190">                return createUri(&quot;/downloaded/&quot; + tempFilePath.getFileName());</span>
+            }
+
+<span class="nc" id="L193">        } catch (IOException e) {</span>
+<span class="nc" id="L194">            log.info(e.toString());</span>
+<span class="nc" id="L195">            log.info(&quot;cannot read in file {}&quot;, tempFile.getName());</span>
+<span class="nc" id="L196">        }</span>
+<span class="nc" id="L197">        return null;</span>
+    }
+
+    /**
+     * Store the encoded string retrieved from DB to a temp file.
+     * @param userId the user to be sent
+     * @param encodedString the encodedContent string retrieved from DB
+     * @param extension retrieved from DB
+     * @return the temp file's uri
+     */ 
+    public static String getCouponImageUri(String userId, String encodedString, String extension) {
+<span class="nc" id="L208">        byte[] decodedByteArray = Base64.decodeBase64(encodedString);</span>
+<span class="nc" id="L209">        InputStream inputStream = new ByteArrayInputStream(decodedByteArray);</span>
+<span class="nc" id="L210">        return inputToTempFile(extension, inputStream);</span>
+    }
+
+    /**
+     * Store content into a temporary file.
+     * @param extension the extension of the desired file format, corresponding to its MIME Type
+     * @param inputStream the inputStream to get ByteStreams
+     * @return the temporary file's uri
+     */
+    public static String inputToTempFile(String extension, InputStream inputStream) {
+<span class="nc" id="L220">        DownloadedContent tempFile = createTempFile(extension);</span>
+<span class="nc" id="L221">        try (OutputStream outputStream = Files.newOutputStream(tempFile.path)) {</span>
+<span class="nc" id="L222">            log.info(&quot;Trying to copy&quot;);</span>
+<span class="nc" id="L223">            ByteStreams.copy(inputStream, outputStream);</span>
+<span class="nc" id="L224">            log.info(&quot;Saved {}: {}&quot;, extension, tempFile);</span>
+<span class="nc" id="L225">            return tempFile.getUri();</span>
+<span class="nc bnc" id="L226" title="All 8 branches missed.">        } catch (IOException e) {</span>
+<span class="nc" id="L227">            throw new UncheckedIOException(e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

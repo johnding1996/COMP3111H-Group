@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>State.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">controller</a> &gt; <span class="el_source">State.java</span></div><h1>State.java</h1><pre class="source lang-java linenums">package controller;
+
+
+import java.util.Date;
+
+/**
+ * Enum class for global state representation.
+ * @author szhouan
+ * @version v2.0.0
+ */
+<span class="pc" id="L11">public enum State {</span>
+
+    /**
+     * Invalid state.
+     * This state is an indicator of errors.
+     */
+<span class="fc" id="L17">    INVALID(&quot;Invalid&quot;),</span>
+    /**
+     * Idle state.
+     * This is the initial and final state for any operation.
+     */
+<span class="fc" id="L22">    IDLE(&quot;Idle&quot;),</span>
+    /**
+     * Initial input state.
+     * State for user initial input.
+     */
+<span class="fc" id="L27">    INITIAL_INPUT(&quot;InitialInput&quot;),</span>
+    /**
+     * Parser menu state.
+     * State for parsing user menu input.
+     */
+<span class="fc" id="L32">    PARSE_MENU(&quot;ParseMenu&quot;),</span>
+    /**
+     * Ask meal state.
+     * State for interacting with user on the menu given.
+     */
+<span class="fc" id="L37">    ASK_MEAL(&quot;AskMeal&quot;),</span>
+    /**
+     * Ask portion state.
+     * State for asking user portion size of each dish.
+     */
+<span class="fc" id="L42">    ASK_PORTION(&quot;AskPortion&quot;),</span>
+    /**
+     * Recommend state.
+     * State for giving recommendation.
+     */
+<span class="fc" id="L47">    RECOMMEND(&quot;Recommend&quot;),</span>
+    /**
+     * Record meal state.
+     * State for recording what the user has eaten.
+     */
+<span class="fc" id="L52">    RECORD_MEAL(&quot;RecordMeal&quot;),</span>
+    /**
+     * Feedback state.
+     * State for providing user feedback information.
+     */
+<span class="fc" id="L57">    FEEDBACK(&quot;Feedback&quot;),</span>
+    /**
+     * Ask weight state.
+     * Not used in the current system.
+     */
+<span class="fc" id="L62">    ASK_WEIGHT(&quot;AskWeight&quot;),</span>
+    /**
+     * Invite friend state.
+     * State for handling `friend` command from user.
+     */
+<span class="fc" id="L67">    INVITE_FRIEND(&quot;InviteFriend&quot;),</span>
+    /**
+     * Claim coupon state.
+     * State for handling `code` command from new user.
+     */
+<span class="fc" id="L72">    CLAIM_COUPON(&quot;ClaimCoupon&quot;),</span>
+    /**
+     * Manage campaign state.
+     * State for handling admin user managing campaign.
+     */
+<span class="fc" id="L77">    MANAGE_CAMPAIGN(&quot;ManageCampaign&quot;),</span>
+    /**
+     * Following state.
+     * State when user follows the chatbot.
+     */
+<span class="fc" id="L82">    FOLLOWING(&quot;Following&quot;),</span>
+    /**
+     * Unfollowing state.
+     * State when user unfollows the chatbot.
+     */
+<span class="fc" id="L87">    UNFOLLOWING(&quot;Unfollowing&quot;);</span>
+
+    /**
+     * This is a private String storing name.
+     */
+    private final String name;
+
+    /**
+     * Timeout period for the states.
+     */
+    private static final int TIMEOUT_PERIOD = 3600;
+
+    /**
+     * Construct a State enum with given name.
+     * @param name String of state name.
+     */
+<span class="fc" id="L103">    private State(String name) {</span>
+<span class="fc" id="L104">        this.name = name;</span>
+<span class="fc" id="L105">    }</span>
+
+    /**
+     * Get name of the state.
+     * @return name of the state.
+     */
+    public String getName() {
+<span class="fc" id="L112">        return name;</span>
+    }
+
+    /**
+     * Overriden toString method for State enum.
+     * @return name of the state.
+     */
+    @Override
+    public String toString() {
+<span class="fc" id="L121">        return getName();</span>
+    }
+
+    /**
+     * Validate whether a string is a valid state name.
+     * @param name String of state name.
+     * @return Whether name is a valid state name.
+     */
+    public static boolean validateStateName(String name) {
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        for (State state : State.values()) {</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">            if (state.name.equals(name)) {</span>
+<span class="fc" id="L132">                return true;</span>
+            }
+        }
+<span class="fc" id="L135">        return false;</span>
+    }
+
+    /**
+     * Return corresponding state for a string.
+     * @param name String of state name.
+     * @return Corresponding state.
+     */
+    public static State getStateByName(String name) {
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">        for (State state : State.values()) {</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">            if (state.name.equals(name)) {</span>
+<span class="fc" id="L146">                return state;</span>
+            }
+        }
+<span class="nc" id="L149">        return State.INVALID;</span>
+    }
+
+    /**
+     * Return Date object for time that is TIMEOUT_PERIOD sec later.
+     * @return A Date object as described.
+     */
+    public static Date getTimeoutDate() {
+<span class="fc" id="L157">        return new Date((new Date()).getTime() + 1000 * TIMEOUT_PERIOD);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

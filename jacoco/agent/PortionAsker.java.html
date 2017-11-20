@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PortionAsker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">agent</a> &gt; <span class="el_source">PortionAsker.java</span></div><h1>PortionAsker.java</h1><pre class="source lang-java linenums">package agent;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import controller.State;
+import lombok.extern.slf4j.Slf4j;
+import java.util.Arrays;
+import java.util.HashSet;
+
+import utility.FormatterMessageJSON;
+import utility.JsonUtility;
+import utility.ParserMessageJSON;
+import utility.Validator;
+
+/**
+ * PortionAsker: ask portion size of each dish.
+ * 
+ * State map:
+ *      0 - Ask whether to skip
+ *      1 - Starting ask portion
+ *      2 - Update portion
+ * 
+ * @author cliubf, szhouan
+ * @version v1.2.0
+ */
+<span class="fc" id="L29">@Slf4j</span>
+@Component
+<span class="fc" id="L31">public class PortionAsker extends Agent {</span>
+
+    /**
+     * THis is a private attibute MenuManager object.
+     */
+    @Autowired
+    private MenuManager menuManager;
+
+    /**
+     * Initialize portion asker agent.
+     */
+    @Override
+    public void init() {
+<span class="fc" id="L44">        agentName = &quot;PortionAsker&quot;;</span>
+<span class="fc" id="L45">        agentStates = new HashSet&lt;&gt;(</span>
+<span class="fc" id="L46">            Arrays.asList(State.ASK_PORTION)</span>
+        );
+<span class="fc" id="L48">        handleImage = false;</span>
+<span class="fc" id="L49">        useSpellChecker = false;</span>
+<span class="fc" id="L50">        this.addHandler(0, (psr) -&gt; askSkip(psr))</span>
+<span class="fc" id="L51">            .addHandler(1, (psr) -&gt; startAskPortion(psr))</span>
+<span class="fc" id="L52">            .addHandler(2, (psr) -&gt; updatePortion(psr));</span>
+<span class="fc" id="L53">    }</span>
+
+    /**
+     * Handler for asking whether skip PortionAsker.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askSkip(ParserMessageJSON psr) {
+<span class="fc" id="L61">        String userId = psr.getUserId();</span>
+
+<span class="fc" id="L63">        JSONObject menuJSON = menuManager.getMenuJSON(userId);</span>
+<span class="fc" id="L64">        states.get(userId).put(&quot;menuJSON&quot;, menuJSON);</span>
+
+<span class="fc" id="L66">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L67">        fmt.appendTextMessage(&quot;Okay, here is your menu:&quot;)</span>
+<span class="fc" id="L68">           .appendTextMessage(JsonUtility.formatMenuJSON(menuJSON, false))</span>
+<span class="fc" id="L69">           .appendTextMessage(&quot;Would you like to tell me the portion &quot; +</span>
+                &quot;size of each dish? Please input 'Yes' or 'No'&quot;);
+<span class="fc" id="L71">        publisher.publish(fmt);</span>
+<span class="fc" id="L72">        return 1;</span>
+    }
+
+    /**
+     * Handler for asking whether skip PortionAsker.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int startAskPortion(ParserMessageJSON psr) {
+<span class="fc" id="L81">        String userId = psr.getUserId();</span>
+<span class="fc" id="L82">        String text = psr.get(&quot;textContent&quot;).trim().toLowerCase();</span>
+
+<span class="fc" id="L84">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        if (text.equals(&quot;yes&quot;)) {</span>
+<span class="fc" id="L86">            fmt.appendTextMessage(&quot;Okay, please give me your update in this format: &quot; +</span>
+                    &quot;&lt;dish index&gt;:&lt;portion in gram&gt;, such as '1:100'&quot;)
+<span class="fc" id="L88">               .appendTextMessage(&quot;Typically, an apple is around 100g&quot;)</span>
+<span class="fc" id="L89">               .appendTextMessage(&quot;Note that if you finish all updates you desired, &quot; +</span>
+                    &quot;you could type 'leave' to end the session&quot;);
+<span class="fc" id="L91">            publisher.publish(fmt);</span>
+<span class="fc" id="L92">            return 2;</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        } else if (text.equals(&quot;no&quot;)) {</span>
+<span class="fc" id="L94">            fmt.appendTextMessage(&quot;Alright, let's move on.&quot;);</span>
+<span class="fc" id="L95">            publisher.publish(fmt);</span>
+<span class="fc" id="L96">            controller.setUserState(userId, State.RECOMMEND);</span>
+<span class="fc" id="L97">            return END_STATE;</span>
+        } else {
+<span class="fc" id="L99">            rejectUserInput(psr, &quot;You could simply tell me yes or no.&quot;);</span>
+<span class="fc" id="L100">            return 1;</span>
+        }
+    }
+
+    /**
+     * Handler for updating portion size.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int updatePortion(ParserMessageJSON psr) {
+<span class="fc" id="L110">        String userId = psr.getUserId();</span>
+<span class="fc" id="L111">        String text = psr.get(&quot;textContent&quot;).trim().toLowerCase();</span>
+
+<span class="fc" id="L113">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (text.equals(&quot;leave&quot;)) {</span>
+<span class="fc" id="L115">            fmt.appendTextMessage(&quot;Alright, update portion finished.&quot;);</span>
+<span class="fc" id="L116">            publisher.publish(fmt);</span>
+<span class="fc" id="L117">            controller.setUserState(userId, State.RECOMMEND);</span>
+<span class="fc" id="L118">            return END_STATE;</span>
+        } else {
+<span class="fc" id="L120">            JSONObject menuJSON = states.get(userId).getJSONObject(&quot;menuJSON&quot;);</span>
+<span class="fc" id="L121">            JSONArray menu = menuJSON.getJSONArray(&quot;menu&quot;);</span>
+<span class="fc" id="L122">            int menuNum = menu.length();</span>
+<span class="fc" id="L123">            String[] tokens = text.split(&quot;:&quot;);</span>
+
+<span class="fc" id="L125">            boolean valid = true;</span>
+<span class="fc" id="L126">            int index = 0;</span>
+<span class="fc" id="L127">            int portion = 0;</span>
+<span class="fc bfc" id="L128" title="All 6 branches covered.">            if (!Validator.isInteger(tokens[0]) || !Validator.isInteger(tokens[1]) ||</span>
+                tokens.length != 2) {
+<span class="fc" id="L130">                valid = false;</span>
+            } else {
+<span class="fc" id="L132">                index = Integer.parseInt(tokens[0]);</span>
+<span class="fc" id="L133">                portion = Integer.parseInt(tokens[1]);</span>
+<span class="pc bpc" id="L134" title="1 of 4 branches missed.">                if (index &lt; 1 || index &gt; menuNum) valid = false;</span>
+<span class="fc bfc" id="L135" title="All 4 branches covered.">                if (portion &lt; 1 || portion &gt; 7000) valid = false;</span>
+            }
+
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            if (!valid) {</span>
+<span class="fc" id="L139">                rejectUserInput(psr, &quot;Please enter in this format: &quot; +</span>
+                        &quot;&lt;dish index&gt;:&lt;portion in gram&gt;, &quot; +
+                        &quot;both of the number shall be integer. &quot; +
+                        &quot;Or type 'leave' if no more update desired.&quot;);
+<span class="fc" id="L143">                return 2;</span>
+            } else {
+<span class="fc" id="L145">                updateDatabase(index, portion, userId);</span>
+<span class="fc" id="L146">                fmt.appendTextMessage(String.format(&quot;Roger, %d gram of %s&quot;,</span>
+<span class="fc" id="L147">                    portion, menu.getJSONObject(index-1).getString(&quot;name&quot;)));</span>
+<span class="fc" id="L148">                publisher.publish(fmt);</span>
+<span class="fc" id="L149">                return 2;</span>
+            }
+        }
+    }
+
+    /**
+     * update portion size to MenuKeeper.
+     * @param dishIndex the index of dish in menu, started by 1.
+     * @param portion portion of the dish, default portion unit as gram.
+     * @param userId String of user Id.
+     */
+    public void updateDatabase(int dishIndex, int portion, String userId) {
+<span class="fc" id="L161">        JSONObject menuJSON = menuManager.getMenuJSON(userId);</span>
+<span class="fc" id="L162">        JSONObject dish = menuJSON.getJSONArray(&quot;menu&quot;).getJSONObject(dishIndex-1);</span>
+<span class="fc" id="L163">        dish.put(&quot;portionSize&quot;, portion);</span>
+<span class="fc" id="L164">        menuJSON.getJSONArray(&quot;menu&quot;).put(dishIndex-1, dish);</span>
+<span class="fc" id="L165">        menuManager.storeMenuJSON(userId, menuJSON);</span>
+<span class="fc" id="L166">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

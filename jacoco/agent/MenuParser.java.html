@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MenuParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">agent</a> &gt; <span class="el_source">MenuParser.java</span></div><h1>MenuParser.java</h1><pre class="source lang-java linenums">package agent;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import database.keeper.MenuKeeper;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import controller.State;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import utility.FormatterMessageJSON;
+import utility.ParserMessageJSON;
+import org.springframework.util.ResourceUtils;
+
+import com.linecorp.bot.client.MessageContentResponse;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * MenuParser: handle menu in text, url and image.
+ * @author cliubf, szhouan
+ * @version v2.1.0
+ */
+<span class="fc" id="L30">@Slf4j</span>
+@Component
+<span class="fc" id="L32">public class MenuParser extends Agent {</span>
+
+    /**
+     * Initialize menu parser agent.
+     */
+    @Override
+    public void init() {
+<span class="fc" id="L39">        agentName = &quot;MenuParser&quot;;</span>
+<span class="fc" id="L40">        agentStates = new HashSet&lt;&gt;(</span>
+<span class="fc" id="L41">            Arrays.asList(State.PARSE_MENU)</span>
+        );
+<span class="fc" id="L43">        handleImage = true;</span>
+<span class="fc" id="L44">        useSpellChecker = false;</span>
+<span class="fc" id="L45">        this.addHandler(0, (psr) -&gt; askMenu(psr))</span>
+<span class="fc" id="L46">            .addHandler(1, (psr) -&gt; parseMenu(psr));</span>
+<span class="fc" id="L47">    }</span>
+
+    /**
+     * Handler for asking menu.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askMenu(ParserMessageJSON psr) {
+<span class="fc" id="L55">        String userId = psr.getUserId();</span>
+<span class="fc" id="L56">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L57">        fmt.appendTextMessage(&quot;Long time no see! What is your menu today? &quot; +</span>
+            &quot;You could use text or URL, or an image.&quot;);
+<span class="fc" id="L59">        publisher.publish(fmt);</span>
+<span class="fc" id="L60">        return 1;</span>
+    }
+
+    /**
+     * Handler for parsing menu.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int parseMenu(ParserMessageJSON psr) {
+<span class="fc" id="L69">        String userId = psr.getUserId();</span>
+<span class="fc" id="L70">        String type = psr.getType();</span>
+
+        // parsing menu
+<span class="fc" id="L73">        JSONArray menuArray = null;</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if (type.equals(&quot;text&quot;)) {</span>
+<span class="fc" id="L75">            String text = psr.get(&quot;textContent&quot;);</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            if (ResourceUtils.isUrl(text)) {</span>
+<span class="fc" id="L77">                menuArray = UrlMenuParser.buildMenu(text);</span>
+            } else {
+<span class="fc" id="L79">                menuArray = TextMenuParser.buildMenu(text);</span>
+            }
+<span class="fc" id="L81">        } else {</span>
+<span class="nc" id="L82">            String uri = psr.get(&quot;imageContent&quot;);</span>
+<span class="nc" id="L83">            log.info(&quot;{}: get image with URI: {}&quot;, agentName, uri);</span>
+<span class="nc" id="L84">            menuArray = ImageMenuParser.buildMenu(&quot;uri&quot;, uri); </span>
+        }
+
+        // check parsed menu and reply
+<span class="fc" id="L88">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if(menuArray == null) {</span>
+<span class="nc" id="L90">            log.info(&quot;{}: empty menu&quot;, agentName);</span>
+<span class="nc" id="L91">            fmt.appendTextMessage(&quot;Looks like the menu is empty, &quot; +</span>
+                &quot;please try again&quot;);
+<span class="nc" id="L93">            publisher.publish(fmt);</span>
+<span class="nc" id="L94">            return 1;</span>
+        }
+        else {
+<span class="fc" id="L97">            JSONObject menuJSON = new JSONObject();</span>
+<span class="fc" id="L98">            menuJSON.put(&quot;userId&quot;, userId)</span>
+<span class="fc" id="L99">                    .put(&quot;menu&quot;, menuArray);</span>
+
+            // keep menu in redis
+<span class="fc" id="L102">            MenuKeeper keeper = new MenuKeeper();</span>
+<span class="fc" id="L103">            keeper.set(userId, menuJSON);</span>
+<span class="fc" id="L104">            keeper.close();</span>
+
+<span class="fc" id="L106">            publisher.publish(fmt);</span>
+            try {
+<span class="fc" id="L108">                Thread.sleep(800);</span>
+<span class="nc" id="L109">            } catch (Exception e) {</span>
+<span class="nc" id="L110">                log.info(e.toString());</span>
+<span class="fc" id="L111">            }</span>
+<span class="fc" id="L112">            controller.setUserState(userId, State.ASK_MEAL);</span>
+<span class="fc" id="L113">            return END_STATE;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JsonUtility.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">utility</a> &gt; <span class="el_source">JsonUtility.java</span></div><h1>JsonUtility.java</h1><pre class="source lang-java linenums">package utility;
+
+import database.querier.FuzzyFoodQuerier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+/**
+ * JsonUtility: JSON builder, formatter and parser for various JSON types.
+ * @author szhouan
+ * @version v1.0.0
+ */
+<span class="fc" id="L17">@Slf4j</span>
+<span class="nc" id="L18">public class JsonUtility {</span>
+    /**
+     * Format a MenuJSON.
+     * @param menuJSON Input MenuJSON
+     * @param withFoodContent Whether print food content
+     * @return formatter String
+     */
+    public static String formatMenuJSON(JSONObject menuJSON,
+        boolean withFoodContent) {
+
+<span class="fc" id="L28">        String ret = &quot;&quot;;</span>
+<span class="fc" id="L29">        JSONArray menu = menuJSON.getJSONArray(&quot;menu&quot;);</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        for (int i=0; i&lt;menu.length(); ++i) {</span>
+<span class="fc" id="L31">            JSONObject dish = menu.getJSONObject(i);</span>
+<span class="fc" id="L32">            String dishName = dish.getString(&quot;name&quot;);</span>
+<span class="fc" id="L33">            ret += String.format(&quot;Dish %d - %s\n&quot;, i+1, dishName);</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">            if (!withFoodContent) continue;</span>
+<span class="fc" id="L35">            JSONArray foodContent = dish.getJSONArray(&quot;foodContent&quot;);</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">            for (int j=0; j&lt;foodContent.length(); ++j) {</span>
+<span class="fc" id="L37">                String desc = foodContent.getJSONObject(j)</span>
+<span class="fc" id="L38">                    .getString(&quot;description&quot;);</span>
+<span class="fc" id="L39">                ret += String.format(&quot;--- %s\n&quot;, desc);</span>
+            }
+        }
+<span class="fc" id="L42">        return ret;</span>
+    }
+
+    /**
+     * Get food content for a menuJSON, and modify in-place.
+     * @param menuJSON input MenuJSON
+     */
+    public static void getFoodContent(JSONObject menuJSON) {
+<span class="fc" id="L50">        JSONArray menu = menuJSON.getJSONArray(&quot;menu&quot;);</span>
+<span class="fc" id="L51">        FuzzyFoodQuerier querier = new FuzzyFoodQuerier();</span>
+<span class="fc" id="L52">        querier.setQueryLimit(1);</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        for (int i=0; i&lt;menu.length(); ++i) {</span>
+<span class="fc" id="L54">            JSONObject dish = menu.getJSONObject(i);</span>
+<span class="fc" id="L55">            String name = dish.getString(&quot;name&quot;);</span>
+<span class="fc" id="L56">            List&lt;String&gt; keyWords = filterDishName(name);</span>
+
+<span class="fc" id="L58">            JSONArray foodContent = new JSONArray();</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            for (String word : keyWords) {</span>
+<span class="fc" id="L60">                JSONObject candidate = querier.search(word)</span>
+<span class="fc" id="L61">                    .getJSONObject(0);</span>
+                // log.info(&quot;candidate:\n{}&quot;, candidate.toString(4));
+<span class="fc" id="L63">                int index = candidate.getInt(&quot;ndb_no&quot;);</span>
+<span class="fc" id="L64">                String description = candidate.getString(&quot;shrt_desc&quot;);</span>
+<span class="fc" id="L65">                JSONObject item = new JSONObject();</span>
+<span class="fc" id="L66">                item.put(&quot;idx&quot;, index);</span>
+<span class="fc" id="L67">                item.put(&quot;description&quot;, description);</span>
+<span class="fc" id="L68">                foodContent.put(item);</span>
+<span class="fc" id="L69">            }</span>
+<span class="fc" id="L70">            dish.put(&quot;foodContent&quot;, foodContent);</span>
+        }
+<span class="fc" id="L72">        querier.close();</span>
+<span class="fc" id="L73">    }</span>
+
+    /**
+     * private hashSet sroring the discard words.
+     */
+    private static final HashSet&lt;String&gt; discardWords;
+    static {
+<span class="fc" id="L80">        List&lt;String&gt; list = Arrays.asList(</span>
+            &quot;of&quot;, &quot;with&quot;, &quot;and&quot;, &quot;the&quot;, &quot;a&quot;, &quot;on&quot;, &quot;in&quot;,
+            &quot;served&quot;, &quot;fried&quot;, &quot;minced&quot;, &quot;stewed&quot;, &quot;baked&quot;,
+            &quot;roasted&quot;, &quot;grilled&quot;, &quot;dish&quot;, &quot;some&quot;,
+            &quot;sweet&quot;, &quot;sour&quot;, &quot;spicy&quot;, &quot;salty&quot;
+        );
+<span class="fc" id="L86">        discardWords = new HashSet&lt;&gt;(list);</span>
+<span class="fc" id="L87">    }</span>
+
+    /**
+     * Filter dish name.
+     * @param dishName String of dish name.
+     * @return A list of words filtered.
+     */
+    public static List&lt;String&gt; filterDishName(String dishName) {
+<span class="fc" id="L95">        ArrayList&lt;String&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        for (String word : TextProcessor.getTokens(dishName)) {</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">            if (!discardWords.contains(word)) list.add(word);</span>
+<span class="fc" id="L98">        }</span>
+<span class="fc" id="L99">        return list;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

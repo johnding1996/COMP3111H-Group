@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InitialInputRecorder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">agent</a> &gt; <span class="el_source">InitialInputRecorder.java</span></div><h1>InitialInputRecorder.java</h1><pre class="source lang-java linenums">package agent;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.TimeZone;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import org.json.JSONObject;
+
+import controller.State;
+import database.querier.UserQuerier;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import utility.FormatterMessageJSON;
+import utility.ParserMessageJSON;
+import utility.TextProcessor;
+import utility.Validator;
+
+/**
+ * UserInitialInputRecorder: handle user initial input.
+ * 
+ * State mapping:
+ *      0 - ask age
+ *      1 - ask gender
+ *      2 - ask weight
+ *      3 - ask height
+ *      4 - ask desiredWeight
+ *      5 - ask goalDate
+ *      6 - store user info
+ * 
+ * @author cliubf, szhouan
+ * @version v2.1.0
+ */
+<span class="fc" id="L42">@Slf4j</span>
+@Component
+<span class="fc" id="L44">public class InitialInputRecorder extends Agent {</span>
+
+    /**
+     * This is a private UserManager attribute.
+     */
+    @Autowired
+    private UserManager userManager;
+
+    /**
+     * Initialize initial input recorder agent.
+     */
+    @Override
+    public void init() {
+<span class="fc" id="L57">        agentName = &quot;InitialInputRecorder&quot;;</span>
+<span class="fc" id="L58">        agentStates = new HashSet&lt;&gt;(</span>
+<span class="fc" id="L59">            Arrays.asList(State.INITIAL_INPUT)</span>
+        );
+<span class="fc" id="L61">        handleImage = false;</span>
+<span class="fc" id="L62">        useSpellChecker = true;</span>
+<span class="fc" id="L63">        this.addHandler(0, (psr) -&gt; askAge(psr))</span>
+<span class="fc" id="L64">            .addHandler(1, (psr) -&gt; askGender(psr))</span>
+<span class="fc" id="L65">            .addHandler(2, (psr) -&gt; askWeight(psr))</span>
+<span class="fc" id="L66">            .addHandler(3, (psr) -&gt; askHeight(psr))</span>
+<span class="fc" id="L67">            .addHandler(4, (psr) -&gt; askDesiredWeight(psr))</span>
+<span class="fc" id="L68">            .addHandler(5, (psr) -&gt; askGoalDate(psr))</span>
+<span class="fc" id="L69">            .addHandler(6, (psr) -&gt; storeUserInfo(psr));</span>
+<span class="fc" id="L70">    }</span>
+
+    /**
+     * Handler for asking age.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askAge(ParserMessageJSON psr) {
+<span class="fc" id="L78">        String userId = psr.getUserId();</span>
+<span class="fc" id="L79">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L80">        fmt.appendTextMessage(&quot;Would you please tell me your age? &quot; +</span>
+            &quot;Give me an integer please ~&quot;);
+<span class="fc" id="L82">        publisher.publish(fmt);</span>
+<span class="fc" id="L83">        return 1;</span>
+    }
+
+    /**
+     * Handler for asking gender.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askGender(ParserMessageJSON psr) {
+<span class="fc" id="L92">        String userId = psr.getUserId();</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (!validateInput(1, psr.get(&quot;textContent&quot;))) {</span>
+<span class="fc" id="L94">            rejectUserInput(psr, null);</span>
+<span class="fc" id="L95">            return 1;</span>
+        }
+<span class="fc" id="L97">        states.get(userId).put(&quot;age&quot;, Integer.parseInt(psr.get(&quot;textContent&quot;)));</span>
+<span class="fc" id="L98">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L99">        fmt.appendTextMessage(&quot;Tell me your gender please, type in 'male' or 'female'&quot;);</span>
+<span class="fc" id="L100">        publisher.publish(fmt);</span>
+<span class="fc" id="L101">        return 2;</span>
+    }
+
+    /**
+     * Handler for asking weight.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askWeight(ParserMessageJSON psr) {
+<span class="fc" id="L110">        String userId = psr.getUserId();</span>
+<span class="fc" id="L111">        String text = psr.get(&quot;textContent&quot;);</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (!validateInput(2, text)) {</span>
+<span class="fc" id="L113">            rejectUserInput(psr, null);</span>
+<span class="fc" id="L114">            return 2;</span>
+        }
+<span class="fc" id="L116">        boolean isMale = true;</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        for (String word : TextProcessor.getTokens(text)) {</span>
+<span class="pc bpc" id="L118" title="2 of 4 branches missed.">            if (word.equals(&quot;female&quot;) || word.equals(&quot;woman&quot;)) {</span>
+<span class="nc" id="L119">                isMale = false;</span>
+<span class="nc" id="L120">                break;</span>
+            }
+<span class="fc" id="L122">        }</span>
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">        states.get(userId).put(&quot;gender&quot;, isMale ? &quot;male&quot; : &quot;female&quot;);</span>
+<span class="fc" id="L124">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L125">        fmt.appendTextMessage(&quot;Hey, what is your weight (in terms of kg)? &quot; +</span>
+            &quot;Just simply give me an integer&quot;);
+<span class="fc" id="L127">        publisher.publish(fmt);</span>
+<span class="fc" id="L128">        return 3;</span>
+    }
+
+    /**
+     * Handler for asking height.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askHeight(ParserMessageJSON psr) {
+<span class="fc" id="L137">        String userId = psr.getUserId();</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        if (!validateInput(3, psr.get(&quot;textContent&quot;))) {</span>
+<span class="fc" id="L139">            rejectUserInput(psr, null);</span>
+<span class="fc" id="L140">            return 3;</span>
+        }
+<span class="fc" id="L142">        states.get(userId).put(&quot;weight&quot;, Integer.parseInt(psr.get(&quot;textContent&quot;)));</span>
+<span class="fc" id="L143">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L144">        fmt.appendTextMessage(&quot;How about your height (in cm)?&quot;);</span>
+<span class="fc" id="L145">        publisher.publish(fmt);</span>
+<span class="fc" id="L146">        return 4;</span>
+    }
+
+    /**
+     * Handler for asking desired weight.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askDesiredWeight(ParserMessageJSON psr) {
+<span class="fc" id="L155">        String userId = psr.getUserId();</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        if (!validateInput(4, psr.get(&quot;textContent&quot;))) {</span>
+<span class="fc" id="L157">            rejectUserInput(psr, null);</span>
+<span class="fc" id="L158">            return 4;</span>
+        }
+<span class="fc" id="L160">        states.get(userId).put(&quot;height&quot;, Integer.parseInt(psr.get(&quot;textContent&quot;)));</span>
+<span class="fc" id="L161">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L162">        fmt.appendTextMessage(&quot;Emmm... What is your desired weight?&quot; +</span>
+            &quot;(Please give an integer in terms of kg)&quot;);
+<span class="fc" id="L164">        publisher.publish(fmt);</span>
+<span class="fc" id="L165">        return 5;</span>
+    }
+
+    /**
+     * Handler for asking goal date.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askGoalDate(ParserMessageJSON psr) {
+<span class="fc" id="L174">        String userId = psr.getUserId();</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        if (!validateInput(5, psr.get(&quot;textContent&quot;))) {</span>
+<span class="fc" id="L176">            rejectUserInput(psr, null);</span>
+<span class="fc" id="L177">            return 5;</span>
+        }
+<span class="fc" id="L179">        states.get(userId).put(&quot;desiredWeight&quot;, Integer.parseInt(psr.get(&quot;textContent&quot;)));</span>
+<span class="fc" id="L180">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L181">        fmt.appendTextMessage(&quot;Alright, now tell when you want to finish this goal? &quot; +</span>
+            &quot;(type in yyyy-mm-dd format)&quot;);
+<span class="fc" id="L183">        publisher.publish(fmt);</span>
+<span class="fc" id="L184">        return 6;</span>
+    }
+
+    /**
+     * Handler for storing user info.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int storeUserInfo(ParserMessageJSON psr) {
+<span class="fc" id="L193">        String userId = psr.getUserId();</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">        if (!validateInput(6, psr.get(&quot;textContent&quot;))) {</span>
+<span class="fc" id="L195">            rejectUserInput(psr, null);</span>
+<span class="fc" id="L196">            return 6;</span>
+        }
+<span class="fc" id="L198">        JSONObject state = states.get(userId);</span>
+<span class="fc" id="L199">        state.put(&quot;goalDate&quot;, psr.get(&quot;textContent&quot;));</span>
+
+<span class="fc" id="L201">        JSONObject prevJSON = userManager.getUserJSON(userId);</span>
+<span class="fc" id="L202">        JSONObject userJSON = new JSONObject();</span>
+<span class="fc" id="L203">        userJSON.put(&quot;id&quot;, userId);</span>
+<span class="fc" id="L204">        userJSON.put(&quot;age&quot;, state.getInt(&quot;age&quot;));</span>
+<span class="fc" id="L205">        userJSON.put(&quot;gender&quot;, state.getString(&quot;gender&quot;));</span>
+<span class="fc" id="L206">        userJSON.put(&quot;weight&quot;, state.getInt(&quot;weight&quot;));</span>
+<span class="fc" id="L207">        userJSON.put(&quot;height&quot;, state.getInt(&quot;height&quot;));</span>
+<span class="fc" id="L208">        userJSON.put(&quot;goal_weight&quot;, state.getInt(&quot;desiredWeight&quot;));</span>
+<span class="fc" id="L209">        userJSON.put(&quot;due_date&quot;, state.getString(&quot;goalDate&quot;));</span>
+
+<span class="fc" id="L211">        Instant now = Instant.now();</span>
+<span class="fc" id="L212">        Timestamp current = Timestamp.from(now);</span>
+<span class="fc" id="L213">        DateFormat df = DateFormat.getDateTimeInstance();</span>
+<span class="fc" id="L214">        df.setTimeZone(TimeZone.getDefault());</span>
+<span class="fc" id="L215">        String followTime = df.format(current);</span>
+<span class="fc" id="L216">        log.info(&quot;Current time: {}&quot;, followTime);</span>
+<span class="fc" id="L217">        String prevFollowTime = null;</span>
+<span class="pc bpc" id="L218" title="2 of 4 branches missed.">        if (prevJSON != null &amp;&amp; prevJSON.keySet().contains(&quot;followTime&quot;)) {</span>
+<span class="fc" id="L219">            prevFollowTime = prevJSON.getString(&quot;followTime&quot;);</span>
+        }
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">        userJSON.put(&quot;followTime&quot;,</span>
+            prevFollowTime==null?followTime:prevFollowTime);
+<span class="fc" id="L223">        log.info(&quot;Storing UserJSON: {}&quot;, userJSON.toString(4));</span>
+
+<span class="fc" id="L225">        userManager.storeUserJSON(userId, userJSON);</span>
+
+<span class="fc" id="L227">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L228">        fmt.appendTextMessage(&quot;Great! I now understand what you need!&quot;);</span>
+<span class="fc" id="L229">        publisher.publish(fmt);</span>
+<span class="fc" id="L230">        controller.setUserState(userId, State.IDLE);</span>
+<span class="fc" id="L231">        return END_STATE;</span>
+    }
+
+    /**
+     * Validate user input.
+     * @param state Current state
+     * @param textContent String of user input
+     * @return validation result
+     */
+    public boolean validateInput(int state, String textContent) {
+<span class="fc bfc" id="L241" title="All 6 branches covered.">        switch (state) {</span>
+            case 1:
+<span class="fc bfc" id="L243" title="All 2 branches covered.">                if(!Validator.isInteger(textContent)) return false;</span>
+<span class="fc" id="L244">                int age = Integer.parseInt(textContent);</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">                if(!Validator.validateAge(age)) return false;</span>
+                break;
+
+            case 2:
+<span class="fc bfc" id="L249" title="All 2 branches covered.">                if (!Validator.isGender(textContent)) return false;</span>
+                break;
+
+            case 3: case 5:
+<span class="fc bfc" id="L253" title="All 2 branches covered.">                if(!Validator.isInteger(textContent)) return false;</span>
+<span class="fc" id="L254">                int weight = Integer.parseInt(textContent);</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">                if (!Validator.validateWeight(weight)) return false;</span>
+                break;
+
+            case 4:
+<span class="fc bfc" id="L259" title="All 2 branches covered.">                if(!Validator.isInteger(textContent)) return false;</span>
+<span class="fc" id="L260">                int height = Integer.parseInt(textContent);</span>
+<span class="pc bpc" id="L261" title="1 of 2 branches missed.">                if (!Validator.validateWeight(height)) return false;</span>
+                break;
+
+            case 6:
+<span class="fc" id="L265">                return Validator.isFutureDate(textContent, &quot;yyyy-MM-dd&quot;);</span>
+
+            default:
+<span class="fc" id="L268">                return false;</span>
+        }
+<span class="fc" id="L270">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

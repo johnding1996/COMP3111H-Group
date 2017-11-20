@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ImageMenuParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">agent</a> &gt; <span class="el_source">ImageMenuParser.java</span></div><h1>ImageMenuParser.java</h1><pre class="source lang-java linenums">package agent;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import lombok.extern.slf4j.Slf4j;
+import utility.JazzySpellChecker;
+
+import com.asprise.ocr.Ocr;
+
+/**
+ * ImageMenuParser: parser image into JSONArray using OCR and SpellChecker.
+ * @author agong, szhouan
+ * @version v1.0.0
+ */
+<span class="fc" id="L30">@Slf4j</span>
+@Component
+<span class="fc" id="L32">public class ImageMenuParser {</span>
+
+    /**
+     * This is a private JazzySpellChecker for spell check.
+     */
+<span class="fc" id="L37">    private static JazzySpellChecker spellChecker = new JazzySpellChecker();</span>
+
+    /**
+     * Parse JSON object from Image uri.
+     * @param type can be either &quot;uri&quot; or &quot;path&quot;
+     * @param uri URL or path string to use 
+     * @return A JSON array
+     */
+    public static String readJsonFromImage(String type, String uri) {
+<span class="fc" id="L46">        Ocr.setUp(); // one time setup</span>
+<span class="fc" id="L47">        Ocr ocr = new Ocr(); // create a new OCR engine</span>
+<span class="fc" id="L48">        ocr.startEngine(&quot;eng&quot;, Ocr.SPEED_FASTEST, &quot;PROP_IMG_PREPROCESS_TYPE=custom|&quot;</span>
+            + &quot;PROP_IMG_PREPROCESS_CUSTOM_CMDS=deskew();grayscale();bin1();autoRotate()&quot;);
+
+<span class="fc" id="L51">        String s = &quot;&quot;;</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (type.equals(&quot;uri&quot;)) {</span>
+<span class="fc" id="L53">            URL url = null;</span>
+            // handle Exception
+            try {
+<span class="fc" id="L56">                url = new URL(uri);</span>
+<span class="fc" id="L57">                s = ocr.recognize(new URL[] { url }, Ocr.RECOGNIZE_TYPE_ALL,</span>
+                    Ocr.OUTPUT_FORMAT_PLAINTEXT);
+<span class="nc" id="L59">            } catch (MalformedURLException e) {</span>
+<span class="nc" id="L60">                log.info(&quot;The URL is not valid.&quot;);</span>
+<span class="fc" id="L61">            }</span>
+<span class="fc" id="L62">        }</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        else if (type.equals(&quot;path&quot;)) {</span>
+<span class="nc" id="L64">            s = ocr.recognize(new File[] { new File(uri) },</span>
+                Ocr.RECOGNIZE_TYPE_ALL, Ocr.OUTPUT_FORMAT_PLAINTEXT);
+        }
+        
+<span class="fc" id="L68">        log.info(&quot;OCR result:\n{}&quot;, s);</span>
+<span class="fc" id="L69">        ocr.stopEngine();</span>
+<span class="fc" id="L70">        return s;</span>
+    }
+
+    /**
+     * Build menu information from JSON array.
+     * @param type can either be uri or path, delegate to OCR
+     * @param uri uri of the image menu
+     * @return A JSON array; null if no dish is successfully parsed
+     */
+    public static JSONArray buildMenu(String type, String uri) {
+<span class="fc" id="L80">        String text = readJsonFromImage(type, uri);</span>
+<span class="fc" id="L81">        JSONArray arr = new JSONArray();</span>
+
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        for (String line : text.split(&quot;\n&quot;)) {</span>
+<span class="fc" id="L84">            log.info(&quot;OCR line: {}&quot;, line);</span>
+            // filter special characters
+<span class="fc" id="L86">            line = line.replaceAll(&quot;[^\\p{Alnum}^\\p{Space}]+&quot;, &quot;&quot;);</span>
+            // filter numeric values, left only alpha characters
+<span class="fc" id="L88">            line = line.replaceAll(&quot;[^A-Za-z]+&quot;, &quot; &quot;);</span>
+<span class="fc" id="L89">            line = line.trim();</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            if (line.equals(&quot;&quot;)) {</span>
+<span class="fc" id="L91">                log.info(&quot;OCR: the line is empty after filtering&quot;);</span>
+<span class="fc" id="L92">                continue;</span>
+            }
+<span class="fc" id="L94">            log.info(&quot;OCR filtered line: {}&quot;, line);</span>
+
+<span class="fc" id="L96">            String correctedSentence = spellChecker</span>
+<span class="fc" id="L97">                .getCorrectedText(line.toLowerCase());</span>
+<span class="fc" id="L98">            JSONObject dish = new JSONObject();</span>
+<span class="fc" id="L99">            dish.put(&quot;name&quot;, correctedSentence);</span>
+<span class="fc" id="L100">            arr.put(dish);</span>
+        }
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">        return arr.length() == 0 ? null : arr;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

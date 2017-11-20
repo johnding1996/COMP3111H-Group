@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StateKeeper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">database.keeper</a> &gt; <span class="el_source">StateKeeper.java</span></div><h1>StateKeeper.java</h1><pre class="source lang-java linenums">package database.keeper;
+
+import controller.State;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import lombok.extern.slf4j.Slf4j;
+import redis.clients.jedis.Jedis;
+
+/**
+ * State keeper to read and write user's current state in the redis cache.
+ * The valid states are defined by controller, which are
+ * {&quot;Idle&quot;, &quot;ParseMenu&quot;, &quot;AskMeal&quot;, &quot;Recommend&quot;, &quot;RecordMeal&quot;, &quot;InitialInput&quot;, &quot;Feedback&quot;}
+ * This state keeper will check the validity of state string.
+ * @author mcding
+ * @version 1.2.1
+ */
+<span class="fc" id="L20">@Slf4j</span>
+public class StateKeeper extends Keeper {
+    /**
+     * The prefix string of redis key.
+     */
+    private static final String KEY_PREFIX = &quot;state&quot;;
+
+    /**
+     * This expire time of redis key.
+     */
+<span class="pc" id="L30">    private int lifeTime = 3*60*60;</span>
+
+    /**
+     * Default constructor.
+     */
+    public StateKeeper() {
+<span class="nc" id="L36">        super();</span>
+<span class="nc" id="L37">    }</span>
+
+    /**
+     * Constuctor with input parameter.
+     * @param jedids input Jedis object
+     * @param lifeTime input lifetime of the cache
+     */
+<span class="fc" id="L44">    StateKeeper(Jedis jedids, int lifeTime) {</span>
+<span class="fc" id="L45">        this.jedis = jedis;</span>
+<span class="fc" id="L46">        this.lifeTime = lifeTime;</span>
+<span class="fc" id="L47">    }</span>
+
+    /**
+     * Check validity of the state string.
+     * @param state the state string
+     * @return whether the state string is valid
+     */
+    private boolean checkValidity(String state) {
+<span class="fc" id="L55">        return State.validateStateName(state);</span>
+    }
+
+    /**
+     * Get the state string according to user id.
+     * Return &quot;Idle&quot; if no user state stored.
+     * @param key key string
+     * @return state string
+     */
+    public String get(String key) {
+<span class="fc" id="L65">        String state = jedis.get(KEY_PREFIX + &quot;:&quot; + key);</span>
+        // If no state value search, add it to Idle state
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (state == null) {</span>
+<span class="fc" id="L68">            this.set(key, &quot;Idle&quot;);</span>
+<span class="fc" id="L69">            return &quot;Idle&quot;;</span>
+        }
+        // Check validity
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        if (!checkValidity(state)) {</span>
+<span class="nc" id="L73">            log.error(String.format(&quot;Invalid state string %s when handling state loading for user %d&quot;, state, key));</span>
+            // If invalid value is found, delete key and return null
+<span class="nc" id="L75">            jedis.del(KEY_PREFIX + &quot;:&quot; + key);</span>
+<span class="nc" id="L76">            return null;</span>
+        } else {
+<span class="fc" id="L78">            return state;</span>
+        }
+    }
+
+    /**
+     * Set the user's state string according to user id.
+     * Will check state string's validity.
+     * @param key key string
+     * @param state state string
+     * @return whether add successfully or not
+     */
+    public boolean set(String key, String state) {
+        // Check validity
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        if (!checkValidity(state)) {</span>
+<span class="fc" id="L92">            log.error(String.format(&quot;Invalid state string %s when handling state storing for user %s&quot;, state, key));</span>
+<span class="fc" id="L93">            return false;</span>
+        }
+<span class="fc" id="L95">        String statusCodeReply = jedis.setex(KEY_PREFIX + &quot;:&quot; + key, lifeTime, state);</span>
+        // If status code is &quot;OK&quot; then redis ensure that the value is stored
+<span class="fc" id="L97">        return statusCodeReply.equals(&quot;OK&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

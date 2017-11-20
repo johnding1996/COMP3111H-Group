@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SerializeKeeper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">database.keeper</a> &gt; <span class="el_source">SerializeKeeper.java</span></div><h1>SerializeKeeper.java</h1><pre class="source lang-java linenums">package database.keeper;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONArray;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Abstract base class which flatten a JSONObject to redis key-value, and handle the read/write operations.
+ * Super class for {@link HistKeeper} and {@link LogKeeper}.
+ * @author mcding
+ * @version 1.2.1
+ */
+<span class="fc" id="L20">@Slf4j</span>
+<span class="fc" id="L21">public abstract class SerializeKeeper extends Keeper {</span>
+    /**
+     * The list of fields for corresponding SerializeKeeper.
+     */
+    protected List&lt;String&gt; fields;
+
+    /**
+     * Set a key with JSONObject value.
+     * @param key key
+     * @param json JSONObject
+     * @return whether add successfully or not
+     */
+    public abstract boolean set(String key, JSONObject json);
+
+    /**
+     * Get a JSONObject value of a key.
+     * @param key key
+     * @param number number of latest result to return
+     * @return json JSONArray
+     */
+    public abstract JSONArray get(String key, int number);
+
+    /**
+     * Append a JSONObject to a list with specific key.
+     * @param prefix key field prefix
+     * @param key key
+     * @param json JSONObject to append with
+     * @return whether the appending operation is successful or not
+     */
+    protected boolean appendList(String prefix, String key, JSONObject json) {
+        // Check validity
+<span class="fc" id="L52">        Long statusCodeReply = jedis.rpush(prefix + &quot;:&quot; + key, json.toString());</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        return (statusCodeReply &gt; 0);</span>
+    }
+
+    /**
+     * Get the latest n records of a list with specific key.
+     * @param prefix key field prefix
+     * @param key key
+     * @param number the number of latest records to get, positive integer
+     * @return JSONArray as a list of latest several JSONObject records
+     */
+    protected JSONArray rangeList(String prefix, String key, int number) {
+<span class="fc" id="L64">        List&lt;String&gt; values = jedis.lrange(prefix + &quot;:&quot; + key, -number, -1);</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        if (values == null) {</span>
+<span class="nc" id="L66">            return null;</span>
+        }
+<span class="fc" id="L68">        JSONArray jsonArray = new JSONArray();</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        for (String value: values) {</span>
+<span class="fc" id="L70">            JSONObject jsonObject= new JSONObject(value);</span>
+<span class="fc" id="L71">            jsonArray.put(jsonObject);</span>
+<span class="fc" id="L72">        }</span>
+<span class="fc" id="L73">        return jsonArray;</span>
+    }
+
+    /**
+     * Get the latest several records before a timestamp of a list with specific key.
+     * @param prefix key field prefix
+     * @param key key
+     * @param date timestamp
+     * @return JSONArray as a list of latest several JSONObject records
+     */
+    protected JSONArray rangeList(String prefix, String key, Date date) {
+        try {
+<span class="fc" id="L85">            JSONArray completeArray = rangeList(prefix, key, 0);</span>
+<span class="fc" id="L86">            JSONArray array = new JSONArray();</span>
+<span class="pc bfc" id="L87" title="All 2 branches covered.">            for (int i=0; i&lt;completeArray.length(); i++) {</span>
+<span class="fc" id="L88">                SimpleDateFormat dateFormat = new SimpleDateFormat(&quot;yyyy-MM-dd'T'HH:mm:ssZ&quot;);</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                if (date.before(dateFormat.parse(completeArray.getJSONObject(i).getString(&quot;timestamp&quot;))))</span>
+<span class="nc" id="L90">                    array.put(completeArray.getJSONObject(i));</span>
+            }
+<span class="fc" id="L92">            return array;</span>
+<span class="fc" id="L93">        } catch (JSONException | ParseException e) {</span>
+<span class="fc" id="L94">            log.error(&quot;Failed to parse the timestamp in redis.&quot;, e);</span>
+<span class="fc" id="L95">            return null;</span>
+        }
+    }
+
+    /**
+     * Utility method to shallow check a JSONObject by a list of fields.
+     * @param jsonObject JSONObject to check
+     * @param fields a list of fields
+     * @return whether the JSONObject is valid or not
+     */
+    protected boolean checkValitidy(JSONObject jsonObject, List&lt;String&gt; fields) {
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        for (String field: fields) {</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            if (!jsonObject.has(field)){</span>
+<span class="fc" id="L108">                return false;</span>
+            }
+<span class="fc" id="L110">        }</span>
+<span class="fc" id="L111">        return true;</span>
+    }
+
+    /**
+     * Utility method to shallow check a JSONArray by checking its JSONObjects one by one.
+     * @param jsonArray JSONArray to check
+     * @param fields a list of fields
+     * @return whether the JSONArray is valid or not
+     */
+    protected boolean checkValidity(JSONArray jsonArray, List&lt;String&gt; fields) {
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        for (int i=0; i&lt;jsonArray.length(); i++) {</span>
+<span class="fc" id="L122">            JSONObject jsonObject = jsonArray.getJSONObject(i);</span>
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">            if (!checkValitidy(jsonObject, fields)){</span>
+<span class="nc" id="L124">                return false;</span>
+            }
+        }
+<span class="fc" id="L127">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MealRecorder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">agent</a> &gt; <span class="el_source">MealRecorder.java</span></div><h1>MealRecorder.java</h1><pre class="source lang-java linenums">package agent;
+
+import database.keeper.HistKeeper;
+import database.keeper.MenuKeeper;
+import database.querier.UserQuerier;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import org.json.JSONArray;
+
+import controller.State;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import static reactor.bus.selector.Selectors.$;
+import javax.annotation.PostConstruct;
+import utility.FormatterMessageJSON;
+import utility.JsonUtility;
+import utility.ParserMessageJSON;
+import utility.Validator;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * MealRecorder: record the dish user ate.
+ * 
+ * State mapping:
+ *      0 - ask dish
+ *      1 - ask portion size
+ *      2 - ask weight
+ *      3 - say goodbye
+ * 
+ * @author cliubf, mcding, szhouan
+ * @version v2.0.0
+ */
+<span class="fc" id="L43">@Slf4j</span>
+@Component
+<span class="fc" id="L45">public class MealRecorder extends Agent {</span>
+
+    /**
+     * This is a private attribute userManager.
+     */
+    @Autowired
+    private UserManager userManager;
+
+    /**
+     * This is a private attribute MenuManager.
+     */
+    @Autowired
+    private MenuManager menuManager;
+
+    /**
+     * Initialize meal recorder agent.
+     */
+    @Override
+    public void init() {
+<span class="fc" id="L64">        agentName = &quot;MealRecorder&quot;;</span>
+<span class="fc" id="L65">        agentStates = new HashSet&lt;&gt;(</span>
+<span class="fc" id="L66">            Arrays.asList(State.RECORD_MEAL)</span>
+        );
+<span class="fc" id="L68">        handleImage = false;</span>
+<span class="fc" id="L69">        useSpellChecker = false;</span>
+<span class="fc" id="L70">        this.addHandler(0, (psr) -&gt; askDish(psr))</span>
+<span class="fc" id="L71">            .addHandler(1, (psr) -&gt; askPortion(psr))</span>
+<span class="fc" id="L72">            .addHandler(2, (psr) -&gt; askWeight(psr))</span>
+<span class="fc" id="L73">            .addHandler(3, (psr) -&gt; sayGoodbye(psr));</span>
+<span class="fc" id="L74">    }</span>
+
+    /**
+     * Handler for asking dish.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askDish(ParserMessageJSON psr) {
+<span class="fc" id="L82">        String userId = psr.getUserId();</span>
+<span class="fc" id="L83">        JSONObject menuJSON = menuManager.getMenuJSON(userId);</span>
+<span class="fc" id="L84">        states.get(userId).put(&quot;menuJSON&quot;, menuJSON);</span>
+
+<span class="fc" id="L86">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L87">        fmt.appendTextMessage(</span>
+            &quot;Welcome back! Please choose what you ate in this list:&quot;)
+<span class="fc" id="L89">           .appendTextMessage(JsonUtility.formatMenuJSON(menuJSON, false))</span>
+<span class="fc" id="L90">           .appendTextMessage(&quot;Please choose one of them and input the number.&quot;);</span>
+<span class="fc" id="L91">        publisher.publish(fmt);</span>
+<span class="fc" id="L92">        return 1;</span>
+    }
+
+    /**
+     * Handler for asking portion.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askPortion(ParserMessageJSON psr) {
+<span class="fc" id="L101">        String userId = psr.getUserId();</span>
+<span class="fc" id="L102">        String text = psr.get(&quot;textContent&quot;);</span>
+
+<span class="fc" id="L104">        boolean valid = true;</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (!Validator.isInteger(text)) {</span>
+<span class="fc" id="L106">            valid = false;</span>
+        } else {
+<span class="fc" id="L108">            int dishId = Integer.parseInt(text);</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            if (dishId &lt; 1 || dishId &gt; states.get(userId)</span>
+<span class="fc" id="L110">                .getJSONObject(&quot;menuJSON&quot;).getJSONArray(&quot;menu&quot;)</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">                .length()) valid = false;</span>
+        }
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        if (!valid) {</span>
+<span class="fc" id="L114">            rejectUserInput(psr, &quot;Please choose among the dishes.&quot;);</span>
+<span class="fc" id="L115">            return 1;</span>
+        }
+
+<span class="fc" id="L118">        int dishId = Integer.parseInt(text) - 1;</span>
+<span class="fc" id="L119">        states.get(userId).put(&quot;dishId&quot;, dishId);</span>
+<span class="fc" id="L120">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L121">        fmt.appendTextMessage(&quot;Great! &quot; +</span>
+                &quot;I have recorded what you have eaten!&quot;)
+<span class="fc" id="L123">            .appendTextMessage(&quot;And what is the portion size of it (in gram)?&quot;);</span>
+<span class="fc" id="L124">        publisher.publish(fmt);</span>
+
+<span class="fc" id="L126">        return 2;</span>
+    }
+
+    /**
+     * Handler for asking weight.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askWeight(ParserMessageJSON psr) {
+<span class="fc" id="L135">        String userId = psr.getUserId();</span>
+<span class="fc" id="L136">        String text = psr.get(&quot;textContent&quot;);</span>
+
+<span class="fc" id="L138">        boolean valid = true;</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        if (!Validator.isInteger(text)) {</span>
+<span class="fc" id="L140">            valid = false;</span>
+        } else {
+<span class="fc" id="L142">            int portionSize = Integer.parseInt(text);</span>
+<span class="fc bfc" id="L143" title="All 4 branches covered.">            if (portionSize &lt;= 0 || portionSize &gt; 5000) {</span>
+<span class="fc" id="L144">                valid = false;</span>
+            }
+        }
+<span class="fc bfc" id="L147" title="All 2 branches covered.">        if (!valid) {</span>
+<span class="fc" id="L148">            rejectUserInput(psr, null);</span>
+<span class="fc" id="L149">            return 2;</span>
+        }
+
+<span class="fc" id="L152">        int portionSize = Integer.parseInt(text);</span>
+<span class="fc" id="L153">        states.get(userId).put(&quot;portionSize&quot;, portionSize);</span>
+<span class="fc" id="L154">        int dishId = states.get(userId).getInt(&quot;dishId&quot;);</span>
+<span class="fc" id="L155">        String dishName = states.get(userId).getJSONObject(&quot;menuJSON&quot;)</span>
+<span class="fc" id="L156">            .getJSONArray(&quot;menu&quot;).getJSONObject(dishId).getString(&quot;name&quot;);</span>
+<span class="fc" id="L157">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L158">        fmt.appendTextMessage(</span>
+<span class="fc" id="L159">            String.format(&quot;So you have eaten %d gram of the dish %s&quot;,</span>
+<span class="fc" id="L160">            portionSize, dishName))</span>
+<span class="fc" id="L161">           .appendTextMessage(&quot;One more question: what is your weight now?&quot;);</span>
+<span class="fc" id="L162">        publisher.publish(fmt);</span>
+
+<span class="fc" id="L164">        return 3;</span>
+    }
+
+    /**
+     * Handler for say goodbye.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int sayGoodbye(ParserMessageJSON psr) {
+<span class="fc" id="L173">        String userId = psr.getUserId();</span>
+<span class="fc" id="L174">        String text = psr.get(&quot;textContent&quot;);</span>
+
+<span class="fc" id="L176">        boolean valid = true;</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">        if (!Validator.isInteger(text)) valid = false;</span>
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">        else if (!Validator.validateWeight(Integer.parseInt(text)))</span>
+<span class="nc" id="L179">            valid = false;</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">        if (!valid) {</span>
+<span class="fc" id="L181">            rejectUserInput(psr, &quot;This is not a valid weight.&quot;);</span>
+<span class="fc" id="L182">            return 3;</span>
+        }
+<span class="fc" id="L184">        int weight = Integer.parseInt(text);</span>
+<span class="fc" id="L185">        states.get(userId).put(&quot;weight&quot;, weight);</span>
+<span class="fc" id="L186">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L187">        fmt.appendTextMessage(String.format(&quot;Ok, your weight now is %d kg&quot;, weight))</span>
+<span class="fc" id="L188">           .appendTextMessage(&quot;See you! ^_^&quot;);</span>
+<span class="fc" id="L189">        publisher.publish(fmt);</span>
+<span class="fc" id="L190">        updateDatabase(userId);</span>
+<span class="fc" id="L191">        controller.setUserState(userId, State.IDLE);</span>
+<span class="fc" id="L192">        return END_STATE;</span>
+    }
+
+    /**
+     * add userInfo to history if everything is correct.
+     * @param userId String of userId
+     */
+    public void updateDatabase (String userId) {
+<span class="fc" id="L200">        MenuKeeper menuKeeper = new MenuKeeper();</span>
+<span class="fc" id="L201">        HistKeeper histKeeper = new HistKeeper();</span>
+<span class="fc" id="L202">        JSONObject histJson = new JSONObject();</span>
+        try{
+            // Add hist to HistKeeper
+<span class="fc" id="L205">            DateFormat dateTimeFormat = new SimpleDateFormat(&quot;yyyy-MM-dd'T'HH:mm:ssZ&quot;);</span>
+<span class="fc" id="L206">            histJson.put(&quot;timestamp&quot;, dateTimeFormat.format(new Date()));</span>
+<span class="fc" id="L207">            histJson.put(&quot;weight&quot;, states.get(userId).get(&quot;weight&quot;));</span>
+<span class="fc" id="L208">            histJson.put(&quot;portionSize&quot;, states.get(userId).get(&quot;portionSize&quot;));</span>
+<span class="fc" id="L209">            log.error(&quot;all&quot; + menuKeeper.get(userId, 1).toString());</span>
+<span class="fc" id="L210">            JSONArray menu = menuKeeper.get(userId, 1).getJSONObject(0).getJSONArray(&quot;menu&quot;);</span>
+<span class="fc" id="L211">            log.error(&quot;menu&quot; + menu.toString());</span>
+<span class="fc" id="L212">            JSONArray selectedMenu = new JSONArray();</span>
+<span class="fc" id="L213">            selectedMenu.put(menu.getJSONObject(states.get(userId).getInt(&quot;dishId&quot;)));</span>
+<span class="fc" id="L214">            log.error(&quot;selected menu&quot; + selectedMenu.toString());</span>
+<span class="fc" id="L215">            histJson.put(&quot;menu&quot;, selectedMenu);</span>
+<span class="fc" id="L216">            histKeeper.set(userId, histJson);</span>
+<span class="fc" id="L217">            log.info(String.format(&quot;Stored the user history of user %s in to the caches.&quot;, userId));</span>
+            // Update weight in UserInfo table
+<span class="fc" id="L219">            JSONObject userJSON = userManager.getUserJSON(userId);</span>
+<span class="fc" id="L220">            userJSON.put(&quot;weight&quot;, states.get(userId).get(&quot;weight&quot;));</span>
+<span class="fc" id="L221">            userManager.storeUserJSON(userId, userJSON);</span>
+
+<span class="nc" id="L223">        } catch (JSONException e) {</span>
+<span class="nc" id="L224">            log.error(&quot;Error encountered when parsing the MealJSON.&quot;, e);</span>
+<span class="fc" id="L225">        }</span>
+<span class="fc" id="L226">        menuKeeper.close();</span>
+<span class="fc" id="L227">        histKeeper.close();</span>
+<span class="fc" id="L228">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

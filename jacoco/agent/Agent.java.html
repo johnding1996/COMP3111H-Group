@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Agent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">agent</a> &gt; <span class="el_source">Agent.java</span></div><h1>Agent.java</h1><pre class="source lang-java linenums">package agent;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import javax.annotation.PostConstruct;
+
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import controller.ChatbotController;
+import controller.Publisher;
+import controller.State;
+import lombok.extern.slf4j.Slf4j;
+import reactor.bus.Event;
+import reactor.bus.EventBus;
+import static reactor.bus.selector.Selectors.$;
+import reactor.fn.Consumer;
+import utility.FormatterMessageJSON;
+import utility.JazzySpellChecker;
+import utility.ParserMessageJSON;
+
+/**
+ * Agent: abstract class for chatbot {@link Agent}.
+ * @author szhouan
+ * @version v1.0.0
+ */
+<span class="fc" id="L29">@Slf4j</span>
+@Component
+<span class="fc" id="L31">public abstract class Agent implements Consumer&lt;Event&lt;ParserMessageJSON&gt;&gt; {</span>
+    /**
+     * MessageHandler interface: implemented by concrete agent.
+     */
+    interface MessageHandler {
+        /**
+         * Handle a message given its ParserMessageJSON.
+         * @param psr Input ParserMessageJSON
+         * @return next state
+         */
+        public int handleMessage(ParserMessageJSON psr);
+    }
+
+    /**
+     * This is a private attribute EventBus.
+     */
+    @Autowired
+    private EventBus eventBus;
+
+    /**
+     * This is a private attribute Publisher.
+     */
+    @Autowired
+    Publisher publisher;
+
+    /**
+     * This is a private attribute Controller.
+     */
+    @Autowired
+    ChatbotController controller;
+
+    /**
+     * This is a private attribute JazzySpellChecker.
+     */
+    @Autowired
+    JazzySpellChecker spellChecker;
+
+    /**
+     * This is a hasMap storing the handler index.
+     */
+<span class="fc" id="L71">    HashMap&lt;Integer, MessageHandler&gt; handlers = new HashMap&lt;&gt;();</span>
+
+    /**
+     * Internal state of the agent module.
+     */
+<span class="fc" id="L76">    HashMap&lt;String, JSONObject&gt; states = new HashMap&lt;&gt;();</span>
+
+    /**
+     * Name of the agent module, to be overriden.
+     */
+<span class="fc" id="L81">    String agentName = &quot;DefaultAgent&quot;;</span>
+
+    /**
+     * Whether handle image message.
+     */
+<span class="fc" id="L86">    boolean handleImage = false;</span>
+
+    /**
+     * Whether use spell checker.
+     */
+<span class="fc" id="L91">    boolean useSpellChecker = false;</span>
+
+    /**
+     * Whether acknowledge controller when message handled.
+     */
+<span class="fc" id="L96">    boolean acknowledgeController = true;</span>
+
+    /**
+     * Responsible states of the agent, to be overriden.
+     */
+<span class="fc" id="L101">    HashSet&lt;State&gt; agentStates = new HashSet&lt;&gt;(</span>
+<span class="fc" id="L102">        Arrays.asList(State.INVALID)</span>
+    );
+
+    /**
+     * Special integer for start  of responsibility of the agent.
+     */
+    static final int START_STATE = 0;
+
+    /**
+     * Special integer for end of send of responsibility of the agent.
+     */
+    static final int END_STATE = -1;
+
+    /**
+     * Number of milliseconds to sleep between adjacent push.
+     */
+    private static final int SLEEP_TIME = 300;
+
+    /**
+     * Add handler for an internal state.
+     * @param state State represented in integer
+     * @param handler A MessageHandler
+     * @return this object
+     */
+    public Agent addHandler(int state, MessageHandler handler) {
+<span class="fc" id="L127">        handlers.put(state, handler);</span>
+<span class="fc" id="L128">        return this;</span>
+    }
+
+    /**
+     * Register on eventBus.
+     */
+    @PostConstruct
+    public void registerEventBus() {
+<span class="fc" id="L136">        init();</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        if (eventBus != null) {</span>
+<span class="fc" id="L138">            eventBus.on($(&quot;ParserMessageJSON&quot;), this);</span>
+<span class="fc" id="L139">            log.info(&quot;{} register on eventBus&quot;, agentName);</span>
+        }
+<span class="fc" id="L141">    }</span>
+
+    /**
+     * Agent initialization, to be overriden.
+     */
+    public abstract void init();
+
+    /**
+     * Event handler for ParserMessageJSON.
+     * @param ev Event object.
+     */
+    public void accept(Event&lt;ParserMessageJSON&gt; ev) {
+<span class="fc" id="L153">        ParserMessageJSON psr = ev.getData();</span>
+
+<span class="fc" id="L155">        String userId = psr.getUserId();</span>
+<span class="fc" id="L156">        State globalState = psr.getState();</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        if (!agentStates.contains(globalState)) {</span>
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">            if (states.containsKey(userId)) {</span>
+<span class="nc" id="L159">                states.remove(userId);</span>
+<span class="nc" id="L160">                log.info(&quot;{}: Remove user {}&quot;, agentName, userId);</span>
+            }
+<span class="fc" id="L162">            return;</span>
+        }
+
+<span class="fc" id="L165">        log.info(&quot;Entering agent {}&quot;, agentName);</span>
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">        if (acknowledgeController) {</span>
+<span class="fc" id="L167">            publisher.publish(new FormatterMessageJSON(userId));</span>
+        }
+
+        // check image message
+<span class="pc bpc" id="L171" title="3 of 4 branches missed.">        if (psr.getType().equals(&quot;image&quot;) &amp;&amp; !handleImage) {</span>
+<span class="nc" id="L172">            log.info(&quot;Agent {} does not handle image&quot;, agentName);</span>
+<span class="nc" id="L173">            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="nc" id="L174">            fmt.appendTextMessage(&quot;I am sorry that you cannot use image at this step :(&quot;);</span>
+<span class="nc" id="L175">            publisher.publish(fmt);</span>
+<span class="nc" id="L176">            return;</span>
+        }
+
+        // correct user input
+<span class="pc bpc" id="L180" title="1 of 4 branches missed.">        if (psr.getType().equals(&quot;text&quot;) &amp;&amp; useSpellChecker) {</span>
+<span class="fc" id="L181">            String textContent = psr.get(&quot;textContent&quot;);</span>
+<span class="fc" id="L182">            String correctedContent = spellChecker.getCorrectedText(textContent);</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">            if (!textContent.equals(correctedContent)) {</span>
+<span class="fc" id="L184">                FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L185">                fmt.appendTextMessage(&quot;Corrected input: &quot; + correctedContent);</span>
+<span class="fc" id="L186">                publisher.publish(fmt);</span>
+<span class="fc" id="L187">                psr.set(&quot;textContent&quot;, correctedContent);</span>
+<span class="fc" id="L188">                sleep();</span>
+            }
+        }
+
+        // register state for first entry
+<span class="pc bpc" id="L193" title="1 of 2 branches missed.">        if (!states.containsKey(userId)) {</span>
+<span class="nc" id="L194">            registerUser(userId);</span>
+        }
+<span class="fc" id="L196">        JSONObject stateJSON = states.get(userId);</span>
+<span class="fc" id="L197">        int state = stateJSON.getInt(&quot;state&quot;);</span>
+<span class="fc" id="L198">        log.info(String.format(&quot;%s: Internal state is %d&quot;, agentName, state));</span>
+<span class="fc" id="L199">        MessageHandler handler = handlers.get(state);</span>
+<span class="fc" id="L200">        int nextState = handler.handleMessage(psr);</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        if (nextState == END_STATE) {</span>
+<span class="fc" id="L202">            states.remove(userId);</span>
+        } else {
+<span class="fc" id="L204">            stateJSON.put(&quot;state&quot;, nextState);</span>
+        }
+
+<span class="fc" id="L207">        log.info(&quot;Leaving agent {}&quot;, agentName);</span>
+<span class="fc" id="L208">    }</span>
+
+    /**
+     * Reject user input.
+     * @param psr Input ParserMessageJSON
+     * @param hint Customized hint for user, leave null if none
+     */
+    public void rejectUserInput(ParserMessageJSON psr, String hint) {
+<span class="fc" id="L216">        String userId = psr.getUserId();</span>
+<span class="fc" id="L217">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L218">        fmt.appendTextMessage(String.format(</span>
+<span class="fc" id="L219">            &quot;OOPS, your input \&quot;%s\&quot; is invalid : o&quot;, psr.get(&quot;textContent&quot;)));</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">        if (hint != null) {</span>
+<span class="fc" id="L221">            fmt.appendTextMessage(hint);</span>
+        }
+<span class="fc" id="L223">        fmt.appendTextMessage(&quot;Please do it again ^_^&quot;);</span>
+<span class="fc" id="L224">        publisher.publish(fmt);</span>
+<span class="fc" id="L225">    }</span>
+
+    /**
+     * Get internal state of a user.
+     * @param userId String of user Id
+     * @return internal state in integer
+     */
+    public int getUserState(String userId) {
+<span class="fc bfc" id="L233" title="All 2 branches covered.">        if (states.containsKey(userId)) {</span>
+<span class="fc" id="L234">            return states.get(userId).getInt(&quot;state&quot;);</span>
+        } else {
+<span class="fc" id="L236">            return END_STATE;</span>
+        }
+    }
+
+    /**
+     * Register internal state of a user.
+     * @param userId String of user Id
+     */
+    public void registerUser(String userId) {
+<span class="fc" id="L245">        JSONObject state = new JSONObject();</span>
+<span class="fc" id="L246">        state.put(&quot;state&quot;, START_STATE);</span>
+<span class="fc" id="L247">        states.put(userId, state);</span>
+<span class="fc" id="L248">        log.info(&quot;{}: Register new user {}&quot;, agentName, userId);</span>
+<span class="fc" id="L249">    }</span>
+
+    /**
+     * Set internal state of a user.
+     * This function is mainly for testing.
+     * @param userId String of user Id
+     * @param newState new state in integer
+     */
+    public void setUserState(String userId, int newState) {
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">        if (!states.containsKey(userId)) {</span>
+<span class="nc" id="L259">            log.info(&quot;{}: no such user {}&quot;, agentName, userId);</span>
+        } else {
+<span class="fc" id="L261">            states.get(userId).put(&quot;state&quot;, newState);</span>
+        }
+<span class="fc" id="L263">    }</span>
+
+    /**
+     * Sleep for a few milli seconds.
+     */
+    public void sleep() {
+        try {
+<span class="fc" id="L270">            Thread.sleep(SLEEP_TIME);</span>
+<span class="nc" id="L271">        } catch (Exception e ) {</span>
+<span class="nc" id="L272">            log.warn(&quot;{}: Sleep interrupted&quot;, agentName);</span>
+<span class="fc" id="L273">        }</span>
+<span class="fc" id="L274">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

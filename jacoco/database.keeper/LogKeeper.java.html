@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LogKeeper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">database.keeper</a> &gt; <span class="el_source">LogKeeper.java</span></div><h1>LogKeeper.java</h1><pre class="source lang-java linenums">package database.keeper;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.util.Arrays;
+import java.util.List;
+
+import lombok.extern.slf4j.Slf4j;
+import redis.clients.jedis.Jedis;
+
+/**
+ * Log keeper to store and load user interaction logs in the redis cache.
+ * The valid JSONObject format is LogJSON defined by database APIs.
+ * @author mcding
+ * @version 1.2.1
+ */
+<span class="fc" id="L17">@Slf4j</span>
+public class LogKeeper extends SerializeKeeper {
+    /**
+     * The identifier of all user logs.
+     */
+    private static final String prefix = &quot;log&quot;;
+
+    /**
+     * private list of string storing the fields.
+     */
+<span class="fc" id="L27">    private static final List&lt;String&gt; fields = Arrays.asList(</span>
+            &quot;timestamp&quot;, &quot;event&quot;, &quot;old_state&quot;, &quot;new_state&quot;
+    );
+
+    /**
+     * Default constructor.
+     */
+    public LogKeeper() {
+<span class="nc" id="L35">        super();</span>
+<span class="nc" id="L36">    }</span>
+
+    /**
+     * Constructor which uses external redis connection.
+     * @param jedids external redis connection
+     */
+<span class="fc" id="L42">    LogKeeper(Jedis jedids) {</span>
+<span class="fc" id="L43">        this.jedis = jedis;</span>
+<span class="fc" id="L44">    }</span>
+
+    /**
+     * Get the latest rows of user logs.
+     * @param key key string
+     * @param number number of latest result to return
+     * @return JSONArray array of recent JSONObjects
+     */
+    @Override
+    public JSONArray get(String key, int number) {
+<span class="fc" id="L54">        JSONArray jsonArray = rangeList(prefix, key, number);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (jsonArray.length() == 0) {</span>
+<span class="fc" id="L56">            log.error(&quot;Attempting to search user log that does not exist.&quot;);</span>
+<span class="fc" id="L57">            return null;</span>
+        }
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        if (!checkValidity(jsonArray, fields)) {</span>
+<span class="nc" id="L60">            log.error(&quot;Failed to load user meal history due to wrongly formatted LogJSON.&quot;);</span>
+<span class="nc" id="L61">            return null;</span>
+        }
+<span class="fc" id="L63">        return jsonArray;</span>
+    }
+
+    /**
+     * Add new user log to cache.
+     * @param key key string
+     * @param logJson new row to add to the redis cache
+     * @return whether appending operation is successful or not
+     */
+    public boolean set(String key, JSONObject logJson) {
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        if (!checkValitidy(logJson, fields)) {</span>
+<span class="fc" id="L74">            log.error(&quot;Invalid formatted LogJSON.&quot;);</span>
+<span class="fc" id="L75">            return false;</span>
+        }
+<span class="fc" id="L77">        return appendList(prefix, key, logJson);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

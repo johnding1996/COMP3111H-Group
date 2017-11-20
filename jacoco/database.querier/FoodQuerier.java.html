@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FoodQuerier.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">database.querier</a> &gt; <span class="el_source">FoodQuerier.java</span></div><h1>FoodQuerier.java</h1><pre class="source lang-java linenums">package database.querier;
+
+import java.sql.Connection;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Base Querier manipulate FoodNutrition table.
+ * Base class for {@link PartialFoodQuerier} and {@link FuzzyFoodQuerier}.
+ * @author mcding
+ * @version 1.2.1
+ */
+<span class="fc" id="L17">@Slf4j</span>
+public class FoodQuerier extends Querier {
+
+    /**
+     * Default constructor.
+     */
+    public FoodQuerier() {
+<span class="fc" id="L24">        super();</span>
+<span class="fc" id="L25">        table = &quot;foodnutrition&quot;;</span>
+<span class="fc" id="L26">        idx_field = &quot;ndb_no&quot;;</span>
+<span class="fc" id="L27">        desc_field = &quot;shrt_desc&quot;;</span>
+<span class="fc" id="L28">        fields = Arrays.asList(</span>
+                &quot;ndb_no&quot;, &quot;shrt_desc&quot;, &quot;water&quot;, &quot;energ_kcal&quot;, &quot;protein&quot;,
+                &quot;lipid_tot&quot;, &quot;ash&quot;, &quot;carbohydrt&quot;, &quot;fiber_td&quot;, &quot;sugar_tot&quot;, &quot;calcium&quot;,
+                &quot;iron&quot;, &quot;magnesium&quot;, &quot;phosphorus&quot;, &quot;potassium&quot;, &quot;sodium&quot;, &quot;zinc&quot;, &quot;copper&quot;,
+                &quot;manganese&quot;, &quot;selenium&quot;, &quot;vit_c&quot;, &quot;thiamin&quot;, &quot;riboflavin&quot;, &quot;niacin&quot;, &quot;panto_acid&quot;,
+                &quot;vit_b6&quot;, &quot;folate_tot&quot;, &quot;folic_acid&quot;, &quot;food_folate&quot;, &quot;folate_dfe&quot;, &quot;choline_tot&quot;,
+                &quot;vit_b12&quot;, &quot;vit_a_iu&quot;, &quot;vit_a_rae&quot;, &quot;retinol&quot;, &quot;alpha_carot&quot;, &quot;beta_carot&quot;,
+                &quot;beta_crypt&quot;, &quot;lycopene&quot;, &quot;lut_zea&quot;, &quot;vit_e&quot;, &quot;vit_d_mcg&quot;, &quot;vit_d_iu&quot;, &quot;vit_k&quot;,
+                &quot;fa_sat&quot;, &quot;fa_mono&quot;, &quot;fa_poly&quot;, &quot;cholestrl&quot;, &quot;gmwt_1&quot;, &quot;gmwt_desc1&quot;, &quot;gmwt_2&quot;,
+                &quot;gmwt_desc2&quot;, &quot;refuse_pct&quot;
+        );
+<span class="fc" id="L39">        critical_fields = new HashSet&lt;&gt;(Arrays.asList(</span>
+                &quot;ndb_no&quot;, &quot;shrt_desc&quot;, &quot;energ_kcal&quot;, &quot;protein&quot;, &quot;lipid_tot&quot;
+        ));
+<span class="fc" id="L42">        queryLimit = 10;</span>
+<span class="fc" id="L43">    }</span>
+
+    /**
+     * Constructor which uses external sql connection.
+     * @param sql external sql connection
+     */
+    FoodQuerier(Connection sql) {
+<span class="fc" id="L50">        this();</span>
+<span class="fc" id="L51">        this.sql = sql;</span>
+<span class="fc" id="L52">    }</span>
+
+    /**
+     * Set the query limit.
+     * @param queryLimit number of rows to return when searching
+     */
+    public FoodQuerier(int queryLimit) {
+<span class="nc" id="L59">        this();</span>
+<span class="nc" id="L60">        this.queryLimit = queryLimit;</span>
+<span class="nc" id="L61">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

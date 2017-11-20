@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextProcessor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">utility</a> &gt; <span class="el_source">TextProcessor.java</span></div><h1>TextProcessor.java</h1><pre class="source lang-java linenums">package utility;
+
+import java.io.StringReader;
+import java.util.*;
+import java.util.regex.Pattern;
+
+import edu.stanford.nlp.ling.Word; 
+import edu.stanford.nlp.process.WordTokenFactory;
+import edu.stanford.nlp.process.PTBTokenizer;
+
+/**
+ * TextProcessor: text processing utilities.
+ * @author szhouan
+ * @version v1.0.0
+ */
+<span class="nc" id="L16">public class TextProcessor {</span>
+
+    /**
+     * private Pattern object.
+     */
+<span class="fc" id="L21">    private static Pattern pattern = Pattern.compile(&quot;\\p{Punct}&quot;);</span>
+
+    /**
+     * Get a list of words from a sentence.
+     * @param sentence A sentence in String.
+     * @return A list of lowercase words in String,
+     *         ordered accordingly.
+     *         Punctuation marks are discarded.
+     */
+    public static List&lt;String&gt; sentenceToWords(String sentence) {
+<span class="fc" id="L31">        String[] words = sentence.split(&quot;\\s+&quot;);</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        for (int i = 0; i &lt; words.length; ++i) {</span>
+<span class="fc" id="L33">            words[i] = words[i].replaceAll(&quot;[^\\w]&quot;, &quot;&quot;).toLowerCase();</span>
+        }
+<span class="fc" id="L35">        return new ArrayList&lt;String&gt;(Arrays.asList(words));</span>
+    }
+
+    /**
+     * Get a list of words from a sentence using PTBTokenizer.
+     * @param sentence A sentence in String.
+     * @return A list of lowercase tokens in String.
+     */
+    public static List&lt;String&gt; getTokens(String sentence) {
+<span class="fc" id="L44">        PTBTokenizer&lt;Word&gt; ptbt = new PTBTokenizer&lt;&gt;(</span>
+            new StringReader(sentence), new WordTokenFactory(), &quot;&quot;
+        );
+<span class="fc" id="L47">        List&lt;String&gt; words = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        while (ptbt.hasNext()) {</span>
+<span class="fc" id="L49">            String word = ptbt.next().word();</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">            if (!pattern.matcher(word).matches()) {</span>
+<span class="fc" id="L51">                words.add(word.toLowerCase());</span>
+            }
+<span class="fc" id="L53">        }</span>
+<span class="fc" id="L54">        return words;</span>
+    }
+
+    /**
+     * Try parsing an English number to numeric number.
+     * @param sentence input sentence probably is a english number
+     * @return string of numeric number
+     */
+    public static String sentenceToNumber(String sentence) {
+<span class="nc" id="L63">        Map&lt;String, String&gt; mapping = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L64">        mapping.put(&quot;hundred&quot;, &quot;&quot;);</span>
+<span class="nc" id="L65">        mapping.put(&quot;and&quot;, &quot;&quot;);</span>
+<span class="nc" id="L66">        mapping.put(&quot;zero&quot;, &quot;0&quot;);</span>
+<span class="nc" id="L67">        mapping.put(&quot;one&quot;, &quot;1&quot;);</span>
+<span class="nc" id="L68">        mapping.put(&quot;two&quot;, &quot;2&quot;);</span>
+<span class="nc" id="L69">        mapping.put(&quot;three&quot;, &quot;3&quot;);</span>
+<span class="nc" id="L70">        mapping.put(&quot;four&quot;, &quot;4&quot;);</span>
+<span class="nc" id="L71">        mapping.put(&quot;five&quot;, &quot;5&quot;);</span>
+<span class="nc" id="L72">        mapping.put(&quot;six&quot;, &quot;6&quot;);</span>
+<span class="nc" id="L73">        mapping.put(&quot;seven&quot;, &quot;7&quot;);</span>
+<span class="nc" id="L74">        mapping.put(&quot;eight&quot;, &quot;8&quot;);</span>
+<span class="nc" id="L75">        mapping.put(&quot;nine&quot;, &quot;9&quot;);</span>
+<span class="nc" id="L76">        mapping.put(&quot;ten&quot;, &quot;1&quot;);</span>
+<span class="nc" id="L77">        mapping.put(&quot;eleven&quot;, &quot;11&quot;);</span>
+<span class="nc" id="L78">        mapping.put(&quot;twelve&quot;, &quot;12&quot;);</span>
+<span class="nc" id="L79">        mapping.put(&quot;thirteen&quot;, &quot;13&quot;);</span>
+<span class="nc" id="L80">        mapping.put(&quot;fourteen&quot;, &quot;14&quot;);</span>
+<span class="nc" id="L81">        mapping.put(&quot;fifteen&quot;, &quot;15&quot;);</span>
+<span class="nc" id="L82">        mapping.put(&quot;sixteen&quot;, &quot;16&quot;);</span>
+<span class="nc" id="L83">        mapping.put(&quot;seventeen&quot;, &quot;17&quot;);</span>
+<span class="nc" id="L84">        mapping.put(&quot;eighteen&quot;, &quot;18&quot;);</span>
+<span class="nc" id="L85">        mapping.put(&quot;nineteen&quot;, &quot;19&quot;);</span>
+<span class="nc" id="L86">        mapping.put(&quot;twenty&quot;, &quot;2&quot;);</span>
+<span class="nc" id="L87">        mapping.put(&quot;thirty&quot;, &quot;3&quot;);</span>
+<span class="nc" id="L88">        mapping.put(&quot;forty&quot;, &quot;4&quot;);</span>
+<span class="nc" id="L89">        mapping.put(&quot;fifty&quot;, &quot;5&quot;);</span>
+<span class="nc" id="L90">        mapping.put(&quot;sixty&quot;, &quot;6&quot;);</span>
+<span class="nc" id="L91">        mapping.put(&quot;seventy&quot;, &quot;7&quot;);</span>
+<span class="nc" id="L92">        mapping.put(&quot;eighty&quot;, &quot;8&quot;);</span>
+<span class="nc" id="L93">        mapping.put(&quot;ninety&quot;, &quot;9&quot;);</span>
+<span class="nc" id="L94">        List&lt;String&gt; words = getTokens(sentence);</span>
+<span class="nc" id="L95">        List&lt;String&gt; numbers = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        for (String word : words) {</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">            if (!mapping.keySet().contains(word)) return null;</span>
+<span class="nc" id="L98">            numbers.add(mapping.get(word));</span>
+<span class="nc" id="L99">        }</span>
+<span class="nc" id="L100">        return String.join(&quot;&quot;, numbers);</span>
+    }
+
+    /**
+     * Utility function for deciding whether two String iterable has one match.
+     * @param it1 Input that needs to be matched
+     * @param it2 Template that input matched against
+     * @return matched item in it2, or null if no match found
+     */
+    public static String getMatch(Iterable&lt;String&gt; it1, Iterable&lt;String&gt; it2) {
+<span class="fc bfc" id="L110" title="All 4 branches covered.">        for (String s1 : it1) for (String s2 : it2) {</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            if (s1.equals(s2)) return s2;</span>
+<span class="fc" id="L112">        }</span>
+<span class="fc" id="L113">        return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

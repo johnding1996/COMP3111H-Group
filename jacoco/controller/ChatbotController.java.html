@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatbotController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">controller</a> &gt; <span class="el_source">ChatbotController.java</span></div><h1>ChatbotController.java</h1><pre class="source lang-java linenums">package controller;
+
+import com.linecorp.bot.client.MessageContentResponse;
+import edu.cmu.sphinx.result.WordResult;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import com.google.common.io.ByteStreams;
+import com.linecorp.bot.client.LineMessagingClient;
+import com.linecorp.bot.client.MessageContentResponse;
+import com.linecorp.bot.model.PushMessage;
+import com.linecorp.bot.model.event.FollowEvent;
+import com.linecorp.bot.model.event.MessageEvent;
+import com.linecorp.bot.model.event.UnfollowEvent;
+import com.linecorp.bot.model.event.message.ImageMessageContent;
+import com.linecorp.bot.model.event.message.TextMessageContent;
+import com.linecorp.bot.model.event.message.AudioMessageContent;
+import com.linecorp.bot.model.message.ImageMessage;
+import com.linecorp.bot.model.message.Message;
+import com.linecorp.bot.model.message.TextMessage;
+import com.linecorp.bot.spring.boot.annotation.EventMapping;
+import com.linecorp.bot.spring.boot.annotation.LineMessageHandler;
+import database.keeper.StateKeeper;
+import agent.IntentionClassifier;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadLocalRandom;
+import utility.Validator;
+import utility.FormatterMessageJSON;
+import utility.ParserMessageJSON;
+import utility.TextProcessor;
+import lombok.NonNull;
+import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
+import reactor.bus.Event;
+import reactor.bus.EventBus;
+import reactor.fn.Consumer;
+
+import static reactor.bus.selector.Selectors.$;
+import javax.annotation.PostConstruct;
+import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.UnsupportedAudioFileException;
+
+import edu.cmu.sphinx.api.Configuration;
+import edu.cmu.sphinx.api.SpeechResult;
+import edu.cmu.sphinx.api.StreamSpeechRecognizer;
+
+/**
+ * ChatbotController: interfacing with LINE API, handle global state transition.
+ * @author szhouan
+ * @version v2.0.0
+ */
+<span class="fc" id="L77">@Slf4j</span>
+@Service
+@LineMessageHandler
+<span class="fc" id="L80">public class ChatbotController implements Consumer&lt;reactor.bus.Event&lt;FormatterMessageJSON&gt;&gt; {</span>
+    /**
+     * THis is a private HashMap noReplyFutures.
+     */
+<span class="fc" id="L84">    private HashMap&lt;String, ScheduledFuture&lt;?&gt;&gt; noReplyFutures = new HashMap&lt;&gt;();</span>
+
+    /**
+     * THis is a private attibute LineMessagingClient.
+     */
+    @Autowired(required = true)
+    private LineMessagingClient lineMessagingClient;
+
+    /**
+     * THis is a private attribute Publisher for publish information.
+     */
+    @Autowired
+    private Publisher publisher;
+
+    /**
+     * THis is a private EventBus eventBus.
+     */
+    @Autowired
+    private EventBus eventBus;
+
+    /**
+     * This is a private TaskScheduler attribute.
+     */
+    @Autowired
+    private TaskScheduler taskScheduler;
+
+    /**
+     * THis is a private attribute IntentionClassifier classifier.
+     */
+    @Autowired(required = false)
+    private IntentionClassifier classifier;
+
+    /**
+     * THis is a private integer storing the num of no reply timeout.
+     */
+    private static final int NO_REPLY_TIMEOUT = 1;
+
+    /**
+     * THis is a private attribute cCOnfiguration object.
+     */
+    private Configuration sphinxConfiguration;
+
+    /**
+     * Set of global key words escaping used by various handlers.
+     */
+<span class="fc" id="L129">    HashSet&lt;String&gt; keyWords = new HashSet&lt;&gt;(Arrays.asList(&quot;CANCEL&quot;));</span>
+
+    /**
+     * Register on eventBus.
+     */
+    @PostConstruct
+    public void init() {
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">        if (eventBus != null) {</span>
+<span class="fc" id="L137">            eventBus.on($(&quot;FormatterMessageJSON&quot;), this);</span>
+<span class="fc" id="L138">            log.info(&quot;ChatbotController register on eventBus&quot;);</span>
+        }
+        // Config the CMU Sphinx data path
+<span class="fc" id="L141">        sphinxConfiguration = new Configuration();</span>
+<span class="fc" id="L142">        sphinxConfiguration.setAcousticModelPath(&quot;resource:/edu/cmu/sphinx/models/en-us/en-us&quot;);</span>
+<span class="fc" id="L143">        sphinxConfiguration.setDictionaryPath(&quot;resource:/language/chatbot.dic&quot;);</span>
+<span class="fc" id="L144">        sphinxConfiguration.setLanguageModelPath(&quot;resource:/language/chatbot.lm&quot;);</span>
+<span class="fc" id="L145">    }</span>
+
+    /**
+     * EventBus FormatterMessageJSON event handler.
+     * Send LINE message if required.
+     * @param ev FormatterMessageJSON event
+     */
+    public void accept(Event&lt;FormatterMessageJSON&gt; ev) {
+<span class="fc" id="L153">        FormatterMessageJSON fmt = ev.getData();</span>
+<span class="fc" id="L154">        String userId = fmt.getUserId();</span>
+
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">        if (noReplyFutures.containsKey(userId)) {</span>
+<span class="nc" id="L157">            ScheduledFuture&lt;?&gt; future = noReplyFutures.remove(userId);</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">            if (future != null)</span>
+<span class="nc" id="L159">                future.cancel(false);</span>
+<span class="nc" id="L160">            log.info(&quot;No reply future cancelled for user {}&quot;, userId);</span>
+        }
+
+        // build message list
+<span class="fc" id="L164">        List&lt;Message&gt; messages = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L165">        JSONArray arr = fmt.getMessageArray();</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (arr.length() == 0) {</span>
+<span class="fc" id="L167">            return;</span>
+        }
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        for (int i = 0; i &lt; arr.length(); ++i) {</span>
+<span class="fc" id="L170">            JSONObject obj = arr.getJSONObject(i);</span>
+<span class="pc bpc" id="L171" title="7 of 10 branches missed.">            switch (obj.getString(&quot;type&quot;)) {</span>
+                case &quot;text&quot;:
+<span class="fc" id="L173">                    messages.add(new TextMessage(obj.getString(&quot;textContent&quot;)));</span>
+<span class="fc" id="L174">                    break;</span>
+                case &quot;image&quot;:
+<span class="nc" id="L176">                    messages.add(new ImageMessage(obj.getString(&quot;originalContentUrl&quot;),</span>
+<span class="nc" id="L177">                        obj.getString(&quot;previewContentUrl&quot;)));</span>
+<span class="nc" id="L178">                    break;</span>
+                default:
+<span class="nc" id="L180">                    log.info(&quot;Invalid message type {}&quot;, obj.getString(&quot;type&quot;));</span>
+            }
+        }
+<span class="fc" id="L183">        log.info(&quot;CONTROLLER: Send push message&quot;);</span>
+<span class="fc" id="L184">        PushMessage pushMessage = new PushMessage(&quot;U&quot; + userId, messages);</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">        if (lineMessagingClient != null)</span>
+<span class="fc" id="L186">            lineMessagingClient.pushMessage(pushMessage);</span>
+<span class="fc" id="L187">    }</span>
+
+    /**
+     * Event handler for LINE text message.
+     * @param event LINE text message event
+     */
+    @EventMapping
+    public void handleTextMessageEvent(MessageEvent&lt;TextMessageContent&gt; event) {
+<span class="fc" id="L195">        ImageControl.servletUriComponentsBuilder = ServletUriComponentsBuilder.fromCurrentContextPath();</span>
+<span class="fc" id="L196">        String userId = event.getSource().getUserId();</span>
+<span class="fc" id="L197">        String textContent = event.getMessage().getText();</span>
+<span class="fc" id="L198">        String messageId = event.getMessage().getId();</span>
+
+        // remove first letter 'U' from userId
+<span class="fc" id="L201">        userId = userId.substring(1);</span>
+
+<span class="fc" id="L203">        log.info(&quot;textContent: {}&quot;, textContent);</span>
+
+        // cancel session?
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (textContent.trim().equals(&quot;CANCEL&quot;)) {</span>
+<span class="fc" id="L207">            log.info(&quot;Session cancelled by user {}&quot;, userId);</span>
+<span class="fc" id="L208">            setUserState(userId, State.IDLE);</span>
+
+<span class="fc" id="L210">            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L211">            fmt.appendTextMessage(&quot;OK, the session is cancelled.&quot;);</span>
+<span class="fc" id="L212">            publisher.publish(fmt);</span>
+<span class="fc" id="L213">            return;</span>
+        }
+
+        // publish message
+<span class="fc" id="L217">        ParserMessageJSON psr = new ParserMessageJSON(userId, &quot;text&quot;);</span>
+<span class="fc" id="L218">        psr.set(&quot;messageId&quot;, messageId).set(&quot;textContent&quot;, textContent).setState(getUserState(userId).toString());</span>
+<span class="fc" id="L219">        registerNoReplyCallback(userId);</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">        if (getUserState(userId) != State.IDLE) {</span>
+<span class="fc" id="L221">            publisher.publish(psr);</span>
+        } else {
+            // Prevent race condition
+<span class="fc" id="L224">            Event&lt;ParserMessageJSON&gt; ev = new Event&lt;&gt;(null, psr);</span>
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">            if (classifier != null) {</span>
+<span class="nc" id="L226">                classifier.accept(ev);</span>
+            }
+        }
+<span class="fc" id="L229">    }</span>
+
+    /**
+     * Event handler for LINE audio message.
+     * Making use of the CMU Sphinx recognition package to do speech recognition.
+     * The dictionary and language model files are at /resources/language folder.
+     * @param event LINE image message event
+     */
+    @EventMapping
+    public void handleAudioMessageEvent(MessageEvent&lt;AudioMessageContent&gt; event) {
+
+<span class="nc" id="L240">        String userId = event.getSource().getUserId();</span>
+<span class="nc" id="L241">        String messageId = event.getMessage().getId();</span>
+
+        // remove first letter 'U' from userId
+<span class="nc" id="L244">        userId = userId.substring(1);</span>
+
+        MessageContentResponse response;
+<span class="nc" id="L247">        List&lt;String&gt; messages = new ArrayList&lt;&gt;();</span>
+        try {
+            // Prompt recognition in progress
+<span class="nc" id="L250">            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="nc" id="L251">            fmt.appendTextMessage(&quot;Speech recognition in progress, please wait...&quot;);</span>
+<span class="nc" id="L252">            publisher.publish(fmt);</span>
+
+            // Initialization
+<span class="nc" id="L255">            StreamSpeechRecognizer recognizer = new StreamSpeechRecognizer(sphinxConfiguration);</span>
+<span class="nc" id="L256">            response = lineMessagingClient.getMessageContent(messageId).get();</span>
+
+            // Conversion to correct format
+<span class="nc" id="L259">            InputStream inputStream = new BufferedInputStream(response.getStream());</span>
+<span class="nc" id="L260">            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(inputStream);</span>
+<span class="nc" id="L261">            AudioFormat oldFormat = audioInputStream.getFormat();</span>
+<span class="nc" id="L262">            AudioFormat newFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 16000, 16, 1, 2, 16000, false);</span>
+<span class="nc" id="L263">            log.info(&quot;Old audio format:&quot; + oldFormat.toString());</span>
+<span class="nc" id="L264">            log.info(&quot;New audio format:&quot; + newFormat.toString());</span>
+<span class="nc" id="L265">            AudioInputStream recognitionInputStream = AudioSystem.getAudioInputStream(newFormat, audioInputStream);</span>
+
+            // Recognition
+<span class="nc" id="L268">            recognizer.startRecognition(recognitionInputStream);</span>
+            SpeechResult result;
+<span class="nc" id="L270">            log.info(&quot;Entered recognition part.&quot;);</span>
+<span class="nc bnc" id="L271" title="All 2 branches missed.">            while ((result = recognizer.getResult()) != null) {</span>
+<span class="nc" id="L272">                String word = result.getHypothesis();</span>
+<span class="nc" id="L273">                messages.add(word);</span>
+<span class="nc" id="L274">            }</span>
+            // Close all possible buffers
+<span class="nc" id="L276">            recognizer.stopRecognition();</span>
+<span class="nc" id="L277">            response.getStream().close();</span>
+<span class="nc" id="L278">            inputStream.close();</span>
+<span class="nc" id="L279">            audioInputStream.close();</span>
+<span class="nc" id="L280">            recognitionInputStream.close();</span>
+<span class="nc" id="L281">            response.close();</span>
+            // Force garbage collection
+<span class="nc" id="L283">            System.gc();</span>
+<span class="nc" id="L284">        } catch (InterruptedException | ExecutionException | IOException | UnsupportedAudioFileException e) {</span>
+<span class="nc" id="L285">            log.error(&quot;Error in recognition.&quot;, e);</span>
+<span class="nc" id="L286">        }</span>
+
+        // Join results
+<span class="nc" id="L289">        String msg = String.join(&quot; &quot;, messages).trim();</span>
+        // Escape lowing for the key words
+<span class="nc bnc" id="L291" title="All 2 branches missed.">        if (!keyWords.contains(msg)) msg = msg.toLowerCase();</span>
+        // Try parsing number
+<span class="nc bnc" id="L293" title="All 2 branches missed.">        if (TextProcessor.sentenceToNumber(msg) != null) msg = TextProcessor.sentenceToNumber(msg);</span>
+<span class="nc" id="L294">        log.info(&quot;Speech recognized message: &quot; + msg);</span>
+
+        // Show recognition result
+<span class="nc" id="L297">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="nc" id="L298">        fmt.appendTextMessage(&quot;RECOGNIZED: &quot; + msg);</span>
+<span class="nc" id="L299">        publisher.publish(fmt);</span>
+
+        // Sleep to pursue the order of replied messages
+<span class="nc" id="L302">        sleep(500);</span>
+
+        // Pack into text message content and call text handler
+<span class="nc" id="L305">        TextMessageContent textContent = new TextMessageContent(event.getMessage().getId(), msg);</span>
+<span class="nc" id="L306">        MessageEvent&lt;TextMessageContent&gt; textEvent = new MessageEvent&lt;&gt;(</span>
+<span class="nc" id="L307">                event.getReplyToken(), event.getSource(), textContent, event.getTimestamp()</span>
+        );
+<span class="nc" id="L309">        this.handleTextMessageEvent(textEvent);</span>
+<span class="nc" id="L310">    }</span>
+
+
+    /**
+     * Event handler for LINE unfollow event.
+     * @param event LINE unfollow event.
+     */
+    @EventMapping
+    public void handleUnfollowEvent(UnfollowEvent event) {
+<span class="fc" id="L319">        String userId = event.getSource().getUserId();</span>
+<span class="fc" id="L320">        userId = userId.substring(1);</span>
+
+<span class="fc" id="L322">        log.info(&quot;Unfollowed by user userId {}&quot;, userId);</span>
+<span class="fc" id="L323">        setUserState(userId, State.UNFOLLOWING);</span>
+<span class="fc" id="L324">    }</span>
+
+    /**
+     * Event handler for LINE follow event.
+     * @param event LINE follow event.
+     */
+    @EventMapping
+    public void handleFollowEvent(FollowEvent event) {
+<span class="fc" id="L332">        String userId = event.getSource().getUserId();</span>
+<span class="fc" id="L333">        userId = userId.substring(1);</span>
+
+<span class="fc" id="L335">        log.info(&quot;Followed by user {}&quot;, userId);</span>
+<span class="fc" id="L336">        setUserState(userId, State.FOLLOWING);</span>
+<span class="fc" id="L337">    }</span>
+
+    /**
+     * Event handler for LINE image message.
+     * @param event LINE image message event
+     */
+    @EventMapping
+    public void handleImageMessageEvent(MessageEvent&lt;ImageMessageContent&gt; event) {
+<span class="nc" id="L345">        ImageControl.servletUriComponentsBuilder = ServletUriComponentsBuilder.fromCurrentContextPath();</span>
+<span class="nc" id="L346">        String userId = event.getSource().getUserId();</span>
+<span class="nc" id="L347">        String messageId = event.getMessage().getId();</span>
+<span class="nc" id="L348">        String replyToken = event.getReplyToken();</span>
+<span class="nc" id="L349">        userId = userId.substring(1);</span>
+<span class="nc" id="L350">        log.info(&quot;Get IMAGE message from user: {}&quot;, userId);</span>
+
+        final MessageContentResponse response;
+        try {
+<span class="nc" id="L354">            response = lineMessagingClient.getMessageContent(messageId).get();</span>
+<span class="nc" id="L355">        } catch (InterruptedException | ExecutionException e) {</span>
+<span class="nc" id="L356">            log.info(&quot;cannot get image: &quot; + e.getMessage());</span>
+<span class="nc" id="L357">            throw new RuntimeException(e);</span>
+<span class="nc" id="L358">        }</span>
+        
+<span class="nc" id="L360">        ParserMessageJSON psr = new ParserMessageJSON(userId, &quot;image&quot;);</span>
+<span class="nc" id="L361">        String uri = ImageControl.saveContent(response, &quot;TempFile&quot;)[0];</span>
+<span class="nc" id="L362">        psr.set(&quot;messageId&quot;, messageId).setState(getUserState(userId).toString())</span>
+<span class="nc" id="L363">           .set(&quot;imageContent&quot;, uri);</span>
+<span class="nc" id="L364">        publisher.publish(psr);</span>
+        // String temp[] = ImageControl.saveContent(response, &quot;DB&quot;);
+        // String uri = ImageControl.getCouponImageUri(userId, temp[1], temp[0]);
+        // FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        // fmt.appendImageMessage(uri, uri);
+        // publisher.publish(fmt);
+<span class="nc" id="L370">    }</span>
+
+    /**
+     * Get state of a user.
+     * @param userId String of user Id
+     * @return State of the user. State.INVALID is returned if there
+     *         is no record for this user
+     */
+    public State getUserState(String userId) {
+
+<span class="nc" id="L380">        StateKeeper keeper = new StateKeeper();</span>
+<span class="nc" id="L381">        String stateName = keeper.get(userId);</span>
+<span class="nc" id="L382">        keeper.close();</span>
+<span class="nc" id="L383">        return State.getStateByName(stateName);</span>
+    }
+
+    /**
+     * Set state of a user, register timeout callback, and publish the transition.
+     * @param userId String of user Id.
+     * @param newState New state for the user.
+     * @return Whether state transition succeeds.
+     */
+    public boolean setUserState(String userId, State newState) {
+<span class="fc" id="L393">        State currentState = getUserState(userId);</span>
+<span class="fc bfc" id="L394" title="All 2 branches covered.">        if (currentState == newState) {</span>
+<span class="fc" id="L395">            log.info(&quot;State will not change for user {}&quot;, userId);</span>
+<span class="fc" id="L396">            return false;</span>
+        }
+<span class="fc" id="L398">        log.info(&quot;State of user {} changed to {}&quot;, userId, newState.toString());</span>
+        try {
+            // prevent race condition
+            // Message handled by one agent module will not be handled by another
+<span class="fc" id="L402">            Thread.sleep(600);</span>
+<span class="nc" id="L403">        } catch (Exception e) {</span>
+<span class="nc" id="L404">            log.info(e.toString());</span>
+<span class="fc" id="L405">        }</span>
+<span class="fc" id="L406">        setKeeperState(userId, newState);</span>
+
+        // publish state transition
+<span class="fc" id="L409">        ParserMessageJSON psr = new ParserMessageJSON(userId, &quot;transition&quot;);</span>
+        // prevent null value
+<span class="fc" id="L411">        psr.set(&quot;textContent&quot;, &quot;&quot;).set(&quot;messageId&quot;, &quot;&quot;).setState(getUserState(userId).toString());</span>
+<span class="fc" id="L412">        publisher.publish(psr);</span>
+
+        // timeout callback if new state is not IDLE
+<span class="fc bfc" id="L415" title="All 2 branches covered.">        if (newState != State.IDLE) {</span>
+<span class="fc bfc" id="L416" title="All 2 branches covered.">            taskScheduler.schedule(</span>
+<span class="fc" id="L417">                    getTimeoutCallback(userId, newState, newState == State.RECOMMEND ? State.RECORD_MEAL : State.IDLE),</span>
+<span class="fc" id="L418">                    State.getTimeoutDate());</span>
+        }
+<span class="fc" id="L420">        return true;</span>
+    }
+
+    /**
+     * Set global state using StateKeeper.
+     * @param userId String of user Id
+     * @param newState New state to set
+     */
+    protected void setKeeperState(String userId, State newState) {
+<span class="nc" id="L429">        StateKeeper keeper = new StateKeeper();</span>
+<span class="nc" id="L430">        keeper.set(userId, newState.toString());</span>
+<span class="nc" id="L431">        keeper.close();</span>
+<span class="nc" id="L432">    }</span>
+
+    /**
+     * Helper function returning callback function for timeout event.
+     * @param userId String of user Id.
+     * @param currentState Current state of user when the function is called.
+     *                     Must not be State.INVALID.
+     * @param nextState The next state of the user when timeout happens.
+     * @return A runnable object as callback function.
+     */
+    private Runnable getTimeoutCallback(String userId, State currentState, State nextState) {
+<span class="fc" id="L443">        return new Runnable() {</span>
+            @Override
+            public void run() {
+<span class="fc" id="L446">                State state = getUserState(userId);</span>
+<span class="pc bpc" id="L447" title="1 of 2 branches missed.">                if (currentState != state)</span>
+<span class="nc" id="L448">                    return;</span>
+<span class="fc" id="L449">                setUserState(userId, nextState);</span>
+<span class="fc" id="L450">            }</span>
+        };
+
+    }
+
+    /**
+     * This is a private String[] storing the replies.
+     */
+<span class="fc" id="L458">    private static final String[] replies = { &quot;Sorry, but I don't understand what you said.&quot;,</span>
+            &quot;Oops, that is complicated for me.&quot;, &quot;Well, that doesn't make sense to me.&quot;,
+            &quot;Well, I really do not understand that.&quot; };
+
+    /**
+     * Register no-reply callback for user input.
+     * If no agent module replies the user, the controller will reply default message.
+     * @param userId String of user Id.
+     */
+    private void registerNoReplyCallback(String userId) {
+        // cancel previous callback
+<span class="fc bfc" id="L469" title="All 2 branches covered.">        if (noReplyFutures.containsKey(userId)) {</span>
+<span class="fc" id="L470">            ScheduledFuture&lt;?&gt; future = noReplyFutures.get(userId);</span>
+<span class="pc bpc" id="L471" title="1 of 2 branches missed.">            if (future != null)</span>
+<span class="nc" id="L472">                future.cancel(false);</span>
+<span class="fc" id="L473">            log.info(&quot;Cancel previous no reply callback for user {}&quot;, userId);</span>
+        }
+<span class="fc" id="L475">        noReplyFutures.put(userId, taskScheduler.schedule(new Runnable() {</span>
+            @Override
+            public void run() {
+<span class="fc" id="L478">                FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L479">                int randomNum = ThreadLocalRandom.current().nextInt(0, replies.length);</span>
+<span class="fc" id="L480">                fmt.appendTextMessage(replies[randomNum]); // general reply</span>
+<span class="fc" id="L481">                State state = getUserState(userId);</span>
+<span class="pc bpc" id="L482" title="1 of 2 branches missed.">                switch (state) {</span>
+                case IDLE:
+<span class="fc" id="L484">                    fmt.appendTextMessage(</span>
+                            &quot;To set your personal info, &quot; + &quot;please send 'setting'.\nIf you want to obtain recommendation, &quot;
+                            + &quot;please say 'recommendation'.\n&quot;
+                                    + &quot;If you want to obtain feedback, please say 'feedback'.\n&quot;
+                                    + &quot;If you want to invite a friend by the coupon, please say 'friend'.\n&quot;
+                                    + &quot;If you want to collect the coupon by your code, please say 'code'.\n&quot;
+                                    + &quot;If you are the admin and want to upload the coupon image, please say 'admin mode'.\n&quot;
+                            + &quot;You can always cancel an operation by saying 'CANCEL'&quot;);
+<span class="fc" id="L492">                    break;</span>
+
+                default:
+<span class="nc" id="L495">                    fmt.appendTextMessage(&quot;You could cancel the session by saying CANCEL&quot;);</span>
+                    break;
+                }
+<span class="fc" id="L498">                publisher.publish(fmt);</span>
+<span class="fc" id="L499">                noReplyFutures.remove(userId);</span>
+<span class="fc" id="L500">            }</span>
+<span class="fc" id="L501">        }, new Date((new Date()).getTime() + 1000 * NO_REPLY_TIMEOUT)));</span>
+<span class="fc" id="L502">        log.info(&quot;Register new no reply callback for user {}&quot;, userId);</span>
+<span class="fc" id="L503">    }</span>
+
+    /**
+     * Sleep for a few milliseconds, used for pursuing the order or messages.
+     * @param milliseconds the number of seconds to sleep.
+     */
+    public void sleep(int milliseconds) {
+        try {
+<span class="nc" id="L511">            TimeUnit.MILLISECONDS.sleep(milliseconds);</span>
+<span class="nc" id="L512">        } catch (InterruptedException e ) {</span>
+<span class="nc" id="L513">            log.warn(&quot;Sleeping in controller got interrupted.&quot;);</span>
+<span class="nc" id="L514">        }</span>
+<span class="nc" id="L515">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

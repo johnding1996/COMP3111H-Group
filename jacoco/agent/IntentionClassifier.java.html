@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IntentionClassifier.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">agent</a> &gt; <span class="el_source">IntentionClassifier.java</span></div><h1>IntentionClassifier.java</h1><pre class="source lang-java linenums">package agent;
+
+import org.springframework.stereotype.Component;
+
+import controller.State;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.Arrays;
+import java.util.HashSet;
+
+import utility.ParserMessageJSON;
+import utility.TextProcessor;
+
+/**
+ * IntentionClassifier: classifier intention of the user and change global state.
+ * @author szhouan
+ * @version v1.1.0
+ */
+<span class="nc" id="L19">@Slf4j</span>
+@Component
+<span class="nc" id="L21">public class IntentionClassifier extends Agent {</span>
+
+    /**
+     * THis is a private HashSet store the recommend keywords.
+     */
+    private HashSet&lt;String&gt; recommendKeywords;
+
+    /**
+     * THis is a private HashSet store the initial input keywords.
+     */
+    private HashSet&lt;String&gt; initialInputKeywords;
+
+    /**
+     * THis is a private HashSet store the feedbck keywords.
+     */
+    private HashSet&lt;String&gt; feedbackKeywords;
+
+    /**
+     * Initialize intention classifier agent.
+     */
+    @Override
+    public void init() {
+<span class="nc" id="L43">        agentName = &quot;IntentionClassifier&quot;;</span>
+<span class="nc" id="L44">        agentStates = new HashSet&lt;&gt;(</span>
+<span class="nc" id="L45">            Arrays.asList(State.IDLE)</span>
+        );
+<span class="nc" id="L47">        handleImage = false;</span>
+<span class="nc" id="L48">        useSpellChecker = false;</span>
+<span class="nc" id="L49">        acknowledgeController = false;</span>
+<span class="nc" id="L50">        this.addHandler(0, (psr) -&gt; parseIntention(psr));</span>
+
+<span class="nc" id="L52">        recommendKeywords = new HashSet&lt;&gt;(</span>
+<span class="nc" id="L53">            Arrays.asList(</span>
+                &quot;recommendation&quot;, &quot;recommendations&quot;, &quot;recommend&quot;,
+                &quot;menu&quot;, &quot;suggestion&quot;, &quot;suggest&quot;
+            )
+        );
+<span class="nc" id="L58">        initialInputKeywords = new HashSet&lt;&gt;(</span>
+<span class="nc" id="L59">            Arrays.asList(</span>
+                &quot;setting&quot;, &quot;settings&quot;, &quot;personal&quot;
+            )
+        );
+<span class="nc" id="L63">        feedbackKeywords = new HashSet&lt;&gt;(</span>
+<span class="nc" id="L64">            Arrays.asList(</span>
+                &quot;feedback&quot;, &quot;report&quot;, &quot;digest&quot;
+            )
+        );
+<span class="nc" id="L68">    }</span>
+
+    /**
+     * Handler for intention input.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int parseIntention(ParserMessageJSON psr) {
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (psr.getType().equals(&quot;transition&quot;)) return END_STATE;</span>
+<span class="nc" id="L77">        String text = psr.get(&quot;textContent&quot;);</span>
+<span class="nc" id="L78">        State globalState = State.IDLE;</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        for (String word : TextProcessor.getTokens(text)) {</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            if (recommendKeywords.contains(word)) globalState = State.PARSE_MENU;</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (initialInputKeywords.contains(word)) globalState = State.INITIAL_INPUT;</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            if (feedbackKeywords.contains(word)) globalState = State.FEEDBACK;</span>
+<span class="nc" id="L83">        }</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (text.toLowerCase().startsWith(&quot;friend&quot;)) globalState = State.INVITE_FRIEND;</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (text.toLowerCase().startsWith(&quot;code&quot;)) globalState = State.CLAIM_COUPON;</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (text.toLowerCase().startsWith(&quot;admin mode&quot;)) globalState = State.MANAGE_CAMPAIGN;</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (globalState != State.IDLE) {</span>
+<span class="nc" id="L88">            controller.setUserState(psr.getUserId(), globalState);</span>
+        }
+<span class="nc" id="L90">        return END_STATE;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

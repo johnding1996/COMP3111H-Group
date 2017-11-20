@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Validator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">utility</a> &gt; <span class="el_source">Validator.java</span></div><h1>Validator.java</h1><pre class="source lang-java linenums">package utility;
+
+import java.util.List;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Validator: user input validation.
+ * @author szhouan
+ * @version v1.0.0
+ */
+<span class="fc" id="L16">@Slf4j</span>
+<span class="nc" id="L17">public class Validator {</span>
+    /**
+     * Check whether a String is an interger.
+     * @param str Input string.
+     * @return whether the string is an integer.
+     */
+    public static boolean isInteger(String str) {  
+        try {
+<span class="fc" id="L25">            Integer.parseInt(str);</span>
+<span class="fc" id="L26">            return true;</span>
+<span class="fc" id="L27">        } catch (NumberFormatException nfe) {</span>
+<span class="fc" id="L28">            return false;</span>
+        }
+    }
+
+    /**
+     * check whether a String represents gender.
+     * @param str Input string.
+     * @return whether the string is a gender.
+     */
+    public static boolean isGender(String str) {
+<span class="fc" id="L38">        List&lt;String&gt; words = TextProcessor.getTokens(str);</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        for (String word : words) {</span>
+<span class="pc bpc" id="L40" title="4 of 15 branches missed.">            switch (word) {</span>
+                case &quot;male&quot;: case &quot;female&quot;:
+                case &quot;man&quot;: case &quot;woman&quot;:
+<span class="fc" id="L43">                return true;</span>
+                
+                default:
+            }
+<span class="fc" id="L47">        }</span>
+<span class="fc" id="L48">        return false;</span>
+    }
+
+    /**
+     * check whether integer is valid age.
+     * @param age An integer representing age.
+     * @return whether the age is valid.
+     */
+    public static boolean validateAge(int age) {
+<span class="fc bfc" id="L57" title="All 4 branches covered.">        return age &gt;= 5 &amp;&amp; age &lt;= 95;</span>
+    }
+
+    /**
+     * check whether integer is valid weight.
+     * @param weight An integer representing weight.
+     * @return whether the weight is valid.
+     */
+    public static boolean validateWeight(int weight) {
+<span class="fc bfc" id="L66" title="All 4 branches covered.">        return weight &gt;= 25 &amp;&amp; weight &lt;= 225;</span>
+    }
+
+    /**
+     * check whether integer is valid height.
+     * @param height An integer representing height.
+     * @return whether the height is valid.
+     */
+    public static boolean validateHeight(int height) {
+<span class="fc bfc" id="L75" title="All 4 branches covered.">        return height &gt;= 25 &amp;&amp; height &lt;= 225;</span>
+    }
+
+    /**
+     * check whether a String is a date after today.
+     * @param str Input String.
+     * @param format expected date format.
+     * @return whether the string is a date after today.
+     *         return false if input format is incorrect.
+     */
+    public static boolean isFutureDate(String str, String format) {
+        try {
+<span class="fc" id="L87">            SimpleDateFormat sdf = new SimpleDateFormat(format);</span>
+<span class="fc" id="L88">            sdf.setLenient(false);</span>
+<span class="fc" id="L89">            Date future = sdf.parse(str);</span>
+<span class="fc" id="L90">            Date today = new Date();</span>
+<span class="fc" id="L91">            log.info(future.toString());</span>
+<span class="fc" id="L92">            log.info(today.toString());</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">            return today.compareTo(future) &lt;= 0;</span>
+<span class="fc" id="L94">        } catch(ParseException pe) {</span>
+<span class="fc" id="L95">            return false;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

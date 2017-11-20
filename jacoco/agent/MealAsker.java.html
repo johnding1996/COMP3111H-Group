@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MealAsker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">agent</a> &gt; <span class="el_source">MealAsker.java</span></div><h1>MealAsker.java</h1><pre class="source lang-java linenums">package agent;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import utility.FormatterMessageJSON;
+import utility.ParserMessageJSON;
+import utility.TextProcessor;
+import utility.Validator;
+import utility.JsonUtility;
+import controller.State;
+import database.querier.FoodQuerier;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * MealAsker: interact with user to get the appropriate menu.
+ * @author szhouan
+ * @version v2.1.0
+ */
+<span class="fc" id="L25">@Slf4j</span>
+@Component
+<span class="fc" id="L27">public class MealAsker extends Agent {</span>
+
+    /**
+     * THis is a private attibute MenuManager.
+     */
+    @Autowired
+    private MenuManager menuManager;
+
+    /**
+     * THis is a private attibute hash map for asker configuration.
+     */
+<span class="fc" id="L38">    private HashMap&lt;Integer, JSONObject&gt; askerConfig = new HashMap&lt;&gt;();</span>
+
+    /**
+     * Initialize initial input recorder agent.
+     */
+    @Override
+    public void init() {
+<span class="fc" id="L45">        agentName = &quot;MealAsker&quot;;</span>
+<span class="fc" id="L46">        agentStates = new HashSet&lt;&gt;(</span>
+<span class="fc" id="L47">            Arrays.asList(State.ASK_MEAL)</span>
+        );
+<span class="fc" id="L49">        handleImage = false;</span>
+<span class="fc" id="L50">        useSpellChecker = false;</span>
+<span class="fc" id="L51">        this.addHandler(0, (psr) -&gt; showMenu(psr))</span>
+<span class="fc" id="L52">            .addHandler(1, (psr) -&gt; acceptMenuChange(psr))</span>
+<span class="fc" id="L53">            .addHandler(2, (psr) -&gt; askFoodName(psr))</span>
+<span class="fc" id="L54">            .addHandler(3, (psr) -&gt; askNutrient(psr))</span>
+<span class="fc" id="L55">            .addHandler(4, (psr) -&gt; askNutrient(psr))</span>
+<span class="fc" id="L56">            .addHandler(5, (psr) -&gt; askNutrient(psr))</span>
+<span class="fc" id="L57">            .addHandler(6, (psr) -&gt; addNewFood(psr));</span>
+        
+<span class="fc" id="L59">        askerConfig.put(4, (new JSONObject())</span>
+<span class="fc" id="L60">            .put(&quot;name&quot;, &quot;energy&quot;).put(&quot;unit&quot;, &quot;kcal/100g&quot;));</span>
+<span class="fc" id="L61">        askerConfig.put(5, (new JSONObject())</span>
+<span class="fc" id="L62">            .put(&quot;name&quot;, &quot;protein&quot;).put(&quot;unit&quot;, &quot;g/100g&quot;));</span>
+<span class="fc" id="L63">        askerConfig.put(6, (new JSONObject())</span>
+<span class="fc" id="L64">            .put(&quot;name&quot;, &quot;lipid&quot;).put(&quot;unit&quot;, &quot;g/100g&quot;));</span>
+<span class="fc" id="L65">    }</span>
+
+    /**
+     * Handler for showing menu.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int showMenu(ParserMessageJSON psr) {
+<span class="fc" id="L73">        String userId = psr.getUserId();</span>
+
+<span class="fc" id="L75">        JSONObject menuJSON = menuManager.getMenuJSON(userId);</span>
+<span class="fc" id="L76">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">        if (menuJSON == null) {</span>
+<span class="nc" id="L78">            fmt.appendTextMessage(&quot;Looks like your menu is empty. Session cancelled.&quot;);</span>
+<span class="nc" id="L79">            publisher.publish(fmt);</span>
+<span class="nc" id="L80">            controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L81">            return END_STATE;</span>
+        } else {
+            // query database for food content
+<span class="fc" id="L84">            JsonUtility.getFoodContent(menuJSON);</span>
+
+            // check no empty food content
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">            if (!checkNoEmptyFoodContent(menuJSON)) {</span>
+<span class="nc" id="L88">                fmt.appendTextMessage(&quot;Your menu input is invalid. Session cancelled.&quot;);</span>
+<span class="nc" id="L89">                publisher.publish(fmt);</span>
+<span class="nc" id="L90">                controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L91">                return END_STATE;</span>
+            }
+
+<span class="fc" id="L94">            fmt.appendTextMessage(&quot;Well, I got your menu.&quot;)</span>
+<span class="fc" id="L95">               .appendTextMessage(&quot;The menu I got is\n&quot; +</span>
+<span class="fc" id="L96">                        JsonUtility.formatMenuJSON(menuJSON, false))</span>
+<span class="fc" id="L97">               .appendTextMessage(&quot;And this is the food &quot; +</span>
+                        &quot;content of each dish I found:&quot;)
+<span class="fc" id="L99">               .appendTextMessage(JsonUtility.formatMenuJSON(menuJSON, true))</span>
+<span class="fc" id="L100">               .appendTextMessage(&quot;Do you want to revise some dish names? &quot; +</span>
+                    &quot;You can type 'confirm' to go to next step. &quot; +
+                    &quot;Please show me your revision in this format: &quot; +
+                    &quot;&lt;dish index&gt;:&lt;revised name&gt;, such as '1:beef'&quot;);
+
+<span class="fc" id="L105">            states.get(userId).put(&quot;menuJSON&quot;, menuJSON);</span>
+
+<span class="fc" id="L107">            publisher.publish(fmt);</span>
+<span class="fc" id="L108">            return 1;</span>
+        }
+    }
+    
+    /**
+     * Handler for accepting menu change from user.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int acceptMenuChange(ParserMessageJSON psr) {
+<span class="fc" id="L118">        String userId = psr.getUserId();</span>
+<span class="fc" id="L119">        String text = psr.get(&quot;textContent&quot;);</span>
+
+<span class="fc" id="L121">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (TextProcessor.getMatch(TextProcessor.getTokens(text),</span>
+<span class="fc" id="L123">            Arrays.asList(&quot;confirm&quot;, &quot;yes&quot;)) != null) {</span>
+<span class="fc" id="L124">            fmt.appendTextMessage(&quot;Bravo! Your update has been saved&quot;)</span>
+<span class="fc" id="L125">               .appendTextMessage(&quot;Is there any missing food on this list? &quot; +</span>
+                    &quot;Tell me Yes or No&quot;);
+<span class="fc" id="L127">            publisher.publish(fmt);</span>
+
+            // update menu keeper
+<span class="fc" id="L130">            menuManager.storeMenuJSON(userId,</span>
+<span class="fc" id="L131">                states.get(userId).getJSONObject(&quot;menuJSON&quot;));</span>
+<span class="fc" id="L132">            return 2;</span>
+        }
+
+<span class="fc" id="L135">        JSONObject menuJSON = states.get(userId).getJSONObject(&quot;menuJSON&quot;);</span>
+<span class="fc" id="L136">        JSONArray menu = menuJSON.getJSONArray(&quot;menu&quot;);</span>
+<span class="fc" id="L137">        String[] tokens = psr.get(&quot;textContent&quot;).split(&quot;:&quot;);</span>
+<span class="fc" id="L138">        boolean valid = true;</span>
+<span class="fc" id="L139">        int index = 0;</span>
+<span class="fc" id="L140">        String newName = &quot;&quot;;</span>
+
+<span class="pc bpc" id="L142" title="1 of 4 branches missed.">        if (!Validator.isInteger(tokens[0]) || tokens.length != 2) {</span>
+<span class="fc" id="L143">            valid = false;</span>
+        } else {
+<span class="fc" id="L145">            index = Integer.parseInt(tokens[0]);</span>
+<span class="fc" id="L146">            newName = tokens[1];</span>
+<span class="pc bpc" id="L147" title="1 of 4 branches missed.">            if (index &lt; 1 || index &gt; menu.length()) valid = false;</span>
+        }
+
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (!valid) {</span>
+<span class="fc" id="L151">            rejectUserInput(psr, &quot;Please enter in this format: &quot; +</span>
+                &quot;&lt;dish index&gt;:&lt;new name&gt;, &quot; +
+                &quot;or type 'confirm' if no more update is desired.&quot;);
+        } else {
+<span class="fc" id="L155">            menu.getJSONObject(index-1).put(&quot;name&quot;, newName);</span>
+<span class="fc" id="L156">            JsonUtility.getFoodContent(menuJSON);</span>
+
+            // check no empty food content
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">            if (!checkNoEmptyFoodContent(menuJSON)) {</span>
+<span class="nc" id="L160">                fmt.appendTextMessage(&quot;Your menu input is invalid. Session cancelled.&quot;);</span>
+<span class="nc" id="L161">                publisher.publish(fmt);</span>
+<span class="nc" id="L162">                controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L163">                return END_STATE;</span>
+            }
+
+<span class="fc" id="L166">            fmt.appendTextMessage(&quot;The Menu I got is\n&quot; +</span>
+<span class="fc" id="L167">                JsonUtility.formatMenuJSON(menuJSON, true))</span>
+<span class="fc" id="L168">               .appendTextMessage(&quot;You could keep updating or confirm the menu&quot;);</span>
+<span class="fc" id="L169">            publisher.publish(fmt);</span>
+        }
+<span class="fc" id="L171">        return 1;</span>
+    }
+    
+    /**
+     * Handler for asking food name.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askFoodName(ParserMessageJSON psr) {
+<span class="fc" id="L180">        String userId = psr.getUserId();</span>
+<span class="fc" id="L181">        String text = psr.get(&quot;textContent&quot;).trim().toLowerCase();</span>
+
+<span class="fc" id="L183">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">        if(text.equals(&quot;yes&quot;)) {</span>
+<span class="fc" id="L185">            fmt.appendTextMessage(&quot;So what is the name of this dish?&quot;);</span>
+<span class="fc" id="L186">            publisher.publish(fmt);</span>
+
+<span class="fc" id="L188">            states.get(userId).put(&quot;userNewFood&quot;, new JSONObject());</span>
+<span class="fc" id="L189">            return 3;</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        } else if(text.equals(&quot;no&quot;)) {</span>
+<span class="nc" id="L191">            fmt.appendTextMessage(&quot;Alright, let's move on.&quot;);</span>
+<span class="nc" id="L192">            publisher.publish(fmt);</span>
+
+<span class="nc" id="L194">            controller.setUserState(userId, State.ASK_PORTION);</span>
+<span class="nc" id="L195">            return END_STATE;</span>
+        } else {
+<span class="nc" id="L197">            rejectUserInput(psr, &quot;Please tell me yes or no.&quot;);</span>
+<span class="nc" id="L198">            return 2;</span>
+        }
+    }
+
+    /**
+     * Handler for asking new food nutrient.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askNutrient(ParserMessageJSON psr) {
+<span class="fc" id="L208">        String userId = psr.getUserId();</span>
+<span class="fc" id="L209">        String text = psr.get(&quot;textContent&quot;);</span>
+<span class="fc" id="L210">        int state = getUserState(userId);</span>
+
+<span class="fc" id="L212">        int nutrient = 0;</span>
+<span class="fc" id="L213">        JSONObject config = null;</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">        if (state == 3) {</span>
+<span class="fc" id="L215">            states.get(userId).getJSONObject(&quot;userNewFood&quot;).put(&quot;name&quot;, text);</span>
+        } else {
+<span class="fc" id="L217">            config = askerConfig.get(state);</span>
+<span class="fc bfc" id="L218" title="All 2 branches covered.">            if(!Validator.isInteger(text)) {</span>
+<span class="fc" id="L219">                rejectUserInput(psr, &quot;Please use an integer&quot;);</span>
+<span class="fc" id="L220">                return state;</span>
+            } else {
+<span class="fc" id="L222">                nutrient = Integer.parseInt(text);</span>
+<span class="fc bfc" id="L223" title="All 4 branches covered.">                if (nutrient &lt;= 0 || nutrient &gt; 1000) {</span>
+<span class="fc" id="L224">                    rejectUserInput(psr, &quot;Your input is not in valid range.&quot;);</span>
+<span class="fc" id="L225">                    return state;</span>
+                }
+<span class="fc" id="L227">                states.get(userId).getJSONObject(&quot;userNewFood&quot;)</span>
+<span class="fc" id="L228">                    .put(config.getString(&quot;name&quot;), nutrient);</span>
+            }
+        }
+
+<span class="fc" id="L232">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+
+<span class="fc" id="L234">        config = askerConfig.get(state+1);</span>
+<span class="fc" id="L235">        fmt.appendTextMessage(String.format(&quot;Okay, so what is the %s contained &quot; +</span>
+            &quot;in this dish? (in terms of %s). Give me an integer please ~&quot;,
+<span class="fc" id="L237">            config.getString(&quot;name&quot;), config.getString(&quot;unit&quot;)));</span>
+<span class="fc" id="L238">        publisher.publish(fmt);</span>
+<span class="fc" id="L239">        return state+1;</span>
+    }
+    
+    /**
+     * Handler for adding new food.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int addNewFood(ParserMessageJSON psr) {
+<span class="fc" id="L248">        String userId = psr.getUserId();</span>
+<span class="fc" id="L249">        String text = psr.get(&quot;textContent&quot;);</span>
+<span class="fc" id="L250">        int state = getUserState(userId);</span>
+
+<span class="fc bfc" id="L252" title="All 2 branches covered.">        if (!Validator.isInteger(text)) {</span>
+<span class="fc" id="L253">            rejectUserInput(psr, &quot;Your input is not an integer.&quot;);</span>
+<span class="fc" id="L254">            return state;</span>
+        } else {
+<span class="fc" id="L256">            int nutrient = Integer.parseInt(text);</span>
+<span class="fc" id="L257">            JSONObject config = askerConfig.get(state);</span>
+<span class="pc bpc" id="L258" title="1 of 4 branches missed.">            if (nutrient &gt; 0 &amp;&amp; nutrient &lt;= 1000) {</span>
+<span class="nc" id="L259">                states.get(userId).getJSONObject(&quot;userNewFood&quot;)</span>
+<span class="nc" id="L260">                .put(config.getString(&quot;name&quot;), nutrient);</span>
+            } else {
+<span class="fc" id="L262">                rejectUserInput(psr, &quot;Your input is not in valid range.&quot;);</span>
+<span class="fc" id="L263">                return state;</span>
+            }
+        }
+
+        // add new food to database and keeper
+<span class="nc" id="L268">        storeNewFood(userId);</span>
+
+<span class="nc" id="L270">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="nc" id="L271">        fmt.appendTextMessage(&quot;Alright, I have recorded the new food.&quot;)</span>
+<span class="nc" id="L272">           .appendTextMessage(&quot;And this is the updated menu:&quot;)</span>
+<span class="nc" id="L273">           .appendTextMessage(JsonUtility.formatMenuJSON(</span>
+<span class="nc" id="L274">               menuManager.getMenuJSON(userId) ,true));</span>
+<span class="nc" id="L275">        publisher.publish(fmt);</span>
+
+<span class="nc" id="L277">        controller.setUserState(userId, State.ASK_PORTION);</span>
+<span class="nc" id="L278">        return END_STATE;</span>
+    }
+
+    /**
+     * Store new food to database and menu keeper.
+     * @param userId String of user Id.
+     */
+    void storeNewFood(String userId){
+<span class="nc" id="L286">        JSONObject food = states.get(userId).getJSONObject(&quot;userNewFood&quot;);</span>
+<span class="nc" id="L287">        String name = food.getString(&quot;name&quot;);</span>
+<span class="nc" id="L288">        int energy = food.getInt(&quot;energy&quot;);</span>
+<span class="nc" id="L289">        int protein = food.getInt(&quot;protein&quot;);</span>
+<span class="nc" id="L290">        int lipid = food.getInt(&quot;lipid&quot;);</span>
+
+<span class="nc" id="L292">        JSONObject newDish = new JSONObject();</span>
+<span class="nc" id="L293">        newDish.put(&quot;shrt_desc&quot;, name)</span>
+<span class="nc" id="L294">               .put(&quot;energ_kcal&quot;, energy)</span>
+<span class="nc" id="L295">               .put(&quot;protein&quot;, protein)</span>
+<span class="nc" id="L296">               .put(&quot;lipid_tot&quot;, lipid);</span>
+<span class="nc" id="L297">        int id = getNewFoodId(newDish);</span>
+
+<span class="nc" id="L299">        JSONObject foodContent = new JSONObject();</span>
+<span class="nc" id="L300">        foodContent.put(&quot;idx&quot;, id);</span>
+<span class="nc" id="L301">        foodContent.put(&quot;description&quot;, name);</span>
+<span class="nc" id="L302">        JSONArray arr = new JSONArray();</span>
+<span class="nc" id="L303">        arr.put(foodContent);</span>
+<span class="nc" id="L304">        JSONObject newFood = new JSONObject();</span>
+<span class="nc" id="L305">        newFood.put(&quot;name&quot;, name);</span>
+<span class="nc" id="L306">        newFood.put(&quot;foodContent&quot;, arr);</span>
+<span class="nc" id="L307">        JSONObject menuJSON = states.get(userId).getJSONObject(&quot;menuJSON&quot;);</span>
+<span class="nc" id="L308">        menuJSON.getJSONArray(&quot;menu&quot;).put(newFood);</span>
+
+<span class="nc" id="L310">        menuManager.storeMenuJSON(userId, menuJSON);</span>
+<span class="nc" id="L311">    }</span>
+
+    /**
+     * Store the new dish to database, and return its id.
+     * @param newDish a new dish supplied by user to store in database.
+     * @return id of the row inserted
+     */
+    int getNewFoodId(JSONObject newDish){
+<span class="nc" id="L319">        int id = 250;</span>
+<span class="nc" id="L320">        FoodQuerier querier = new FoodQuerier();</span>
+<span class="nc" id="L321">        boolean flag = false;</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">        while (!flag){</span>
+<span class="nc" id="L323">            newDish.put(&quot;ndb_no&quot;, ++id);</span>
+<span class="nc" id="L324">            flag = querier.add(newDish);</span>
+        }
+<span class="nc" id="L326">        querier.close();</span>
+<span class="nc" id="L327">        return id;</span>
+    }
+
+    /**
+     * Check empty food content for a MenuJSON.
+     * @param menuJSON input MenuJSON
+     * @return whether there is no dish with empty food content
+     */
+    boolean checkNoEmptyFoodContent(JSONObject menuJSON) {
+<span class="fc" id="L336">        JSONArray menu = menuJSON.getJSONArray(&quot;menu&quot;);</span>
+<span class="fc bfc" id="L337" title="All 2 branches covered.">        for (int i=0; i&lt;menu.length(); ++i) {</span>
+<span class="fc" id="L338">            JSONArray foodContent = menu.getJSONObject(i).getJSONArray(&quot;foodContent&quot;);</span>
+<span class="pc bpc" id="L339" title="1 of 2 branches missed.">            if (foodContent.length() == 0) {</span>
+<span class="nc" id="L340">                return false;</span>
+            }
+        }
+<span class="fc" id="L343">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

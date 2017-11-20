@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FeedbackManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">agent</a> &gt; <span class="el_source">FeedbackManager.java</span></div><h1>FeedbackManager.java</h1><pre class="source lang-java linenums">package agent;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.lang.Integer;
+
+import controller.ImageControl;
+import database.keeper.HistKeeper;
+import org.apache.commons.lang3.time.DateUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import controller.Publisher;
+import controller.State;
+import controller.ChatbotController;
+
+import org.knowm.xchart.*;
+import org.knowm.xchart.style.Styler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import static reactor.bus.selector.Selectors.$;
+
+import reactor.fn.Consumer;
+import reactor.bus.Event;
+import reactor.bus.EventBus;
+import javax.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import utility.FormatterMessageJSON;
+import utility.JazzySpellChecker;
+import utility.ParserMessageJSON;
+
+import utility.TextProcessor;
+
+
+/**
+ * Generate user weight line chart and nutrient pie chart.
+ * 
+ * State map:
+ *      0 - Ask feedback duration
+ *      1 - Ask chart type
+ *      2 - Send chart to user
+ * 
+ * @author mcding, wguoaa, szhouan
+ * @version v2.1.0
+ */
+<span class="fc" id="L53">@Slf4j</span>
+@Component
+<span class="fc" id="L55">public class FeedbackManager extends Agent {</span>
+
+    /**
+     * Private attribute food recommender.
+     */
+    @Autowired
+    private FoodRecommender recommender;
+
+    /**
+     * Initialize initial input recorder agent.
+     */
+    @Override
+    public void init() {
+<span class="fc" id="L68">        agentName = &quot;FeedbackManager&quot;;</span>
+<span class="fc" id="L69">        agentStates = new HashSet&lt;&gt;(</span>
+<span class="fc" id="L70">            Arrays.asList(State.FEEDBACK)</span>
+        );
+<span class="fc" id="L72">        handleImage = false;</span>
+<span class="fc" id="L73">        useSpellChecker = false;</span>
+<span class="fc" id="L74">        this.addHandler(0, (psr) -&gt; askDuration(psr))</span>
+<span class="fc" id="L75">            .addHandler(1, (psr) -&gt; askChartType(psr))</span>
+<span class="pc" id="L76">            .addHandler(2, (psr) -&gt; sendChart(psr));</span>
+<span class="fc" id="L77">    }</span>
+
+    /**
+     * Handler for asking feedback duration.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askDuration(ParserMessageJSON psr) {
+<span class="fc" id="L85">        String userId = psr.getUserId();</span>
+
+<span class="fc" id="L87">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L88">        fmt.appendTextMessage(&quot;Ok! How many dates do you want for feedback? Please input a positive integer.&quot;);</span>
+<span class="fc" id="L89">        publisher.publish(fmt);</span>
+<span class="fc" id="L90">        return 1;</span>
+    }
+
+    /**
+     * Handler for asking chart type.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askChartType(ParserMessageJSON psr) {
+<span class="fc" id="L99">        String userId = psr.getUserId();</span>
+<span class="fc" id="L100">        String text = psr.get(&quot;textContent&quot;);</span>
+
+<span class="fc" id="L102">        int resultDuration = parseFeedbackDuration(userId, text);</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (resultDuration == -1) { // invalid input</span>
+<span class="fc" id="L104">            rejectUserInput(psr, &quot;Your input for duration is invalid.&quot;);</span>
+<span class="fc" id="L105">            return 1;</span>
+        }
+<span class="fc" id="L107">        states.get(userId).put(&quot;resultDuration&quot;, resultDuration);</span>
+
+<span class="fc" id="L109">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L110">        JSONArray histJSON = getHist(userId, resultDuration);</span>
+<span class="pc bpc" id="L111" title="3 of 4 branches missed.">        if (histJSON == null || histJSON.length() == 0) {</span>
+<span class="fc" id="L112">            fmt.appendTextMessage(&quot;Sorry, you don't have any recorded history. The session is cancelled.&quot;);</span>
+<span class="fc" id="L113">            publisher.publish(fmt);</span>
+<span class="fc" id="L114">            controller.setUserState(userId, State.IDLE);</span>
+<span class="fc" id="L115">            return END_STATE;</span>
+        }
+
+<span class="nc" id="L118">        parseWeightHist(userId, histJSON);</span>
+<span class="nc" id="L119">        JSONArray timestamps = states.get(userId).getJSONArray(&quot;timestamps&quot;);</span>
+<span class="nc" id="L120">        JSONArray weights = states.get(userId).getJSONArray(&quot;weights&quot;);</span>
+<span class="nc" id="L121">        log.info(&quot;FEEDBACK: user timestamps&quot; + timestamps.toString(4));</span>
+<span class="nc" id="L122">        log.info(&quot;FEEDBACK: user weight histories&quot; + weights.toString(4));</span>
+<span class="nc" id="L123">        parseNutrientHist(userId, histJSON);</span>
+<span class="nc" id="L124">        JSONObject nutrients = states.get(userId).getJSONObject(&quot;nutrients&quot;);</span>
+<span class="nc" id="L125">        log.info(&quot;FEEDBACK: user nutrition hist&quot; + nutrients.toString(4));</span>
+<span class="nc" id="L126">        fmt.appendTextMessage(&quot;Great, We've analyzed the history of your weights and meals, &quot; +</span>
+                &quot;and generated two charts for you. Which chart would you want to have a look at? &quot; +
+                &quot;Please reply \'weight\' or \'nutrient\'.&quot;);
+<span class="nc" id="L129">        publisher.publish(fmt);</span>
+<span class="nc" id="L130">        return 2;</span>
+    }
+
+    /**
+     * Handler for sending chart to user.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int sendChart(ParserMessageJSON psr) {
+<span class="nc" id="L139">        String userId = psr.getUserId();</span>
+<span class="nc" id="L140">        String text = psr.get(&quot;textContent&quot;).trim().toLowerCase();</span>
+
+<span class="nc" id="L142">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (text.equals(&quot;weight&quot;)) {</span>
+<span class="nc" id="L144">            fmt.appendTextMessage(&quot;Your chart is being loaded, please wait...&quot;);</span>
+<span class="nc" id="L145">            publisher.publish(fmt);</span>
+<span class="nc" id="L146">            drawLineChart(userId);</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        } else if (text.equals(&quot;nutrient&quot;)) {</span>
+<span class="nc" id="L148">            fmt.appendTextMessage(&quot;Your chart is being loaded, please wait...&quot;);</span>
+<span class="nc" id="L149">            publisher.publish(fmt);</span>
+<span class="nc" id="L150">            drawPieChart(userId);</span>
+        } else {
+<span class="nc" id="L152">            rejectUserInput(psr, &quot;Invalid chart type. &quot; +</span>
+                    &quot;Please reply \'weight\' or \'nutrient\'.&quot;);
+<span class="nc" id="L154">            return 2;</span>
+        }
+<span class="nc" id="L156">        controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L157">        return END_STATE;</span>
+    }
+
+    /**
+     * Draw pie chart according to userId and user nutrition hist.
+     * @param userId user's unique id
+     */
+    public void drawPieChart(String userId) {
+<span class="nc" id="L165">        PieChart chart = new PieChartBuilder().width(800).height(600).</span>
+<span class="nc" id="L166">                title(&quot;Nutrient Pie Chart&quot;).build();</span>
+<span class="nc" id="L167">        JSONObject nutrients = states.get(userId).getJSONObject(&quot;nutrients&quot;);</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">        for (Object o : nutrients.keySet()){</span>
+<span class="nc" id="L169">            String nutrient = (String) o;</span>
+<span class="nc" id="L170">            chart.addSeries(nutrient, nutrients.getDouble(nutrient));</span>
+<span class="nc" id="L171">        }</span>
+<span class="nc" id="L172">        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();</span>
+        try {
+<span class="nc" id="L174">            BitmapEncoder.saveBitmap(chart, outputStream, BitmapEncoder.BitmapFormat.BMP);</span>
+<span class="nc" id="L175">            sendChart(userId, outputStream);</span>
+<span class="nc" id="L176">        } catch (IOException e) {</span>
+<span class="nc" id="L177">            log.error(&quot;Error encountered when saving charts in feedback handler.&quot;, e);</span>
+<span class="nc" id="L178">        }</span>
+<span class="nc" id="L179">    }</span>
+
+    /**
+     * Draw line chart of user's weight.
+     * @param userId user's unique id
+     */
+    public void drawLineChart(String userId) {
+<span class="nc" id="L186">        XYChart chart = new XYChartBuilder().width(800).height(600)</span>
+<span class="nc" id="L187">                .title(&quot;Weight Line Chart&quot;)</span>
+<span class="nc" id="L188">                .xAxisTitle(&quot;Time&quot;)</span>
+<span class="nc" id="L189">                .yAxisTitle(&quot;Weight&quot;).build();</span>
+<span class="nc" id="L190">        JSONArray timestamps = states.get(userId).getJSONArray(&quot;timestamps&quot;);</span>
+<span class="nc" id="L191">        JSONArray weights = states.get(userId).getJSONArray(&quot;weights&quot;);</span>
+<span class="nc" id="L192">        List&lt;Date&gt; timestampList = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L193">        List&lt;Integer&gt; weightList = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L194" title="All 2 branches missed.">        for (int i=0; i&lt;timestamps.length(); ++i) {</span>
+<span class="nc" id="L195">            timestampList.add(new Date(timestamps.getLong(i)));</span>
+        }
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        for (int i=0; i&lt;weights.length(); ++i) {</span>
+<span class="nc" id="L198">            weightList.add(weights.getInt(i));</span>
+        }
+<span class="nc" id="L200">        chart.getStyler().setLegendPosition(Styler.LegendPosition.InsideNE);</span>
+<span class="nc" id="L201">        chart.getStyler().setDefaultSeriesRenderStyle(XYSeries.XYSeriesRenderStyle.Area);</span>
+<span class="nc" id="L202">        chart.addSeries(&quot;weight&quot;, timestampList, weightList);</span>
+<span class="nc" id="L203">        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();</span>
+        try {
+<span class="nc" id="L205">            BitmapEncoder.saveBitmap(chart, outputStream, BitmapEncoder.BitmapFormat.BMP);</span>
+<span class="nc" id="L206">            sendChart(userId, outputStream);</span>
+<span class="nc" id="L207">        } catch (IOException e) {</span>
+<span class="nc" id="L208">            log.error(&quot;Error encountered when saving charts in feedback handler.&quot;, e);</span>
+<span class="nc" id="L209">        }</span>
+<span class="nc" id="L210">    }</span>
+
+    /**
+     * Send chart ot image controller.
+     * @param userId user id
+     * @param outputStream outputStream contains chart in bmp format.
+     */
+    public void sendChart(String userId, ByteArrayOutputStream outputStream) {
+<span class="nc" id="L218">        byte[] bitmapData = outputStream.toByteArray();</span>
+<span class="nc" id="L219">        InputStream inputStream = new ByteArrayInputStream(bitmapData);</span>
+<span class="nc" id="L220">        String tempFileUri = ImageControl.inputToTempFile(&quot;bmp&quot;, inputStream);</span>
+<span class="nc" id="L221">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="nc" id="L222">        fmt.appendImageMessage(tempFileUri, tempFileUri);</span>
+<span class="nc" id="L223">        publisher.publish(fmt);</span>
+<span class="nc" id="L224">    }</span>
+
+    /**
+     * Get the weight history list from hist JSONArray.
+     * @param userId String of user Id
+     * @param histJSON user hist JSONArray
+     */
+    private void parseWeightHist(String userId, JSONArray histJSON) {
+<span class="nc" id="L232">        JSONArray timestamps = new JSONArray();</span>
+<span class="nc" id="L233">        JSONArray weights = new JSONArray();</span>
+        try {
+            int i;
+<span class="nc bnc" id="L236" title="All 2 branches missed.">            for (i=0; i&lt;histJSON.length(); i++) {</span>
+<span class="nc" id="L237">                JSONObject hist = histJSON.getJSONObject(i);</span>
+<span class="nc" id="L238">                SimpleDateFormat format = new SimpleDateFormat(&quot;yyyy-MM-dd'T'HH:mm:ssZ&quot;);</span>
+<span class="nc" id="L239">                Date timestamp = format.parse(hist.getString(&quot;timestamp&quot;));</span>
+<span class="nc" id="L240">                int weight = hist.getInt(&quot;weight&quot;);</span>
+<span class="nc" id="L241">                timestamps.put(timestamp.getTime());</span>
+<span class="nc" id="L242">                weights.put(weight);</span>
+            }
+<span class="nc" id="L244">            states.get(userId).put(&quot;timestamps&quot;, timestamps);</span>
+<span class="nc" id="L245">            states.get(userId).put(&quot;weights&quot;, weights);</span>
+<span class="nc" id="L246">            log.info(String.format(&quot;Successfully fetched user hist from hist keeper, %d records were found.&quot;, i));</span>
+<span class="nc" id="L247">        } catch (JSONException | ParseException e) {</span>
+<span class="nc" id="L248">            log.error(&quot;Error encountered when fetching user weight hist from hist keeper.&quot;, e);</span>
+<span class="nc" id="L249">        }</span>
+<span class="nc" id="L250">    }</span>
+
+    /**
+     * Get the nutrient consumption statistics from hist JSONArray.
+     * @param userId user id
+     * @param histJSON user hist jsonArray
+     */
+    private void parseNutrientHist(String userId, JSONArray histJSON) {
+<span class="nc" id="L258">        JSONObject nutrients = new JSONObject();</span>
+        try {
+<span class="nc bnc" id="L260" title="All 2 branches missed.">            for (int i=0; i&lt;histJSON.length(); i++) {</span>
+<span class="nc" id="L261">                JSONObject hist = histJSON.getJSONObject(i);</span>
+<span class="nc" id="L262">                JSONArray foodContent = hist.getJSONArray(&quot;menu&quot;).getJSONObject(0).getJSONArray(&quot;foodContent&quot;);</span>
+<span class="nc" id="L263">                int portionSize = hist.getInt(&quot;portionSize&quot;);</span>
+<span class="nc" id="L264">                JSONArray foodList = recommender.getFoodJSON(foodContent);</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">                for (int j=0; j&lt;FoodRecommender.nutrientDailyIntakes.length(); j++) {</span>
+<span class="nc" id="L266">                    String nutrient = FoodRecommender.nutrientDailyIntakes.getJSONObject(j).getString(&quot;name&quot;);</span>
+<span class="nc" id="L267">                    String desc = FoodRecommender.nutrientDailyIntakes.getJSONObject(j).getString(&quot;desc&quot;);</span>
+<span class="nc" id="L268">                    double actualIntake = portionSize * recommender.getAverageNutrient(foodList, nutrient) / 100 * 3;</span>
+<span class="nc" id="L269">                    double expectedIntake = FoodRecommender.nutrientDailyIntakes.getJSONObject(j).getInt(&quot;y&quot;);</span>
+<span class="nc bnc" id="L270" title="All 2 branches missed.">                    if (!nutrients.keySet().contains(desc)) {</span>
+<span class="nc" id="L271">                        nutrients.put(desc, 0.0);</span>
+                    }
+<span class="nc" id="L273">                    double x = nutrients.getDouble(desc);</span>
+<span class="nc" id="L274">                    nutrients.put(desc, actualIntake/expectedIntake/histJSON.length() + nutrients.getDouble(desc));</span>
+                }
+            }
+<span class="nc" id="L277">            states.get(userId).put(&quot;nutrients&quot;, nutrients);</span>
+<span class="nc" id="L278">            log.info(&quot;Successfully calculated the user nutrient consumptions.&quot;);</span>
+<span class="nc" id="L279">        } catch (JSONException e) {</span>
+<span class="nc" id="L280">            log.error(&quot;Error encountered when fetching user hist from hist keeper.&quot;, e);</span>
+<span class="nc" id="L281">        }</span>
+<span class="nc" id="L282">    }</span>
+
+    /**
+     * Get the hist JSONArray form HistKeeper.
+     * @param userId userid String
+     * @param duration number of days to query
+     * @return user hist JSONArray
+     */
+    private JSONArray getHist(String userId, int duration) {
+<span class="fc" id="L291">        Calendar calendar = Calendar.getInstance();</span>
+<span class="fc" id="L292">        calendar.add(Calendar.DATE, -duration);</span>
+<span class="fc" id="L293">        Date date = calendar.getTime();</span>
+<span class="fc" id="L294">        date = DateUtils.truncate(date, Calendar.DATE);</span>
+<span class="fc" id="L295">        HistKeeper histKeeper = new HistKeeper();</span>
+<span class="fc" id="L296">        JSONArray histJSON = histKeeper.get(userId, date);</span>
+<span class="fc" id="L297">        histKeeper.close();</span>
+<span class="fc" id="L298">        return histJSON;</span>
+    }
+
+    /**
+     * Parse the duration from input message.
+     * @param msg message
+     * @param userId user id
+     * @return int of duration
+     */
+    private int parseFeedbackDuration(String userId, String msg) {
+        try {
+<span class="fc" id="L309">            int duration = Integer.parseInt(msg);</span>
+<span class="fc bfc" id="L310" title="All 2 branches covered.">            if (duration&lt;=0) throw new NumberFormatException();</span>
+<span class="fc" id="L311">            return duration;</span>
+<span class="fc" id="L312">        } catch (NumberFormatException e) {</span>
+<span class="fc" id="L313">            return -1;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

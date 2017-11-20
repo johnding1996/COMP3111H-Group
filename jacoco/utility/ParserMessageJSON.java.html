@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ParserMessageJSON.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">utility</a> &gt; <span class="el_source">ParserMessageJSON.java</span></div><h1>ParserMessageJSON.java</h1><pre class="source lang-java linenums">package utility;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.linecorp.bot.client.MessageContentResponse;
+
+import controller.State;
+import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+
+/**
+ * ParserMessageJSON: used by Controller to send message to agent modules.
+ * @author szhouan
+ * @version v2.0.0
+ */
+<span class="fc" id="L21">@Slf4j</span>
+public class ParserMessageJSON extends MessageJSON {
+
+    /**
+     * private HashSet storing the key.
+     */
+    private static final HashSet&lt;String&gt; keySet;
+
+    /**
+     * private HashSet storing the type.
+     */
+    private static final HashSet&lt;String&gt; typeSet;
+    static {
+<span class="fc" id="L34">        keySet = new HashSet&lt;&gt;(</span>
+<span class="fc" id="L35">            Arrays.asList(</span>
+                &quot;userId&quot;, &quot;type&quot;, &quot;state&quot;,
+                &quot;messageId&quot;, &quot;textContent&quot;, &quot;imageContent&quot;
+                // &quot;extension&quot;, &quot;imageBase64&quot;
+            )
+        );
+<span class="fc" id="L41">        typeSet = new HashSet&lt;&gt;(</span>
+<span class="fc" id="L42">            Arrays.asList(</span>
+                &quot;text&quot;, &quot;image&quot;, &quot;transition&quot;
+            )
+        );
+<span class="fc" id="L46">    }</span>
+
+    /**
+     * Constructor for ParserMessageJSON.
+     * @param userId String of user Id
+     * @param type Message type
+     */
+<span class="fc" id="L53">    public ParserMessageJSON(String userId, String type) {</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        if (!typeSet.contains(type)) {</span>
+<span class="nc" id="L55">            log.info(&quot;Invalid type: {}&quot;, type);</span>
+<span class="nc" id="L56">            type = &quot;transition&quot;;</span>
+        }
+<span class="fc" id="L58">        json.put(&quot;userId&quot;, userId)</span>
+<span class="fc" id="L59">            .put(&quot;type&quot;, type);</span>
+<span class="fc" id="L60">    }</span>
+
+    /**
+     * Set key-value pair for ParserMessageJSON.
+     * @param key Name of the key to set.
+     * @param value Value to set.
+     * @return this object.
+     */
+    public ParserMessageJSON set(String key, Object value) {
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if (!keySet.contains(key)) {</span>
+<span class="nc" id="L70">            log.info(&quot;Set invalid field: {}&quot;, key);</span>
+<span class="nc" id="L71">            return this;</span>
+        }
+<span class="fc" id="L73">        boolean valid = true;</span>
+<span class="pc bpc" id="L74" title="4 of 6 branches missed.">        switch (key) {</span>
+            case &quot;type&quot;:
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                if (typeSet.contains(value)) json.put(key, value);</span>
+<span class="nc" id="L77">                else valid = false;</span>
+<span class="nc" id="L78">                break;</span>
+            default:
+<span class="fc" id="L80">                json.put(key, value);</span>
+        }
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        if (!valid) {</span>
+<span class="nc" id="L83">            log.info(&quot;Invalid value for field {}: {}&quot;, key, value.toString());</span>
+        }
+<span class="fc" id="L85">        return this;</span>
+    }
+
+    /**
+     * Get value corresponding to key.
+     * @param key Name of the key
+     * @return String of value contained in the key
+     */
+    public String get(String key) {
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if(keySet.contains(key)) </span>
+<span class="fc" id="L95">            return json.getString(key);</span>
+<span class="nc" id="L96">        return null;</span>
+    }
+
+
+    /**
+     * Get state object corresponding to the JSON.
+     * @return State object
+     */
+    public State getState() {
+<span class="fc" id="L105">        return State.getStateByName(json.getString(&quot;state&quot;));</span>
+    }
+
+    /**
+     * Set state field of the JSON.
+     * @param state Name of the state
+     * @return this object
+     */
+    public ParserMessageJSON setState(String state) {
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">        if (State.validateStateName(state)) {</span>
+<span class="fc" id="L115">            json.put(&quot;state&quot;, state);</span>
+        }
+<span class="fc" id="L117">        return this;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

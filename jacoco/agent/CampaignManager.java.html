@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CampaignManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">agent</a> &gt; <span class="el_source">CampaignManager.java</span></div><h1>CampaignManager.java</h1><pre class="source lang-java linenums">package agent;
+
+import org.apache.commons.codec.binary.Base64;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import com.google.common.io.ByteStreams;
+import controller.ImageControl;
+import controller.State;
+import database.keeper.CampaignKeeper;
+import lombok.extern.slf4j.Slf4j;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import utility.FormatterMessageJSON;
+import utility.ParserMessageJSON;
+import utility.TextProcessor;
+import utility.Validator;
+
+/**
+ * CampaignManager: manage sharing, coupon claiming and coupon image upload.
+ * 
+ * State mapping:
+ *      0 - branching (assign sharing code/check claimed code/start admin mode)
+ *      1 - enable admin access
+ *      2 - update available coupon (campaign already started)
+ *      3 - set available coupon (campaign not started)
+ *      4 - set coupon image
+ *      5 - check coupon code
+ * @author szhouan
+ * @version v1.0.0
+ */
+<span class="fc" id="L41">@Slf4j</span>
+@Component
+<span class="fc" id="L43">public class CampaignManager extends Agent {</span>
+
+    /**
+     * This is a private attribute Usermanager.
+     */
+    @Autowired
+    private UserManager userManager;
+
+    /**
+     * This is a integer storing the availble coupon num.
+     */
+<span class="fc" id="L54">    int availableCoupon = 0;</span>
+
+    /**
+     * This is a string storing the admin code.
+     */
+    static final String ADMIN_ACCESS_CODE = &quot;I am Sung Kim!!&quot;;
+
+    /**
+     * This is used to store the conpaign start instant.
+     */
+    Instant campaignStartInstant;
+
+    /**
+     * This is a string storing the coupon context.
+     */
+    String couponTextContent;
+
+    /**
+     * This is a int storing the num of current coupon.
+     */
+<span class="fc" id="L74">    int currentCouponId = 0;</span>
+
+    /**
+     * Initialize campaign manager agent.
+     */
+    @Override
+    public void init() {
+<span class="fc" id="L81">        agentName = &quot;CampaignManager&quot;;</span>
+<span class="fc" id="L82">        agentStates = new HashSet&lt;&gt;(</span>
+<span class="fc" id="L83">            Arrays.asList(State.INVITE_FRIEND, State.CLAIM_COUPON, State.MANAGE_CAMPAIGN)</span>
+        );
+<span class="fc" id="L85">        handleImage = false;</span>
+<span class="fc" id="L86">        useSpellChecker = false;</span>
+<span class="fc" id="L87">        this.addHandler(0, (psr) -&gt; branchHandler(psr))</span>
+<span class="fc" id="L88">            .addHandler(1, (psr) -&gt; enableAdminAccess(psr))</span>
+<span class="fc" id="L89">            .addHandler(2, (psr) -&gt; updateCouponNumber(psr))</span>
+<span class="fc" id="L90">            .addHandler(3, (psr) -&gt; startCampaign(psr))</span>
+<span class="pc" id="L91">            .addHandler(4, (psr) -&gt; setCouponImage(psr))</span>
+<span class="fc" id="L92">            .addHandler(5, (psr) -&gt; checkCoupon(psr));</span>
+<span class="fc" id="L93">    }</span>
+
+    /**
+     * Handler for first interaction, providing branching.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int branchHandler(ParserMessageJSON psr) {
+<span class="fc" id="L101">        State state = psr.getState();</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (state == State.INVITE_FRIEND) {</span>
+<span class="fc" id="L103">            return inviteFriendHandler(psr);</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        } else if (state == State.CLAIM_COUPON) {</span>
+<span class="fc" id="L105">            return claimCouponHandler(psr);</span>
+        } else {
+<span class="fc" id="L107">            return campaignManageHandler(psr);</span>
+        }
+    }
+
+    /**
+     * Handler for inviting friend.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int inviteFriendHandler(ParserMessageJSON psr) {
+<span class="fc" id="L117">        String userId = psr.getUserId();</span>
+
+<span class="fc" id="L119">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (availableCoupon &lt;= 0) {</span>
+<span class="fc" id="L121">            fmt.appendTextMessage(&quot;Sorry, the campaign is not ongoing at this stage. &quot; +</span>
+                &quot;Please keep an eye on this so that you won't miss it! ^_^&quot;);
+<span class="fc" id="L123">            publisher.publish(fmt);</span>
+<span class="fc" id="L124">            controller.setUserState(userId, State.IDLE);</span>
+<span class="fc" id="L125">            return END_STATE;</span>
+        }
+
+<span class="fc" id="L128">        CampaignKeeper keeper = getCampaignKeeper();</span>
+<span class="fc" id="L129">        int couponCount = Integer.parseInt(keeper.getCouponCnt());</span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">        if (couponCount &gt;= availableCoupon) {</span>
+<span class="nc" id="L131">            fmt.appendTextMessage(&quot;I am sorry that we do not have available coupons now. &quot; +</span>
+                &quot;Please come earlier next time! ^_^&quot;);
+<span class="nc" id="L133">            publisher.publish(fmt);</span>
+<span class="nc" id="L134">            controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L135">            keeper.close();</span>
+<span class="nc" id="L136">            return END_STATE;</span>
+        }
+
+<span class="fc" id="L139">        fmt.appendTextMessage(&quot;Thank you for promoting our service! ^_^&quot;)</span>
+<span class="fc" id="L140">           .appendTextMessage(String.format(&quot;This is your sharing code: %06d&quot;, currentCouponId));</span>
+<span class="fc" id="L141">        keeper.setParentUserId(String.format(&quot;%06d&quot;, currentCouponId), userId);</span>
+<span class="fc" id="L142">        keeper.close();</span>
+<span class="fc" id="L143">        ++currentCouponId;</span>
+
+<span class="fc" id="L145">        publisher.publish(fmt);</span>
+<span class="fc" id="L146">        controller.setUserState(userId, State.IDLE);</span>
+<span class="fc" id="L147">        return END_STATE;</span>
+    }
+
+    /**
+     * Handler for claiming coupon.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int claimCouponHandler(ParserMessageJSON psr) {
+<span class="fc" id="L156">        String userId = psr.getUserId();</span>
+        
+<span class="fc" id="L158">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L159">        fmt.appendTextMessage(&quot;Great! What is your sharing code for the coupon? &quot; +</span>
+            &quot;Please input the 6 digit code only.&quot;);
+<span class="fc" id="L161">        publisher.publish(fmt);</span>
+<span class="fc" id="L162">        return 5;</span>
+    }
+
+    /**
+     * Handler for checking coupon id.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int checkCoupon(ParserMessageJSON psr) {
+<span class="fc" id="L171">        String userId = psr.getUserId();</span>
+<span class="fc" id="L172">        String text = psr.get(&quot;textContent&quot;).trim();</span>
+
+<span class="fc" id="L174">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc bfc" id="L175" title="All 4 branches covered.">        if (text.length() != 6 || !Validator.isInteger(text)) {</span>
+<span class="fc" id="L176">            fmt.appendTextMessage(&quot;Sorry, the format for the coupon claimed is invalid&quot;)</span>
+<span class="fc" id="L177">               .appendTextMessage(&quot;The correct format should be 'code &lt;6-digit number&gt;'.&quot;);</span>
+<span class="fc" id="L178">            publisher.publish(fmt);</span>
+<span class="fc" id="L179">            controller.setUserState(userId, State.IDLE);</span>
+<span class="fc" id="L180">            return END_STATE;</span>
+        }
+
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">        if (availableCoupon &lt;= 0) {</span>
+<span class="fc" id="L184">            fmt.appendTextMessage(&quot;Sorry, the campaign is not ongoing at this stage. &quot; +</span>
+                &quot;Please stay tuned on this :)&quot;);
+<span class="fc" id="L186">            publisher.publish(fmt);</span>
+<span class="fc" id="L187">            controller.setUserState(userId, State.IDLE);</span>
+<span class="fc" id="L188">            return END_STATE;</span>
+        }
+
+<span class="nc" id="L191">        CampaignKeeper keeper = getCampaignKeeper();</span>
+        // log.info(&quot;COUPON COUNT = &quot; + keeper.getCouponCnt());
+<span class="nc" id="L193">        int couponCount = Integer.parseInt(keeper.getCouponCnt());</span>
+<span class="nc bnc" id="L194" title="All 2 branches missed.">        if (couponCount &gt;= availableCoupon) {</span>
+<span class="nc" id="L195">            fmt.appendTextMessage(&quot;Sorry, but all the available coupons are now distributed. &quot; +</span>
+                &quot;Please be earlier next time ~&quot;);
+<span class="nc" id="L197">            publisher.publish(fmt);</span>
+<span class="nc" id="L198">            controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L199">            keeper.close();</span>
+<span class="nc" id="L200">            return END_STATE;</span>
+        }
+
+<span class="nc" id="L203">        String parentUserId = keeper.getParentUserId(text);</span>
+<span class="nc" id="L204">        keeper.close();</span>
+<span class="nc bnc" id="L205" title="All 2 branches missed.">        if (parentUserId == null) {</span>
+<span class="nc" id="L206">            fmt.appendTextMessage(&quot;Well, this is not a valid sharing Id.&quot;)</span>
+<span class="nc" id="L207">               .appendTextMessage(&quot;Please double check. Session cancelled.&quot;);</span>
+<span class="nc" id="L208">            publisher.publish(fmt);</span>
+<span class="nc" id="L209">            controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L210">            return END_STATE;</span>
+        }
+
+<span class="nc" id="L213">        JSONObject userJSON = userManager.getUserJSON(userId);</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        if (userJSON == null) {</span>
+<span class="nc" id="L215">            fmt.appendTextMessage(&quot;Well, I don't have your personal information yet, &quot; +</span>
+                &quot;so you cannot claim the coupon now.&quot;)
+<span class="nc" id="L217">               .appendTextMessage(&quot;Please do so by 'setting'. Session cancelled.&quot;);</span>
+<span class="nc" id="L218">            publisher.publish(fmt);</span>
+<span class="nc" id="L219">            controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L220">            return END_STATE;</span>
+        }
+
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        if (userJSON.keySet().contains(&quot;parentUserId&quot;)) {</span>
+<span class="nc" id="L224">            fmt.appendTextMessage(&quot;Well, one user can only claim the coupon using 'code' once.&quot;)</span>
+<span class="nc" id="L225">               .appendTextMessage(&quot;But you can share this chatbot with your friends to &quot; +</span>
+                &quot;get more coupons!&quot;);
+<span class="nc" id="L227">            publisher.publish(fmt);</span>
+<span class="nc" id="L228">            controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L229">            return END_STATE;</span>
+        }
+
+<span class="nc bnc" id="L232" title="All 2 branches missed.">        if (parentUserId.equals(userId)) {</span>
+<span class="nc" id="L233">            fmt.appendTextMessage(&quot;Well, seems that this code is issued as your sharing code, &quot; +</span>
+                &quot;so you cannot self-claim it :(&quot;);
+<span class="nc" id="L235">            publisher.publish(fmt);</span>
+<span class="nc" id="L236">            controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L237">            return END_STATE;</span>
+        }
+
+        // check whether is new user
+<span class="nc" id="L241">        String followTime = userJSON.getString(&quot;followTime&quot;);</span>
+<span class="nc" id="L242">        SimpleDateFormat format = new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;);</span>
+<span class="nc" id="L243">        long follow = 0;</span>
+        try {
+<span class="nc" id="L245">            Date timestamp = format.parse(followTime);</span>
+<span class="nc" id="L246">            follow = timestamp.getTime();</span>
+<span class="nc" id="L247">        } catch (Exception e) {</span>
+<span class="nc" id="L248">            log.info(e.toString());</span>
+<span class="nc" id="L249">        }</span>
+<span class="nc" id="L250">        long start = campaignStartInstant.getEpochSecond() * 1000;</span>
+<span class="nc" id="L251">        log.info(&quot;follow string: {}&quot;, followTime);</span>
+<span class="nc" id="L252">        log.info(String.format(&quot;Follow: %d Start: %d&quot;, follow, start));</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        if (follow &lt; start) {</span>
+<span class="nc" id="L254">            fmt.appendTextMessage(&quot;Sorry, you are not a user following us after the campaign start.&quot;);</span>
+<span class="nc" id="L255">            publisher.publish(fmt);</span>
+<span class="nc" id="L256">            controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L257">            return END_STATE;</span>
+        }
+
+        // update database
+<span class="nc" id="L261">        userJSON.put(&quot;parentUserId&quot;, parentUserId);</span>
+<span class="nc" id="L262">        userManager.storeUserJSON(userId, userJSON);</span>
+<span class="nc" id="L263">        keeper = getCampaignKeeper();</span>
+<span class="nc" id="L264">        keeper.incrCouponCnt();</span>
+<span class="nc" id="L265">        keeper.close();</span>
+
+<span class="nc" id="L267">        keeper = getCampaignKeeper();</span>
+<span class="nc" id="L268">        String encodedString = keeper.getCouponImg();</span>
+<span class="nc" id="L269">        keeper.close();</span>
+
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        boolean hasImage = encodedString != null;</span>
+<span class="nc" id="L272">        String uri = null;</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">        if (hasImage)</span>
+<span class="nc" id="L274">            uri = ImageControl.getCouponImageUri(userId, encodedString, &quot;png&quot;);</span>
+
+<span class="nc" id="L276">        fmt.appendTextMessage(&quot;Congratulations! This is the coupon you claimed:&quot;);</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">        if (hasImage) {</span>
+<span class="nc" id="L278">            fmt.appendImageMessage(uri, uri);</span>
+        } else {
+<span class="nc" id="L280">            fmt.appendTextMessage(&quot;NO IMAGE FOR COUPON YET&quot;);</span>
+        }
+<span class="nc" id="L282">        publisher.publish(fmt);</span>
+<span class="nc" id="L283">        sleep();</span>
+
+<span class="nc" id="L285">        fmt = new FormatterMessageJSON(parentUserId);</span>
+<span class="nc" id="L286">        fmt.appendTextMessage(&quot;Hey, one more user follows our chatbot by your promotion ~&quot;)</span>
+<span class="nc" id="L287">           .appendTextMessage(&quot;This coupon is rewarded to you:&quot;);</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">        if (hasImage) {</span>
+<span class="nc" id="L289">            fmt.appendImageMessage(uri, uri);</span>
+        } else {
+<span class="nc" id="L291">            fmt.appendTextMessage(&quot;NO IMAGE FOR COUPON YET&quot;);</span>
+        }
+<span class="nc" id="L293">        publisher.publish(fmt);</span>
+<span class="nc" id="L294">        sleep();</span>
+
+<span class="nc" id="L296">        controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L297">        return END_STATE;</span>
+    }
+
+    /**
+     * Handler for campaign management.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int campaignManageHandler(ParserMessageJSON psr) {
+<span class="fc" id="L306">        String userId = psr.getUserId();</span>
+
+<span class="fc" id="L308">        JSONObject userJSON = userManager.getUserJSON(userId);</span>
+<span class="fc" id="L309">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc bfc" id="L310" title="All 2 branches covered.">        if (userJSON == null) {</span>
+<span class="fc" id="L311">            fmt.appendTextMessage(&quot;Sorry, we cannot verify your admin identity. &quot; +</span>
+                &quot;Please do 'setting' first. Session cancelled.&quot;);
+<span class="fc" id="L313">            publisher.publish(fmt);</span>
+
+<span class="fc" id="L315">            controller.setUserState(userId, State.IDLE);</span>
+<span class="fc" id="L316">            return END_STATE;</span>
+        }
+
+<span class="fc" id="L319">        boolean isAdmin = true;</span>
+<span class="fc bfc" id="L320" title="All 2 branches covered.">        if (!userJSON.keySet().contains(&quot;isAdmin&quot;)) isAdmin = false;</span>
+<span class="pc bpc" id="L321" title="1 of 2 branches missed.">        else if (!userJSON.getBoolean(&quot;isAdmin&quot;)) isAdmin = false;</span>
+<span class="fc bfc" id="L322" title="All 2 branches covered.">        if (!isAdmin) {</span>
+<span class="fc" id="L323">            fmt.appendTextMessage(&quot;You are not an admin user now. &quot; +</span>
+                &quot;If you want to enable your admin priviledge, please input your admin access code.&quot;);
+<span class="fc" id="L325">            publisher.publish(fmt);</span>
+<span class="fc" id="L326">            return 1;</span>
+        }
+
+<span class="fc" id="L329">        fmt.appendTextMessage(&quot;Hi admin user! ^_^&quot;);</span>
+<span class="fc bfc" id="L330" title="All 2 branches covered.">        if (availableCoupon &gt; 0) {</span>
+<span class="fc" id="L331">            fmt.appendTextMessage(&quot;The campaign is now open, and the number of &quot; +</span>
+                &quot;available coupon is &quot; + availableCoupon + &quot;.&quot;)
+<span class="fc" id="L333">               .appendTextMessage(&quot;Do you want to update it? Tell me a number or say 'skip'.&quot;);</span>
+<span class="fc" id="L334">            publisher.publish(fmt);</span>
+<span class="fc" id="L335">            return 2;</span>
+        } else {
+<span class="fc" id="L337">            fmt.appendTextMessage(&quot;The campaign is not open now. Do you want to start it now?&quot;)</span>
+<span class="fc" id="L338">               .appendTextMessage(&quot;Input a positive number as the number of available coupons &quot; +</span>
+                &quot;for this campaign, or say 'no'.&quot;);
+<span class="fc" id="L340">            publisher.publish(fmt);</span>
+<span class="fc" id="L341">            return 3;</span>
+        }
+    }
+
+    /**
+     * Handler for enabling admin access.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int enableAdminAccess(ParserMessageJSON psr) {
+<span class="fc" id="L351">        String userId = psr.getUserId();</span>
+<span class="fc" id="L352">        String text = psr.get(&quot;textContent&quot;);</span>
+
+<span class="fc" id="L354">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc bfc" id="L355" title="All 2 branches covered.">        if (text.equals(ADMIN_ACCESS_CODE)) {</span>
+<span class="fc" id="L356">            fmt.appendTextMessage(&quot;Admin mode has been enabled for you.&quot;);</span>
+<span class="fc" id="L357">            publisher.publish(fmt);</span>
+<span class="fc" id="L358">            sleep();</span>
+
+<span class="fc" id="L360">            log.info(&quot;{}: update UserJSON&quot;, agentName);</span>
+<span class="fc" id="L361">            JSONObject userJSON = userManager.getUserJSON(userId);</span>
+<span class="fc" id="L362">            userJSON.put(&quot;isAdmin&quot;, true);</span>
+<span class="fc" id="L363">            userManager.storeUserJSON(userId, userJSON);</span>
+
+<span class="fc" id="L365">            return campaignManageHandler(psr);</span>
+        } else {
+<span class="fc" id="L367">            fmt.appendTextMessage(&quot;Incorrect access code. Access denied.&quot;);</span>
+<span class="fc" id="L368">            publisher.publish(fmt);</span>
+<span class="fc" id="L369">            controller.setUserState(userId, State.IDLE);</span>
+<span class="fc" id="L370">            return END_STATE;</span>
+        }
+    }
+
+    /**
+     * Handler for updating number of available coupons.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int updateCouponNumber(ParserMessageJSON psr) {
+<span class="fc" id="L380">        String userId = psr.getUserId();</span>
+<span class="fc" id="L381">        String text = psr.get(&quot;textContent&quot;).toLowerCase();</span>
+
+<span class="fc" id="L383">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc bfc" id="L384" title="All 2 branches covered.">        if (Validator.isInteger(text)) {</span>
+<span class="fc" id="L385">            int couponNumber = Integer.parseInt(text);</span>
+<span class="fc bfc" id="L386" title="All 2 branches covered.">            if (couponNumber &lt;= 0) {</span>
+<span class="fc" id="L387">                availableCoupon = 0;</span>
+<span class="fc" id="L388">                fmt.appendTextMessage(&quot;Set available coupon to non-positive, campaign stopped.&quot;);</span>
+<span class="fc" id="L389">                publisher.publish(fmt);</span>
+
+<span class="fc" id="L391">                controller.setUserState(userId, State.IDLE);</span>
+<span class="fc" id="L392">                return END_STATE;</span>
+            } else {
+<span class="fc" id="L394">                availableCoupon = couponNumber;</span>
+<span class="fc" id="L395">                fmt.appendTextMessage(&quot;Set available coupon to &quot; + availableCoupon + &quot;.&quot;);</span>
+            }
+<span class="fc" id="L397">        } else {</span>
+<span class="fc bfc" id="L398" title="All 2 branches covered.">            if (TextProcessor.getMatch(TextProcessor.getTokens(text),</span>
+<span class="fc" id="L399">                Arrays.asList(&quot;no&quot;, &quot;nope&quot;, &quot;skip&quot;, &quot;next&quot;)) != null) {</span>
+<span class="fc" id="L400">                fmt.appendTextMessage(&quot;Update coupon number skipped.&quot;);</span>
+            } else {
+<span class="fc" id="L402">                rejectUserInput(psr, &quot;Please tell me the updated available coupon number, &quot; +</span>
+                    &quot;or ask me to skip this part explicitly.&quot;);
+<span class="fc" id="L404">                return 2;</span>
+            }
+        }
+
+<span class="fc" id="L408">        states.get(userId).put(&quot;usePrefix&quot;, true);</span>
+<span class="fc" id="L409">        fmt.appendTextMessage(&quot;Now do you want to update the image of the coupon? &quot; +</span>
+            &quot;If yes, send an image to me. Otherwise, please say 'CANCEL'.&quot;);
+<span class="fc" id="L411">        publisher.publish(fmt);</span>
+<span class="fc" id="L412">        handleImage = true;</span>
+<span class="fc" id="L413">        log.info(&quot;{}: enable image handling&quot;, agentName);</span>
+<span class="fc" id="L414">        return 4;</span>
+    }
+
+    /**
+     * Handler for starting campaign.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int startCampaign(ParserMessageJSON psr) {
+<span class="fc" id="L423">        String userId = psr.getUserId();</span>
+<span class="fc" id="L424">        String text = psr.get(&quot;textContent&quot;);</span>
+
+<span class="fc" id="L426">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc bfc" id="L427" title="All 2 branches covered.">        if (Validator.isInteger(text)) {</span>
+<span class="fc" id="L428">            int num = Integer.parseInt(text);</span>
+<span class="fc bfc" id="L429" title="All 2 branches covered.">            if (num &gt; 0) {</span>
+<span class="fc" id="L430">                availableCoupon = num;</span>
+<span class="fc" id="L431">                states.get(userId).put(&quot;usePrefix&quot;, false);</span>
+<span class="fc" id="L432">                campaignStartInstant = Instant.now();</span>
+<span class="fc" id="L433">                fmt.appendTextMessage(&quot;Start campaign with a total of &quot; + num + &quot; coupon(s).&quot;);</span>
+<span class="fc" id="L434">                fmt.appendTextMessage(&quot;Now please set the image of the coupon. You can say 'CANCEL' to skip.&quot;);</span>
+<span class="fc" id="L435">                publisher.publish(fmt);</span>
+<span class="fc" id="L436">                handleImage = true;</span>
+<span class="fc" id="L437">                log.info(&quot;{}: enable image handling&quot;, agentName);</span>
+
+<span class="fc" id="L439">                CampaignKeeper keeper = getCampaignKeeper();</span>
+<span class="fc" id="L440">                keeper.resetCouponCnt();</span>
+<span class="fc" id="L441">                keeper.close();</span>
+<span class="fc" id="L442">                return 4;</span>
+            } else {
+<span class="fc" id="L444">                rejectUserInput(psr, &quot;Either input a positive number, or say you do not want &quot; +</span>
+                    &quot;to start a campaign explicitly.&quot;);
+<span class="fc" id="L446">                return 3;</span>
+            }
+        } else {
+<span class="fc bfc" id="L449" title="All 2 branches covered.">            if (TextProcessor.getMatch(TextProcessor.getTokens(text),</span>
+<span class="fc" id="L450">                Arrays.asList(&quot;no&quot;, &quot;nope&quot;, &quot;n't&quot;)) != null) {</span>
+<span class="fc" id="L451">                fmt.appendTextMessage(&quot;OK, cancelling to start a campaign.&quot;);</span>
+<span class="fc" id="L452">                publisher.publish(fmt);</span>
+<span class="fc" id="L453">                controller.setUserState(userId, State.IDLE);</span>
+<span class="fc" id="L454">                return END_STATE;</span>
+            } else {
+<span class="fc" id="L456">                rejectUserInput(psr, &quot;I don't understand what you have said.&quot;);</span>
+<span class="fc" id="L457">                return 3;</span>
+            }
+        }
+    }
+
+    /**
+     * Handler for setting coupon image.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int setCouponImage(ParserMessageJSON psr) {
+<span class="nc" id="L468">        String userId = psr.getUserId();</span>
+<span class="nc" id="L469">        String type = psr.getType();</span>
+
+<span class="nc" id="L471">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="nc bnc" id="L472" title="All 2 branches missed.">        if (type.equals(&quot;text&quot;)) {</span>
+<span class="nc" id="L473">            rejectUserInput(psr, &quot;Please send me a photo or say 'CANCEL'.&quot;);</span>
+<span class="nc" id="L474">            return 4;</span>
+        }
+
+<span class="nc" id="L477">        String uriString = psr.get(&quot;imageContent&quot;);</span>
+<span class="nc" id="L478">        log.info(&quot;URI {}&quot;, uriString);</span>
+<span class="nc" id="L479">        String encodedString = null;</span>
+        try {
+<span class="nc" id="L481">            InputStream is = (new URI(uriString)).toURL().openStream();</span>
+<span class="nc" id="L482">            ByteArrayOutputStream bos = new ByteArrayOutputStream();</span>
+<span class="nc" id="L483">            long numOfBytes = ByteStreams.copy(is, bos);</span>
+<span class="nc" id="L484">            log.info(&quot;copied &quot; + numOfBytes + &quot; bytes&quot;);</span>
+<span class="nc" id="L485">            byte[] buf = bos.toByteArray();</span>
+<span class="nc" id="L486">            encodedString = Base64.encodeBase64URLSafeString(buf);</span>
+            // log.info(&quot;Encoded String in Base64: {}&quot;, encodedString);
+<span class="nc" id="L488">        } catch (Exception e) {</span>
+<span class="nc" id="L489">            log.info(e.toString());</span>
+<span class="nc" id="L490">        }</span>
+
+<span class="nc bnc" id="L492" title="All 2 branches missed.">        if (encodedString == null) {</span>
+<span class="nc" id="L493">            fmt.appendTextMessage(&quot;ERROR in getting the image, session cancelled&quot;);</span>
+<span class="nc" id="L494">            publisher.publish(fmt);</span>
+<span class="nc" id="L495">            controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L496">            return END_STATE;</span>
+        }
+
+<span class="nc" id="L499">        CampaignKeeper keeper = getCampaignKeeper();</span>
+<span class="nc" id="L500">        keeper.setCouponImg(encodedString);</span>
+<span class="nc" id="L501">        keeper.close();</span>
+
+<span class="nc" id="L503">        fmt.appendTextMessage(&quot;Set image of the coupon succeeded.&quot;)</span>
+<span class="nc" id="L504">           .appendTextMessage(&quot;Leaving admin mode for campaign management.&quot;);</span>
+<span class="nc" id="L505">        publisher.publish(fmt);</span>
+<span class="nc" id="L506">        controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L507">        handleImage = false;</span>
+<span class="nc" id="L508">        log.info(&quot;{}: disable image handling&quot;, agentName);</span>
+<span class="nc" id="L509">        return END_STATE;</span>
+    }
+
+    /**
+     * Get campaign keeper.
+     * @return A campaign keeper
+     */
+    CampaignKeeper getCampaignKeeper() {
+<span class="fc" id="L517">        return new CampaignKeeper();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

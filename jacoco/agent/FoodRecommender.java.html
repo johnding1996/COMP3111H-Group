@@ -1,0 +1,664 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FoodRecommender.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">dieting-chatbot</a> &gt; <a href="index.source.html" class="el_package">agent</a> &gt; <span class="el_source">FoodRecommender.java</span></div><h1>FoodRecommender.java</h1><pre class="source lang-java linenums">package agent;
+
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import reactor.bus.Event;
+import reactor.bus.EventBus;
+import static reactor.bus.selector.Selectors.$;
+
+import reactor.fn.Consumer;
+import utility.FormatterMessageJSON;
+import utility.ParserMessageJSON;
+import utility.TextProcessor;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import controller.Publisher;
+import controller.State;
+import controller.ChatbotController;
+import database.querier.FoodQuerier;
+import database.querier.FuzzyFoodQuerier;
+import database.querier.UserQuerier;
+
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * FoodRecommender: calculate scores for each dish and generate reasons for recommendation.
+ * 
+ * State mapping:
+ *      0 - ask meal type
+ *      1 - ask exercise rate
+ *      2 - publish recommendation
+ * 
+ * @author mcding, agong, szhouan
+ * @version v2.1.0
+ */
+<span class="fc" id="L41">@Slf4j</span>
+@Component
+<span class="fc" id="L43">public class FoodRecommender extends Agent {</span>
+
+    /**
+     * menuManager Private MenuManager Object.
+     */
+    @Autowired
+    private MenuManager menuManager;
+
+    /**
+     * This is a private userManager Object.
+     */
+    @Autowired
+    private UserManager userManager;
+
+    /**
+     * This is a public JSONArray Object.
+     */
+    public static JSONArray nutrientDailyIntakes;
+    static {
+<span class="fc" id="L62">        nutrientDailyIntakes = new JSONArray();</span>
+<span class="fc" id="L63">        nutrientDailyIntakes</span>
+<span class="fc" id="L64">            .put(packSingleIntakeJSON(&quot;lipid_tot&quot;, 70, 15, &quot;g&quot;, &quot;fat&quot;))</span>
+<span class="fc" id="L65">            .put(packSingleIntakeJSON(&quot;carbohydrt&quot;, 260, 15, &quot;g&quot;, &quot;carbohydrate&quot;))</span>
+<span class="fc" id="L66">            .put(packSingleIntakeJSON(&quot;sugar_tot&quot;, 90, 15, &quot;g&quot;, &quot;sugar&quot;))</span>
+<span class="fc" id="L67">            .put(packSingleIntakeJSON(&quot;protein&quot;, 50, 15, &quot;g&quot;, &quot;protein&quot;))</span>
+<span class="fc" id="L68">            .put(packSingleIntakeJSON(&quot;fiber_td&quot;, 30, 5, &quot;g&quot;, &quot;dietary fiber&quot;))</span>
+<span class="fc" id="L69">            .put(packSingleIntakeJSON(&quot;vit_c&quot;, 35, 10, &quot;mg&quot;, &quot;vitamin C&quot;))</span>
+<span class="fc" id="L70">            .put(packSingleIntakeJSON(&quot;sodium&quot;, 1600, 10, &quot;mg&quot;, &quot;sodium&quot;))</span>
+<span class="fc" id="L71">            .put(packSingleIntakeJSON(&quot;potassium&quot;, 2000, 5, &quot;mg&quot;, &quot;potassium&quot;))</span>
+<span class="fc" id="L72">            .put(packSingleIntakeJSON(&quot;calcium&quot;, 800, 5, &quot;mg&quot;, &quot;calcium&quot;));</span>
+    }
+
+    /**
+     * This is a private Map&lt;String, Double&gt; attribute.
+     */
+    private static Map&lt;String, Double&gt; mealTypeToPortions;
+
+    /**
+     * THis is a private String attribute.
+     */
+    private static String VALID_MEAL_TYPES;
+    static {
+<span class="fc" id="L85">        mealTypeToPortions = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L86">        mealTypeToPortions.put(&quot;breakfast&quot;, 0.2);</span>
+<span class="fc" id="L87">        mealTypeToPortions.put(&quot;brunch&quot;, 0.35);</span>
+<span class="fc" id="L88">        mealTypeToPortions.put(&quot;lunch&quot;, 0.4);</span>
+        // mealTypeToPortions.put(&quot;afternoon tea&quot;, 0.15);
+<span class="fc" id="L90">        mealTypeToPortions.put(&quot;dinner&quot;, 0.4);</span>
+<span class="fc" id="L91">        mealTypeToPortions.put(&quot;supper&quot;, 0.15);</span>
+<span class="fc" id="L92">        List&lt;String&gt; tmp = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        for (String mealType : mealTypeToPortions.keySet()) {</span>
+<span class="fc" id="L94">            tmp.add(&quot;\&quot;&quot; + mealType + &quot;\&quot;&quot;);</span>
+<span class="fc" id="L95">        }</span>
+<span class="fc" id="L96">        VALID_MEAL_TYPES = String.join(&quot;, &quot;, tmp);</span>
+    }
+
+    /**
+     * This is a Private Map attribute.
+     */
+    private static Map&lt;String, Double&gt; exerciseRateToIntakeRatios;
+
+    /**
+     * This is a private String attribute.
+     */
+    private static String VALID_EXERCISE_RATE;
+    static {
+<span class="fc" id="L109">        exerciseRateToIntakeRatios = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L110">        exerciseRateToIntakeRatios.put(&quot;little&quot;, 1.2);</span>
+<span class="fc" id="L111">        exerciseRateToIntakeRatios.put(&quot;light&quot;, 1.375);</span>
+<span class="fc" id="L112">        exerciseRateToIntakeRatios.put(&quot;moderate&quot;, 1.55);</span>
+<span class="fc" id="L113">        exerciseRateToIntakeRatios.put(&quot;active&quot;, 1.725);</span>
+<span class="fc" id="L114">        exerciseRateToIntakeRatios.put(&quot;intensive&quot;, 1.9);</span>
+<span class="fc" id="L115">        List&lt;String&gt; tmp = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        for (String exerciseRate : exerciseRateToIntakeRatios.keySet()) {</span>
+<span class="fc" id="L117">            tmp.add(&quot;\&quot;&quot; + exerciseRate + &quot;\&quot;&quot;);</span>
+<span class="fc" id="L118">        }</span>
+<span class="fc" id="L119">        VALID_EXERCISE_RATE = String.join(&quot;, &quot;, tmp);</span>
+<span class="fc" id="L120">    }</span>
+
+    /**
+     * Initialize food recommender agent.
+     */
+    @Override
+    public void init() {
+<span class="fc" id="L127">        agentName = &quot;FoodRecommender&quot;;</span>
+<span class="fc" id="L128">        agentStates = new HashSet&lt;&gt;(</span>
+<span class="fc" id="L129">            Arrays.asList(State.RECOMMEND)</span>
+        );
+<span class="fc" id="L131">        handleImage = false;</span>
+<span class="fc" id="L132">        useSpellChecker = false;</span>
+<span class="fc" id="L133">        this.addHandler(0, (psr) -&gt; askMealType(psr))</span>
+<span class="fc" id="L134">            .addHandler(1, (psr) -&gt; askExerciseRate(psr))</span>
+<span class="fc" id="L135">            .addHandler(2, (psr) -&gt; giveRecommendation(psr))</span>
+<span class="pc" id="L136">            .addHandler(3, (psr) -&gt; explainAlgorithm(psr));</span>
+<span class="fc" id="L137">    }</span>
+
+    /**
+     * Handler for asking meal type.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askMealType(ParserMessageJSON psr) {
+<span class="fc" id="L145">        String userId = psr.getUserId();</span>
+
+        // Is menu empty?
+<span class="fc" id="L148">        JSONObject menuJSON = menuManager.getMenuJSON(userId);</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        if (menuJSON == null) {</span>
+<span class="nc" id="L150">            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="nc" id="L151">            fmt.appendTextMessage(&quot;Seems that I don't have your menu yet.&quot; +</span>
+                &quot;Session cancelled.&quot;);
+<span class="nc" id="L153">            publisher.publish(fmt);</span>
+<span class="nc" id="L154">            controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L155">            return END_STATE;</span>
+        }
+<span class="fc" id="L157">        states.get(userId).put(&quot;menuJSON&quot;, menuJSON);</span>
+
+        // Is user info available?
+<span class="fc" id="L160">        JSONObject userJSON = userManager.getUserJSON(userId);</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        if (userJSON == null) {</span>
+<span class="nc" id="L162">            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="nc" id="L163">            fmt.appendTextMessage(&quot;Sorry, I don't have your personal &quot; +</span>
+               &quot;information yet, so I could not give you recommendations. &quot; +
+               &quot;Please set your personal information first. ^_^ &quot; +
+               &quot;Session cancelled.&quot;);
+<span class="nc" id="L167">            publisher.publish(fmt);</span>
+<span class="nc" id="L168">            controller.setUserState(userId, State.IDLE);</span>
+<span class="nc" id="L169">            return END_STATE;</span>
+        }
+<span class="fc" id="L171">        states.get(userId).put(&quot;userJSON&quot;, userJSON);</span>
+
+        // set default meal type
+<span class="fc" id="L174">        states.get(userId).put(&quot;mealPortion&quot;,</span>
+<span class="fc" id="L175">            mealTypeToPortions.get(getDefaultMealType()));</span>
+
+        // ask meal type
+<span class="fc" id="L178">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L179">        fmt.appendTextMessage(&quot;Ok, let me analyze what you should eat for this meal. &quot; +</span>
+                &quot;Before that, could you tell me which meal you are eating?&quot;)
+<span class="fc" id="L181">           .appendTextMessage(String.format(&quot;According to the time, &quot; +</span>
+<span class="fc" id="L182">            &quot;I guess you are eating %s. Is that correct?&quot;, getDefaultMealType()))</span>
+<span class="fc" id="L183">           .appendTextMessage(&quot;Please CONFIRM that or tell me which meal you are eating directly. &quot; +</span>
+                &quot;The valid options are &quot; + VALID_MEAL_TYPES + &quot;.&quot;);
+<span class="fc" id="L185">        publisher.publish(fmt);</span>
+<span class="fc" id="L186">        sleep();</span>
+
+<span class="fc" id="L188">        return 1;</span>
+    }
+
+    /**
+     * Handler for asking exercise rate.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askExerciseRate(ParserMessageJSON psr) {
+<span class="fc" id="L197">        String userId = psr.getUserId();</span>
+<span class="fc" id="L198">        String text = psr.get(&quot;textContent&quot;);</span>
+
+        // validate meal type
+<span class="fc" id="L201">        boolean valid = false;</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">        if (TextProcessor.getMatch(TextProcessor.getTokens(text),</span>
+<span class="fc" id="L203">            Arrays.asList(&quot;confirm&quot;, &quot;yes&quot;, &quot;right&quot;, &quot;true&quot;, &quot;yep&quot;)) != null) {</span>
+<span class="fc" id="L204">            valid = true;</span>
+        } else {
+<span class="fc" id="L206">            String mealType = TextProcessor.getMatch(TextProcessor.getTokens(text),</span>
+<span class="fc" id="L207">                mealTypeToPortions.keySet());</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">            if (mealType != null) {</span>
+<span class="fc" id="L209">                states.get(userId).put(&quot;mealPortion&quot;,</span>
+<span class="fc" id="L210">                    mealTypeToPortions.get(mealType));</span>
+<span class="fc" id="L211">                valid = true;</span>
+            }
+        }
+<span class="fc bfc" id="L214" title="All 2 branches covered.">        if (!valid) {</span>
+<span class="fc" id="L215">            rejectUserInput(psr, &quot;This is not a meal type..&quot;);</span>
+<span class="fc" id="L216">            return 1;</span>
+        }
+
+<span class="fc" id="L219">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L220">        fmt.appendTextMessage(&quot;Great, I've recorded your meal type!&quot;)</span>
+<span class="fc" id="L221">           .appendTextMessage(&quot;Another question is about you exercise rate. &quot; +</span>
+                &quot;Could you tell me how much physical exercise you have been doing recently?&quot;)
+<span class="fc" id="L223">           .appendTextMessage(&quot;Valid options include &quot; + VALID_EXERCISE_RATE + &quot;.&quot;);</span>
+<span class="fc" id="L224">        publisher.publish(fmt);</span>
+<span class="fc" id="L225">        sleep();</span>
+
+<span class="fc" id="L227">        return 2;</span>
+    }
+
+    /**
+     * Handler for giving recommendation.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int giveRecommendation(ParserMessageJSON psr) {
+<span class="fc" id="L236">        String userId = psr.getUserId();</span>
+<span class="fc" id="L237">        String text = psr.get(&quot;textContent&quot;);</span>
+
+        // validate exercise rate
+<span class="fc" id="L240">        String exerciseRate = TextProcessor.getMatch(TextProcessor.getTokens(text),</span>
+<span class="fc" id="L241">            exerciseRateToIntakeRatios.keySet());</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (exerciseRate == null) {</span>
+<span class="fc" id="L243">            rejectUserInput(psr, &quot;This is not a valid exercise rate..&quot;);</span>
+<span class="fc" id="L244">            return 2;</span>
+        }
+<span class="fc" id="L246">        states.get(userId).put(&quot;intakeRatio&quot;, exerciseRateToIntakeRatios.get(exerciseRate));</span>
+<span class="fc" id="L247">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L248">        fmt.appendTextMessage(&quot;Thanks a lot, I've recorded your exercise rate!&quot;)</span>
+<span class="fc" id="L249">           .appendTextMessage(&quot;That's all the information I want. Hold tight, &quot; +</span>
+                &quot;I am thinking about some personalized recommendations for you!\n... ... ...&quot;);
+<span class="fc" id="L251">        publisher.publish(fmt);</span>
+<span class="fc" id="L252">        sleep();</span>
+
+<span class="fc" id="L254">        generateRecommendation(getMenuScore(</span>
+<span class="fc" id="L255">            menuManager.getMenuJSON(userId)</span>
+        ));
+<span class="fc" id="L257">        sleep();</span>
+
+<span class="fc" id="L259">        fmt = new FormatterMessageJSON(userId);</span>
+<span class="fc" id="L260">        fmt.appendTextMessage(&quot;These are all my recommendations. &quot; +</span>
+                &quot;Please input FINISH when you finish your meal so that I can record it for later analysis.&quot;)
+<span class="fc" id="L262">           .appendTextMessage(&quot;If you are curious about how I generate these recommendations and the mechanism behind, &quot; +</span>
+                &quot;feel free to let me know!&quot;)
+<span class="fc" id="L264">           .appendTextMessage(&quot;Enjoy your meal!&quot;);</span>
+<span class="fc" id="L265">        publisher.publish(fmt);</span>
+<span class="fc" id="L266">        sleep();</span>
+
+<span class="fc" id="L268">        return 3;</span>
+    }
+
+    /**
+     * Handler for explaining recommendation algorithm.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int explainAlgorithm(ParserMessageJSON psr) {
+<span class="nc" id="L277">        String userId = psr.getUserId();</span>
+<span class="nc" id="L278">        String text = psr.get(&quot;textContent&quot;);</span>
+
+        // finish meal?
+<span class="nc bnc" id="L281" title="All 2 branches missed.">        if (TextProcessor.getMatch(TextProcessor.getTokens(text),</span>
+<span class="nc" id="L282">            Arrays.asList(&quot;yes&quot;, &quot;right&quot;, &quot;true&quot;, &quot;yep&quot;,</span>
+            &quot;finished&quot;, &quot;finish&quot;, &quot;done&quot;))!= null) {
+<span class="nc" id="L284">            controller.setUserState(userId, State.RECORD_MEAL);</span>
+<span class="nc" id="L285">            return END_STATE;</span>
+        }
+
+        // want to know algorithm?
+<span class="nc bnc" id="L289" title="All 2 branches missed.">        if (TextProcessor.getMatch(TextProcessor.getTokens(text),</span>
+<span class="nc" id="L290">            Arrays.asList(&quot;reference&quot;, &quot;how&quot;, &quot;why&quot;)) != null) {</span>
+
+<span class="nc" id="L292">            FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="nc" id="L293">            fmt.appendTextMessage(&quot;Thank you for your interests!&quot;);</span>
+<span class="nc" id="L294">            fmt.appendTextMessage(&quot;We generate recommendation by assigning each dish with a score and order them.&quot;);</span>
+<span class="nc" id="L295">            fmt.appendTextMessage(&quot;The score of each dish is calculated based on the well-known formula called basal metabolic rate (BMR) &quot; +</span>
+                    &quot;(which makes use of the your age, recent weight, and height), &quot; +
+                    &quot;and the recommended daily intake of 9 nutrients &quot; +
+                    &quot;(fat, carbohydrate, sugar, protein, dietary fiber, vitamin C, and 3 kinds of minerals).&quot;);
+<span class="nc" id="L299">            fmt.appendTextMessage(&quot;To give more personalized recommendation, we also take your exercise rate and current meal type into consideration, &quot; +</span>
+                    &quot;to calculate your expected meal energy intake.&quot;);
+<span class="nc" id="L301">            fmt.appendTextMessage(&quot;Generally, the higher the score a dish has, the more nutrients it supplies meet our recommended value. &quot; +</span>
+                    &quot;We also carefully analyze 9 sub-scores for each dish you input, and generate persuasive reasons based on them.&quot;);
+<span class="nc" id="L303">            publisher.publish(fmt);</span>
+<span class="nc" id="L304">            return 3;</span>
+        }
+
+        // don't know what user wants
+<span class="nc" id="L308">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+<span class="nc" id="L309">        fmt.appendTextMessage(&quot;Do you mean that you have finished your meal? &quot; +</span>
+                &quot;If yes, please tell me and I will record what you have eaten.&quot;);
+<span class="nc" id="L311">        publisher.publish(fmt);</span>
+<span class="nc" id="L312">        return 3;</span>
+    }
+
+    /**
+     * Helper function for getting default meal type.
+     * @return String of default meal type
+     */
+    String getDefaultMealType() {
+<span class="fc" id="L320">        LocalDateTime date = LocalDateTime.now();</span>
+        // Add 8 since our users are in UTC+8 time zone.
+<span class="fc" id="L322">        double hours = (double)(date.toLocalTime().toSecondOfDay()) / 60.0 / 60.0 + 8.0;</span>
+<span class="pc bpc" id="L323" title="2 of 4 branches missed.">        if (hours &gt; 4.5 &amp;&amp; hours &lt; 9.5) return &quot;breakfast&quot;;</span>
+<span class="pc bpc" id="L324" title="2 of 4 branches missed.">        else if (hours &gt; 9 &amp;&amp; hours &lt; 11) return &quot;brunch&quot;;</span>
+<span class="pc bpc" id="L325" title="2 of 4 branches missed.">        else if (hours &gt; 10.5 &amp;&amp; hours &lt; 14.5) return &quot;lunch&quot;;</span>
+        // else if (hours &gt; 14 &amp;&amp; hours &lt; 17 ) return &quot;afternoon tea&quot;;
+<span class="pc bpc" id="L327" title="2 of 4 branches missed.">        else if (hours &gt; 16.5 &amp;&amp; hours &lt; 20.5) return &quot;dinner&quot;;</span>
+<span class="fc" id="L328">        else return &quot;supper&quot;;</span>
+    }
+
+    /**
+     * Helper function for building a JSON object representing a config for nutrient.
+     * @param name String store the user name
+     * @param y store the value of key y double
+     * @param proportion store the proportion double
+     * @param unit store the unit String
+     * @param desc store the description
+     * @return A JSONObject containing config info for a nutrient type.
+     */
+    private static JSONObject packSingleIntakeJSON(String name, double y, double proportion, String unit, String desc) {
+<span class="fc" id="L341">        JSONObject json = new JSONObject();</span>
+<span class="fc" id="L342">        json.put(&quot;name&quot;, name)</span>
+<span class="fc" id="L343">            .put(&quot;y&quot;, y)</span>
+<span class="fc" id="L344">            .put(&quot;proportion&quot;, proportion)</span>
+<span class="fc" id="L345">            .put(&quot;unit&quot;, unit)</span>
+<span class="fc" id="L346">            .put(&quot;desc&quot;, desc);</span>
+<span class="fc" id="L347">        return json;</span>
+    }
+
+    /**
+     * Give recommendation given a MenuJSON.
+     * @param menuJSON A JSONObject of MenuJSON format.
+     * @return A JSONObject of FoodScoreJSON format.
+     */
+    public JSONObject getMenuScore(JSONObject menuJSON) {
+<span class="fc" id="L356">        JSONObject foodScoreJSON = new JSONObject();</span>
+<span class="fc" id="L357">        String userId = menuJSON.getString(&quot;userId&quot;);</span>
+<span class="fc" id="L358">        foodScoreJSON.put(&quot;userId&quot;, userId);</span>
+<span class="fc" id="L359">        JSONArray results = new JSONArray();</span>
+<span class="fc" id="L360">        JSONArray menu = menuJSON.getJSONArray(&quot;menu&quot;);</span>
+<span class="fc bfc" id="L361" title="All 2 branches covered.">        for (int i=0; i&lt;menu.length(); ++i) {</span>
+<span class="fc" id="L362">            JSONObject dish = menu.getJSONObject(i);</span>
+<span class="fc" id="L363">            JSONObject dishResult = new JSONObject();</span>
+<span class="fc" id="L364">            String name = dish.getString(&quot;name&quot;);</span>
+<span class="fc" id="L365">            JSONArray foodContent = dish.getJSONArray(&quot;foodContent&quot;);</span>
+<span class="fc" id="L366">            dishResult.put(&quot;name&quot;, name);</span>
+<span class="fc" id="L367">            dishResult.put(&quot;score&quot;, calculateScore(userId, foodContent));</span>
+<span class="fc" id="L368">            dishResult.put(&quot;energy&quot;, calculateEnergyIntakes(userId, foodContent));</span>
+<span class="fc" id="L369">            dishResult.put(&quot;nutrient&quot;, calculateNutrientIntakes(userId, foodContent));</span>
+<span class="fc" id="L370">            results.put(dishResult);</span>
+        }
+<span class="fc" id="L372">        foodScoreJSON.put(&quot;results&quot;, results);</span>
+        // log.info(&quot;Calculated food score JSON:\n{}&quot;,
+        //     foodScoreJSON.toString(4));
+<span class="fc" id="L375">        return foodScoreJSON;</span>
+    }
+
+    /**
+     * Generate recommendation based on FoodScoreJSON.
+     * @param foodScoreJSON A JSONObject of FoodScoreJSON format.
+     */
+    public void generateRecommendation(JSONObject foodScoreJSON) {
+<span class="fc" id="L383">        String userId = foodScoreJSON.getString(&quot;userId&quot;);</span>
+<span class="fc" id="L384">        JSONArray results = foodScoreJSON.getJSONArray(&quot;results&quot;);</span>
+<span class="fc" id="L385">        int verboseConfig = 2;</span>
+<span class="fc" id="L386">        int nDishes = results.length();</span>
+<span class="fc" id="L387">        int nNutrients = nutrientDailyIntakes.length();</span>
+        // Order and index of total scores
+<span class="fc" id="L389">        double[] totalScore = new double[nDishes];</span>
+<span class="fc bfc" id="L390" title="All 2 branches covered.">        for (int i=0; i&lt;nDishes; ++i) {</span>
+<span class="fc" id="L391">            totalScore[i] = results.getJSONObject(i).getJSONObject(&quot;score&quot;).getDouble(&quot;total&quot;);</span>
+        }
+<span class="fc" id="L393">        double[] totalIndex = getIndex(totalScore);</span>
+        // Order and index of each nutrient's scores
+<span class="fc" id="L395">        double[][] nutrientIndex = new double[nDishes][];</span>
+<span class="fc bfc" id="L396" title="All 2 branches covered.">        for (int i=0; i&lt;nDishes; ++i) {</span>
+<span class="fc" id="L397">            JSONObject dish = results.getJSONObject(i);</span>
+<span class="fc" id="L398">            double[] score = new double[nNutrients];</span>
+<span class="fc bfc" id="L399" title="All 2 branches covered.">            for (int j=0; j&lt;nNutrients; ++j) {</span>
+<span class="fc" id="L400">                String nutrient = nutrientDailyIntakes.getJSONObject(j).getString(&quot;name&quot;);</span>
+<span class="fc" id="L401">                score[j] = dish.getJSONObject(&quot;score&quot;).getDouble(nutrient);</span>
+            }
+<span class="fc" id="L403">            nutrientIndex[i] = getIndex(score);</span>
+        }
+        // Start generating texts
+<span class="fc" id="L406">        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);</span>
+        // Suggestion
+<span class="fc" id="L408">        JSONObject bestDish = results.getJSONObject((int)totalIndex[0]);</span>
+<span class="fc" id="L409">        String bestDishName = bestDish.getString(&quot;name&quot;);</span>
+<span class="fc" id="L410">        int bestDishPortionSize = (int)Math.round(bestDish.getJSONObject(&quot;energy&quot;).getDouble(&quot;portionSize&quot;)/5)*5;</span>
+<span class="fc" id="L411">        fmt.appendTextMessage(String.format(&quot;We suggest you to eat this dish: %s\n&quot; +</span>
+<span class="fc" id="L412">                        &quot;And the recommended portion size is %d gram&quot;, bestDishName, bestDishPortionSize));</span>
+        // Reason for the portion size
+<span class="fc" id="L414">        fmt.appendTextMessage(String.format(&quot;According to your age, weight and height, your BMR is around %d kcal/day. &quot; +</span>
+                &quot;Based on yout exercise rate, your daily intake should be %d kcal, &quot; +
+                &quot;and you should obtain %d kcal from this meal, &quot; +
+                &quot;since %s has on average %d kcal energy per 100 g, &quot; +
+                &quot;you should have around %d gram of it.&quot;,
+<span class="fc" id="L419">                (int)bestDish.getJSONObject(&quot;energy&quot;).getDouble(&quot;BMR&quot;),</span>
+<span class="fc" id="L420">                (int)bestDish.getJSONObject(&quot;energy&quot;).getDouble(&quot;dailyIntake&quot;),</span>
+<span class="fc" id="L421">                (int)bestDish.getJSONObject(&quot;energy&quot;).getDouble(&quot;mealIntake&quot;),</span>
+                bestDishName,
+<span class="fc" id="L423">                (int)bestDish.getJSONObject(&quot;energy&quot;).getDouble(&quot;energ_kcal&quot;),</span>
+<span class="fc" id="L424">                bestDishPortionSize));</span>
+        // Reason for choosing the highest score dish (it must exist)
+<span class="fc" id="L426">        List&lt;String&gt; bestReasons = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L427" title="All 2 branches covered.">        for (int k=0; k&lt;verboseConfig; k++) {</span>
+<span class="fc" id="L428">            String nutrient = nutrientDailyIntakes.getJSONObject((int)nutrientIndex[(int)totalIndex[0]][k]).getString(&quot;name&quot;);</span>
+<span class="fc" id="L429">            String nutrientDescription = nutrientDailyIntakes.getJSONObject((int)nutrientIndex[(int)totalIndex[0]][k]).getString(&quot;desc&quot;);</span>
+<span class="fc" id="L430">            JSONObject intakeJSON = bestDish.getJSONObject(&quot;nutrient&quot;).getJSONObject(nutrient);</span>
+<span class="fc" id="L431">            String resonNutrient = String.format(&quot;you can get %d %s of %s from %s which is &quot; +</span>
+                    &quot;relatively close to your recommended intake of %s through this meal, %d %s&quot;,
+<span class="fc" id="L433">                    (int)intakeJSON.getDouble(&quot;actual&quot;),</span>
+<span class="fc" id="L434">                    intakeJSON.getString(&quot;unit&quot;),</span>
+                    nutrientDescription,
+                    bestDishName,
+                    nutrientDescription,
+<span class="fc" id="L438">                    (int)intakeJSON.getDouble(&quot;expect&quot;),</span>
+<span class="fc" id="L439">                    intakeJSON.getString(&quot;unit&quot;));</span>
+<span class="fc" id="L440">            bestReasons.add(resonNutrient);</span>
+        }
+<span class="fc" id="L442">        fmt.appendTextMessage(String.format(&quot;We recommend %s instead of others, since &quot;, bestDishName) +</span>
+<span class="fc" id="L443">                String.join(&quot;, &quot;, bestReasons) + &quot;.&quot;);</span>
+        // Reason for not choosing the lowest score (if not only one dish)
+        // If only one dish, publish now and return
+<span class="pc bpc" id="L446" title="1 of 2 branches missed.">        if (nDishes == 1) {</span>
+<span class="nc" id="L447">            publisher.publish(fmt);</span>
+<span class="nc" id="L448">            return;</span>
+        }
+<span class="fc" id="L450">        JSONObject worstDish = results.getJSONObject((int)totalIndex[totalIndex.length-1]);</span>
+<span class="fc" id="L451">        String worstDishName = worstDish.getString(&quot;name&quot;);</span>
+<span class="fc" id="L452">        List&lt;String&gt; worstReasons = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L453" title="All 2 branches covered.">        for (int k=0; k&lt;verboseConfig; k++) {</span>
+<span class="fc" id="L454">            String nutrient = nutrientDailyIntakes.getJSONObject((int)nutrientIndex[(int)totalIndex[totalIndex.length-1]][nNutrients-k-1]).getString(&quot;name&quot;);</span>
+<span class="fc" id="L455">            String nutrientDescription = nutrientDailyIntakes.getJSONObject((int)nutrientIndex[(int)totalIndex[totalIndex.length-1]][nNutrients-k-1]).getString(&quot;desc&quot;);</span>
+<span class="fc" id="L456">            JSONObject intakeJSON = worstDish.getJSONObject(&quot;nutrient&quot;).getJSONObject(nutrient);</span>
+<span class="fc" id="L457">            String resonNutrient = String.format(&quot;you would get %d %s of %s from %s which is &quot; +</span>
+                            &quot;far from to your recommended intake of %s through this meal, %d %s&quot;,
+<span class="fc" id="L459">                    (int)intakeJSON.getDouble(&quot;actual&quot;),</span>
+<span class="fc" id="L460">                    intakeJSON.getString(&quot;unit&quot;),</span>
+                    nutrientDescription,
+                    worstDishName,
+                    nutrientDescription,
+<span class="fc" id="L464">                    (int)intakeJSON.getDouble(&quot;expect&quot;),</span>
+<span class="fc" id="L465">                    intakeJSON.getString(&quot;unit&quot;));</span>
+<span class="fc" id="L466">            worstReasons.add(resonNutrient);</span>
+        }
+<span class="fc" id="L468">        fmt.appendTextMessage(String.format(&quot;We do not recommend %s, because &quot;, worstDishName) +</span>
+<span class="fc" id="L469">                String.join(&quot;, &quot;, worstReasons) + &quot;.&quot;);</span>
+        // Finally publish the reasons
+<span class="fc" id="L471">        publisher.publish(fmt);</span>
+<span class="fc" id="L472">    }</span>
+
+    /**
+     * Helper function for getting a JSONArray of FoodJSON given foodContent.
+     * @param foodContent A JSONArray of food content.
+     * @return A JSONArray of FoodJSON.
+     */
+    public JSONArray getFoodJSON(JSONArray foodContent) {
+<span class="fc" id="L480">        FoodQuerier foodQuerier = new FuzzyFoodQuerier();</span>
+<span class="fc" id="L481">        JSONArray foodList = new JSONArray();</span>
+<span class="fc bfc" id="L482" title="All 2 branches covered.">        for (int i=0; i&lt;foodContent.length(); ++i) {</span>
+<span class="fc" id="L483">            int index = foodContent.getJSONObject(i).getInt(&quot;idx&quot;);</span>
+<span class="fc" id="L484">            foodList.put(foodQuerier.get(index));</span>
+        }
+<span class="fc" id="L486">        foodQuerier.close();</span>
+<span class="fc" id="L487">        return foodList;</span>
+    }
+
+    /**
+     * Calculate score given food content of a dish.
+     * @param userId String of userId.
+     * @param foodContent A JSONArray representing the content of a dish.
+     * @return Score of the dish.
+     */
+    public JSONObject calculateScore(String userId, JSONArray foodContent) {
+<span class="fc" id="L497">        JSONArray foodList = getFoodJSON(foodContent);</span>
+<span class="fc" id="L498">        JSONObject userJSON = states.get(userId).getJSONObject(&quot;userJSON&quot;);</span>
+<span class="fc" id="L499">        JSONObject scoreJSON = new JSONObject();</span>
+<span class="fc" id="L500">        double totalScore = 0;</span>
+<span class="fc" id="L501">        double averageCalorie = getAverageNutrient(foodList, &quot;energ_kcal&quot;);</span>
+<span class="fc bfc" id="L502" title="All 2 branches covered.">        for (int i = 0; i&lt; nutrientDailyIntakes.length(); ++i) {</span>
+<span class="fc" id="L503">            JSONObject config = nutrientDailyIntakes.getJSONObject(i);</span>
+<span class="fc" id="L504">            String name = config.getString(&quot;name&quot;);</span>
+<span class="fc" id="L505">            double y = config.getDouble(&quot;y&quot;);</span>
+<span class="fc" id="L506">            double proportion = config.getDouble(&quot;proportion&quot;);</span>
+<span class="fc" id="L507">            double k = getDailyIntake(userJSON) * getAverageNutrient(foodList, name) / averageCalorie;</span>
+<span class="fc" id="L508">            double t = k / y - 1;</span>
+<span class="fc" id="L509">            double score = Math.exp(-t * t / 2) * proportion;</span>
+<span class="fc" id="L510">            scoreJSON.put(name, score);</span>
+<span class="fc" id="L511">            totalScore += score;</span>
+        }
+<span class="fc" id="L513">        scoreJSON.put(&quot;total&quot;, totalScore);</span>
+<span class="fc" id="L514">        return scoreJSON;</span>
+    }
+
+    /**
+     * Calculate score given food content of a dish.
+     * @param userId String of userId.
+     * @param foodContent A JSONArray representing the content of a dish.
+     * @return Score of the dish.
+     */
+    public JSONObject calculateNutrientIntakes(String userId, JSONArray foodContent) {
+<span class="fc" id="L524">        JSONArray foodList = getFoodJSON(foodContent);</span>
+<span class="fc" id="L525">        JSONObject userJSON = states.get(userId).getJSONObject(&quot;userJSON&quot;);</span>
+<span class="fc" id="L526">        JSONObject intakeJSON = new JSONObject();</span>
+<span class="fc" id="L527">        double averageCalorie = getAverageNutrient(foodList, &quot;energ_kcal&quot;);</span>
+<span class="fc bfc" id="L528" title="All 2 branches covered.">        for (int i = 0; i&lt; nutrientDailyIntakes.length(); ++i) {</span>
+<span class="fc" id="L529">            JSONObject dailyIntakes = nutrientDailyIntakes.getJSONObject(i);</span>
+<span class="fc" id="L530">            String nutrient = dailyIntakes.getString(&quot;name&quot;);</span>
+<span class="fc" id="L531">            JSONObject nutrientIntakeJSON = new JSONObject();</span>
+<span class="fc" id="L532">            double recommendedIntake = getMealIntake(userJSON) * dailyIntakes.getDouble(&quot;y&quot;) / getDailyIntake(userJSON);</span>
+<span class="fc" id="L533">            double actualIntake = getMealIntake(userJSON) * getAverageNutrient(foodList, nutrient) / averageCalorie;</span>
+<span class="fc" id="L534">            String unit = dailyIntakes.getString(&quot;unit&quot;);</span>
+<span class="fc" id="L535">            nutrientIntakeJSON.put(&quot;expect&quot;, recommendedIntake);</span>
+<span class="fc" id="L536">            nutrientIntakeJSON.put(&quot;actual&quot;, actualIntake);</span>
+<span class="fc" id="L537">            nutrientIntakeJSON.put(&quot;unit&quot;, unit);</span>
+<span class="fc" id="L538">            intakeJSON.put(nutrient, nutrientIntakeJSON);</span>
+        }
+<span class="fc" id="L540">        return intakeJSON;</span>
+    }
+
+    /**
+     * Calculate portion size given food content of a dish.
+     * @param userId String of userId.
+     * @param foodContent A JSONArray representing the content of a dish.
+     * @return Recommended portion size in gram.
+     */
+    public JSONObject calculateEnergyIntakes(String userId, JSONArray foodContent) {
+<span class="fc" id="L550">        JSONArray foodList = getFoodJSON(foodContent);</span>
+<span class="fc" id="L551">        JSONObject userJSON = states.get(userId).getJSONObject(&quot;userJSON&quot;);</span>
+<span class="fc" id="L552">        JSONObject sizeJSON = new JSONObject();</span>
+<span class="fc" id="L553">        double averageCalorie = getAverageNutrient(foodList, &quot;energ_kcal&quot;);</span>
+        // 100 factor comes from the energy_kcal are listed in unit kcal/100g
+<span class="fc" id="L555">        double rawPortionSize = 100 * getMealIntake(userJSON) / averageCalorie;</span>
+<span class="fc" id="L556">        log.info(&quot;average calorie: &quot; + averageCalorie);</span>
+<span class="fc" id="L557">        log.info(&quot;user daily intake: &quot; + getDailyIntake(userJSON));</span>
+<span class="fc" id="L558">        log.info(&quot;user BMR: &quot; + getUserBMR(userJSON));</span>
+<span class="fc" id="L559">        log.info(&quot;user meal intake: &quot; + getMealIntake(userJSON));</span>
+<span class="fc" id="L560">        log.info(&quot;raw portion size: &quot; + rawPortionSize);</span>
+<span class="fc" id="L561">        sizeJSON.put(&quot;energ_kcal&quot;, averageCalorie);</span>
+<span class="fc" id="L562">        sizeJSON.put(&quot;BMR&quot;, getUserBMR(userJSON));</span>
+<span class="fc" id="L563">        sizeJSON.put(&quot;dailyIntake&quot;, getDailyIntake(userJSON));</span>
+<span class="fc" id="L564">        sizeJSON.put(&quot;mealIntake&quot;, getMealIntake(userJSON));</span>
+<span class="fc" id="L565">        sizeJSON.put(&quot;portionSize&quot;, rawPortionSize);</span>
+<span class="fc" id="L566">        return sizeJSON;</span>
+    }
+
+    /**
+     * Helper function for calculating average nutrient content.
+     * @param list A JSONArray whose entries are FoodJSON.
+     * @param nutrientName Name of nutrient in string.
+     * @return The average amount of nutrient.
+     */
+    public double getAverageNutrient(JSONArray list, String nutrientName) {
+<span class="fc" id="L576">        double sum = 0;</span>
+<span class="fc" id="L577">        int cnt = 0;</span>
+<span class="fc bfc" id="L578" title="All 2 branches covered.">        for (int i=0; i&lt;list.length(); ++i) {</span>
+            try {
+<span class="fc" id="L580">                sum += list.getJSONObject(i).getDouble(nutrientName);</span>
+<span class="fc" id="L581">                ++cnt;</span>
+<span class="nc" id="L582">            } catch (JSONException e) {</span>
+<span class="nc" id="L583">                log.info(e.toString());</span>
+<span class="fc" id="L584">            }</span>
+        }
+<span class="pc bpc" id="L586" title="1 of 2 branches missed.">        if (cnt &gt; 0) return sum / cnt;</span>
+<span class="nc" id="L587">        else return 0;</span>
+    }
+
+    /**
+     * Get the user recommended meal intake.
+     * @param userJSON String of user id.
+     * @return recommend meal intake of that user.
+     */
+    public double getMealIntake(JSONObject userJSON) {
+<span class="fc" id="L596">        String userId = userJSON.getString(&quot;id&quot;);</span>
+<span class="fc" id="L597">        return getUserBMR(userJSON) * states.get(userId).getDouble(&quot;intakeRatio&quot;)</span>
+<span class="fc" id="L598">            * states.get(userId).getDouble(&quot;mealPortion&quot;);</span>
+    }
+
+    /**
+     * Get the user recommended daily intake.
+     * @param userJSON String of user id.
+     * @return recommend daily intake of that user.
+     */
+    public double getDailyIntake(JSONObject userJSON) {
+<span class="fc" id="L607">        String userId = userJSON.getString(&quot;id&quot;);</span>
+<span class="fc" id="L608">        return getUserBMR(userJSON) * states.get(userId).getDouble(&quot;intakeRatio&quot;);</span>
+    }
+
+    /**
+     * Calculate BMR for a user.
+     * @param userJSON JSONObject of UserJSON format.
+     * @return BMR value.
+     */
+    public double getUserBMR(JSONObject userJSON) {
+<span class="fc" id="L617">        String gender = userJSON.getString(&quot;gender&quot;);</span>
+<span class="fc" id="L618">        double weight = userJSON.getDouble(&quot;weight&quot;);</span>
+<span class="fc" id="L619">        double height = userJSON.getDouble(&quot;height&quot;);</span>
+<span class="fc" id="L620">        int age = userJSON.getInt(&quot;age&quot;);</span>
+<span class="pc bpc" id="L621" title="7 of 10 branches missed.">        switch (gender) {</span>
+            case &quot;male&quot;:
+<span class="fc" id="L623">                return 66.47 + 13.7*weight + 5*height - 6.8*age;</span>
+            case &quot;female&quot;:
+<span class="nc" id="L625">                return 655.1 + 9.6*weight + 1.8*height - 4.7*age;</span>
+            default:
+<span class="nc" id="L627">                log.info(&quot;Invalid gender {}&quot;, gender);</span>
+<span class="nc" id="L628">                return 0;</span>
+        }
+    }
+
+    /**
+     * Helper function to get the index of a double array after it is ordered in descending order.
+     * @param array input double array.
+     * @return index array, note that it is double array.
+     */
+    public double[] getIndex(double[] array) {
+<span class="fc" id="L638">        int size = array.length;</span>
+        double temp;
+<span class="fc" id="L640">        double[] index = new double[size];</span>
+<span class="fc bfc" id="L641" title="All 2 branches covered.">        for (int i=0; i&lt;size; i++) {</span>
+<span class="fc" id="L642">            index[i] = i;</span>
+        }
+<span class="fc bfc" id="L644" title="All 2 branches covered.">        for(int i=0; i &lt; size; i++){</span>
+<span class="fc bfc" id="L645" title="All 2 branches covered.">            for(int j=1; j &lt; (size-i); j++){</span>
+<span class="fc bfc" id="L646" title="All 2 branches covered.">                if(array[j-1] &lt; array[j]){</span>
+                    //swap elements
+<span class="fc" id="L648">                    temp = array[j-1];</span>
+<span class="fc" id="L649">                    array[j-1] = array[j];</span>
+<span class="fc" id="L650">                    array[j] = temp;</span>
+                    //swap indices
+<span class="fc" id="L652">                    temp = index[j-1];</span>
+<span class="fc" id="L653">                    index[j-1] = index[j];</span>
+<span class="fc" id="L654">                    index[j] = temp;</span>
+                }
+
+            }
+        }
+<span class="fc" id="L659">        log.info(&quot;getIndex: input: &quot; + Arrays.toString(array) +</span>
+<span class="fc" id="L660">                &quot;index:&quot; + Arrays.toString(index));</span>
+<span class="fc" id="L661">        return index;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
