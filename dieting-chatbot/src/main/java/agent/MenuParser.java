@@ -104,6 +104,11 @@ public class MenuParser extends Agent {
             keeper.close();
 
             publisher.publish(fmt);
+            try {
+                Thread.sleep(800);
+            } catch (Exception e) {
+                log.info(e.toString());
+            }
             controller.setUserState(userId, State.ASK_MEAL);
             return END_STATE;
         }

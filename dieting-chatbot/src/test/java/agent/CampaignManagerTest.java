@@ -61,8 +61,8 @@ public class CampaignManagerTest extends AgentTest {
         checkHandler("-1", "", 3, 3);
         checkHandler("Can you understand", "", 3, 3);
         checkHandler("100", Arrays.asList("Start campaign", "Now please"), 3, 4);
-        checkHandler("Blah", Arrays.asList("Set coupon text", "Leaving admin mode"),
-            4, Agent.END_STATE);
+        // checkHandler("Blah", Arrays.asList("Set coupon text", "Leaving admin mode"),
+        //     4, Agent.END_STATE);
         
         campaignManager.registerUser(userId);
         checkHandler("", Arrays.asList("Hi admin", "The campaign is now open",
@@ -71,7 +71,7 @@ public class CampaignManagerTest extends AgentTest {
         checkHandler("no", "Update coupon number skipped", 2, 4);
         campaignManager.setUserState(userId, 2);
         checkHandler("10", "Set available coupon to 10", 2, 4);
-        checkHandler("UPDATE: bbb", "Update coupon text", 4, Agent.END_STATE);
+        // checkHandler("UPDATE: bbb", "Update coupon text", 4, Agent.END_STATE);
 
         campaignManager.registerUser(userId);
         checkHandler("", "Hi admin", 0, 2);
@@ -86,7 +86,7 @@ public class CampaignManagerTest extends AgentTest {
         checkHandler("100", Arrays.asList("Start", "Now please"), 3, 4);
         campaignManager.setUserState(userId, 2);
         checkHandler("10", "Set available", 2, 4);
-        checkHandler("blah", "Cancel to update", 4, Agent.END_STATE);
+        // checkHandler("blah", "Cancel to update", 4, Agent.END_STATE);
     }
 
     @Test

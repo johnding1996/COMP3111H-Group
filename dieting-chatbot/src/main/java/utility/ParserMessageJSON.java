@@ -35,6 +35,7 @@ public class ParserMessageJSON extends MessageJSON {
             Arrays.asList(
                 "userId", "type", "state",
                 "messageId", "textContent", "imageContent"
+                // "extension", "imageBase64"
             )
         );
         typeSet = new HashSet<>(

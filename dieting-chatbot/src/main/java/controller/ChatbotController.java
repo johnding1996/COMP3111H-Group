@@ -169,15 +169,15 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
         for (int i = 0; i < arr.length(); ++i) {
             JSONObject obj = arr.getJSONObject(i);
             switch (obj.getString("type")) {
-            case "text":
-                messages.add(new TextMessage(obj.getString("textContent")));
-                break;
-            case "image":
-                messages.add(new ImageMessage(obj.getString("originalContentUrl"),
-                    obj.getString("previewContentUrl")));
-                break;
-            default:
-                log.info("Invalid message type {}", obj.getString("type"));
+                case "text":
+                    messages.add(new TextMessage(obj.getString("textContent")));
+                    break;
+                case "image":
+                    messages.add(new ImageMessage(obj.getString("originalContentUrl"),
+                        obj.getString("previewContentUrl")));
+                    break;
+                default:
+                    log.info("Invalid message type {}", obj.getString("type"));
             }
         }
         log.info("CONTROLLER: Send push message");
