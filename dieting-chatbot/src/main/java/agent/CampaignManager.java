@@ -42,13 +42,35 @@ import utility.Validator;
 @Component
 public class CampaignManager extends Agent {
 
+    /**
+     * This is a private attribute Usermanager.
+     */
     @Autowired
     private UserManager userManager;
 
+    /**
+     * This is a integer storing the availble coupon num.
+     */
     int availableCoupon = 0;
+
+    /**
+     * This is a string storing the admin code.
+     */
     static final String ADMIN_ACCESS_CODE = "I am Sung Kim!!";
+
+    /**
+     * This is used to store the conpaign start instant.
+     */
     Instant campaignStartInstant;
+
+    /**
+     * This is a string storing the coupon context.
+     */
     String couponTextContent;
+
+    /**
+     * This is a int storing the num of current coupon.
+     */
     int currentCouponId = 0;
 
     /**

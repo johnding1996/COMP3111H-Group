@@ -49,10 +49,20 @@ public class ImageControl {
      */
     @Value
     public static class DownloadedContent {
+        /**
+         * THis is a Path object.
+         */
         Path path;
+
+        /**
+         * THis is a String storing uri.
+         */
         String uri;
     }
 
+    /**
+     * This is a ServletUriComponentsBuilder.
+     */
     public static ServletUriComponentsBuilder servletUriComponentsBuilder;
     
     /**

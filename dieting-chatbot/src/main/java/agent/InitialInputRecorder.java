@@ -43,6 +43,9 @@ import utility.Validator;
 @Component
 public class InitialInputRecorder extends Agent {
 
+    /**
+     * This is a private UserManager attribute.
+     */
     @Autowired
     private UserManager userManager;
 

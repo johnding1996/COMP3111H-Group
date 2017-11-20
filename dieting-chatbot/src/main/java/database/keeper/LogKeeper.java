@@ -20,6 +20,10 @@ public class LogKeeper extends SerializeKeeper {
      * The identifier of all user logs.
      */
     private static final String prefix = "log";
+
+    /**
+     * private list of string storing the fields.
+     */
     private static final List<String> fields = Arrays.asList(
             "timestamp", "event", "old_state", "new_state"
     );

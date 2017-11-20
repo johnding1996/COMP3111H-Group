@@ -42,12 +42,21 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class FoodRecommender extends Agent {
 
+    /**
+     * menuManager Private MenuManager Object.
+     */
     @Autowired
     private MenuManager menuManager;
 
+    /**
+     * This is a private userManager Object.
+     */
     @Autowired
     private UserManager userManager;
-    
+
+    /**
+     * This is a public JSONArray Object.
+     */
     public static JSONArray nutrientDailyIntakes;
     static {
         nutrientDailyIntakes = new JSONArray();
@@ -63,7 +72,14 @@ public class FoodRecommender extends Agent {
             .put(packSingleIntakeJSON("calcium", 800, 5, "mg", "calcium"));
     }
 
+    /**
+     * This is a private Map<String, Double> attribute.
+     */
     private static Map<String, Double> mealTypeToPortions;
+
+    /**
+     * THis is a private String attribute.
+     */
     private static String VALID_MEAL_TYPES;
     static {
         mealTypeToPortions = new LinkedHashMap<>();
@@ -80,7 +96,14 @@ public class FoodRecommender extends Agent {
         VALID_MEAL_TYPES = String.join(", ", tmp);
     }
 
+    /**
+     * This is a Private Map attribute.
+     */
     private static Map<String, Double> exerciseRateToIntakeRatios;
+
+    /**
+     * This is a private String attribute.
+     */
     private static String VALID_EXERCISE_RATE;
     static {
         exerciseRateToIntakeRatios = new LinkedHashMap<>();
@@ -307,6 +330,11 @@ public class FoodRecommender extends Agent {
 
     /**
      * Helper function for building a JSON object representing a config for nutrient.
+     * @param name String store the user name
+     * @param y store the value of key y double
+     * @param proportion store the proportion double
+     * @param unit store the unit String
+     * @param desc store the description
      * @return A JSONObject containing config info for a nutrient type.
      */
     private static JSONObject packSingleIntakeJSON(String name, double y, double proportion, String unit, String desc) {

@@ -78,26 +78,49 @@ import edu.cmu.sphinx.api.StreamSpeechRecognizer;
 @Service
 @LineMessageHandler
 public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMessageJSON>> {
-
+    /**
+     * THis is a private HashMap noReplyFutures.
+     */
     private HashMap<String, ScheduledFuture<?>> noReplyFutures = new HashMap<>();
 
+    /**
+     * THis is a private attibute LineMessagingClient.
+     */
     @Autowired(required = true)
     private LineMessagingClient lineMessagingClient;
 
+    /**
+     * THis is a private attribute Publisher for publish information.
+     */
     @Autowired
     private Publisher publisher;
 
+    /**
+     * THis is a private EventBus eventBus.
+     */
     @Autowired
     private EventBus eventBus;
 
+    /**
+     * This is a private TaskScheduler attribute.
+     */
     @Autowired
     private TaskScheduler taskScheduler;
 
+    /**
+     * THis is a private attribute IntentionClassifier classifier.
+     */
     @Autowired(required = false)
     private IntentionClassifier classifier;
 
+    /**
+     * THis is a private integer storing the num of no reply timeout.
+     */
     private static final int NO_REPLY_TIMEOUT = 1;
 
+    /**
+     * THis is a private attribute cCOnfiguration object.
+     */
     private Configuration sphinxConfiguration;
 
     /**
@@ -429,6 +452,9 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
 
     }
 
+    /**
+     * This is a private String[] storing the replies.
+     */
     private static final String[] replies = { "Sorry, but I don't understand what you said.",
             "Oops, that is complicated for me.", "Well, that doesn't make sense to me.",
             "Well, I really do not understand that." };

@@ -14,6 +14,10 @@ import edu.stanford.nlp.process.PTBTokenizer;
  * @version v1.0.0
  */
 public class TextProcessor {
+
+    /**
+     * private Pattern object.
+     */
     private static Pattern pattern = Pattern.compile("\\p{Punct}");
 
     /**

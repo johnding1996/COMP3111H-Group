@@ -25,6 +25,7 @@ public class UrlMenuParser {
      * Read String from a Reader.
      * @param rd The Reader to use.
      * @return The String read from rd.
+     * @throws IOException if error occurs in stream
      */
     private static String readAll(Reader rd) throws IOException {
         StringBuilder sb = new StringBuilder();

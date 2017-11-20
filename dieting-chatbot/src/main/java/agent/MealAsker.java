@@ -26,9 +26,15 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class MealAsker extends Agent {
 
+    /**
+     * THis is a private attibute MenuManager.
+     */
     @Autowired
     private MenuManager menuManager;
 
+    /**
+     * THis is a private attibute hash map for asker configuration.
+     */
     private HashMap<Integer, JSONObject> askerConfig = new HashMap<>();
 
     /**

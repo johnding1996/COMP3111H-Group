@@ -31,6 +31,9 @@ import com.asprise.ocr.Ocr;
 @Component
 public class ImageMenuParser {
 
+    /**
+     * This is a private JazzySpellChecker for spell check.
+     */
     private static JazzySpellChecker spellChecker = new JazzySpellChecker();
 
     /**

@@ -20,8 +20,19 @@ import utility.TextProcessor;
 @Component
 public class IntentionClassifier extends Agent {
 
+    /**
+     * THis is a private HashSet store the recommend keywords.
+     */
     private HashSet<String> recommendKeywords;
+
+    /**
+     * THis is a private HashSet store the initial input keywords.
+     */
     private HashSet<String> initialInputKeywords;
+
+    /**
+     * THis is a private HashSet store the feedbck keywords.
+     */
     private HashSet<String> feedbackKeywords;
 
     /**
