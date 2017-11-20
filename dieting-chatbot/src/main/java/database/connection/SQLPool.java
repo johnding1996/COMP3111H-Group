@@ -18,6 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class SQLPool {
+    /**
+     * This is a private attribute BasicDataSource for connection.
+     */
     private static BasicDataSource connectionPool;
 
     static {

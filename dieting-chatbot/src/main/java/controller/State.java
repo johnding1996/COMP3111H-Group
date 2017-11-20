@@ -86,6 +86,9 @@ public enum State {
      */
     UNFOLLOWING("Unfollowing");
 
+    /**
+     * This is a private String storing name.
+     */
     private final String name;
 
     /**

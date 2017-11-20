@@ -72,6 +72,9 @@ public class JsonUtility {
         querier.close();
     }
 
+    /**
+     * private hashSet sroring the discard words.
+     */
     private static final HashSet<String> discardWords;
     static {
         List<String> list = Arrays.asList(
