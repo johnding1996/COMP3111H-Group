@@ -2,12 +2,9 @@ package agent;
 
 import database.keeper.HistKeeper;
 import database.keeper.MenuKeeper;
+import database.querier.UserQuerier;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.lang.Integer;
-
-import database.querier.UserQuerier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -184,9 +181,7 @@ public class MealRecorder extends Agent {
         fmt.appendTextMessage(String.format("So your weight now is %d kg", weight))
            .appendTextMessage("See you ^_^");
         publisher.publish(fmt);
-        log.error("HERE1");
         updateDatabase(userId);
-        log.error("HERE2");
         controller.setUserState(userId, State.IDLE);
         return END_STATE;
     }
@@ -198,7 +193,6 @@ public class MealRecorder extends Agent {
     public void updateDatabase (String userId) {
         MenuKeeper menuKeeper = new MenuKeeper();
         HistKeeper histKeeper = new HistKeeper();
-        UserQuerier userQuerier = new UserQuerier();
         JSONObject histJson = new JSONObject();
         try{
             // Add hist to HistKeeper
@@ -216,15 +210,14 @@ public class MealRecorder extends Agent {
             histKeeper.set(userId, histJson);
             log.info(String.format("Stored the user history of user %s in to the caches.", userId));
             // Update weight in UserInfo table
-            JSONObject infoJson = userQuerier.get(userId);
-            infoJson.put("weight", states.get(userId).get("weight"));
-            userQuerier.update(infoJson);
+            JSONObject userJSON = userManager.getUserJSON(userId);
+            userJSON.put("weight", states.get(userId).get("weight"));
+            userManager.storeUserJSON(userId, userJSON);
 
         } catch (JSONException e) {
             log.error("Error encountered when parsing the MealJSON.", e);
         }
         menuKeeper.close();
         histKeeper.close();
-        userQuerier.close();
     }
 }

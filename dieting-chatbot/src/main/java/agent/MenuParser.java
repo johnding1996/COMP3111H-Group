@@ -31,9 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class MenuParser extends Agent {
 
-    @Autowired
-    private ImageMenuParser imageMenuParser;
-
     /**
      * Initialize menu parser agent.
      */
@@ -43,7 +40,7 @@ public class MenuParser extends Agent {
         agentStates = new HashSet<>(
             Arrays.asList(State.PARSE_MENU)
         );
-        handleImage = false;
+        handleImage = true;
         useSpellChecker = false;
         this.addHandler(0, (psr) -> askMenu(psr))
             .addHandler(1, (psr) -> parseMenu(psr));
@@ -58,7 +55,7 @@ public class MenuParser extends Agent {
         String userId = psr.getUserId();
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("Long time no see! What is your menu today? " +
-            "You could use text or URL.");
+            "You could use text or URL, or an image.");
         publisher.publish(fmt);
         return 1;
     }
@@ -70,14 +67,21 @@ public class MenuParser extends Agent {
      */
     public int parseMenu(ParserMessageJSON psr) {
         String userId = psr.getUserId();
-        String text = psr.get("textContent");
+        String type = psr.getType();
 
         // parsing menu
         JSONArray menuArray = null;
-        if (ResourceUtils.isUrl(text)) {
-            menuArray = UrlMenuParser.buildMenu(text);
+        if (type.equals("text")) {
+            String text = psr.get("textContent");
+            if (ResourceUtils.isUrl(text)) {
+                menuArray = UrlMenuParser.buildMenu(text);
+            } else {
+                menuArray = TextMenuParser.buildMenu(text);
+            }
         } else {
-            menuArray = TextMenuParser.buildMenu(text);
+            String uri = psr.get("imageContent");
+            log.info("{}: get image with URI: {}", agentName, uri);
+            menuArray = ImageMenuParser.buildMenu("uri", uri); 
         }
 
         // check parsed menu and reply

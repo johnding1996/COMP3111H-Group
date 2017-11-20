@@ -34,14 +34,9 @@ dependencies {
     compile "org.springframework:spring-web"
     compile "com.fasterxml.jackson.core:jackson-databind"
     compile "io.projectreactor:reactor-bus"
-    compile "javax.json:javax.json-api:1.0"
     compile "org.json:json"
     compile group: 'commons-codec', name: 'commons-codec', version: '1.9'
-    compile group: 'org.languagetool', name: 'language-en', version: '3.9'
     compile group: 'com.asprise.ocr', name: 'java-ocr-api', version: '[15,)'
-    compile group: 'org.glassfish', name: 'javax.json', version: '1.0.4'
-    compile group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2'
-    compile group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1'
     compile group: 'net.sf.jazzy', name: 'jazzy', version: '0.5.2-rtext-1.4.1-2'
     compile group: 'edu.stanford.nlp', name: 'stanford-corenlp', version: '3.8.0'
     testCompile("junit:junit")

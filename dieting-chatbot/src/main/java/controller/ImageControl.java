@@ -170,6 +170,7 @@ public class ImageControl {
             }
 
         } catch (IOException e) {
+            log.info(e.toString());
             log.info("cannot read in file {}", tempFile.getName());
         }
         return null;

@@ -30,38 +30,18 @@ import utility.JazzySpellChecker;
 
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {FoodRecommender.class, JazzySpellChecker.class,
-    UserManager.class})
-@ContextConfiguration(classes = {TestConfiguration.class, FoodRecommenderTest.class})
+@SpringBootTest(classes = {FoodRecommender.class, JazzySpellChecker.class})
+@ContextConfiguration(classes = {TestConfiguration.class, DatabaseMocker.class})
 public class FoodRecommenderTest extends AgentTest {
 
-    static HashMap<String, JSONObject> menus = new HashMap<>();
-
-    @Bean
-    public MenuManager createMenuManager() {
-        MenuManager menuManager = Mockito.spy(MenuManager.class);
-        Mockito.doAnswer(new Answer<JSONObject>() {
-            @Override
-            public JSONObject answer(InvocationOnMock invocation) {
-                String userId = invocation.getArgumentAt(0, String.class);
-                return menus.getOrDefault(userId, null);
-            }
-        }).when(menuManager).getMenuJSON(Matchers.anyString());
-        Mockito.doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocation) {
-                String userId = invocation.getArgumentAt(0, String.class);
-                JSONObject menuJSON = invocation.getArgumentAt(1, JSONObject.class);
-                menus.put(userId, menuJSON);
-                return null;
-            }
-        }).when(menuManager).storeMenuJSON(Matchers.anyString(),
-            Matchers.any(JSONObject.class));
-        return menuManager;
-    }
-
-    @Autowired(required = false)
+    @Autowired
     private FoodRecommender recommender;
+
+    @Autowired
+    private MenuManager menuManager;
+
+    @Autowired
+    private UserManager userManager;
 
     private static String szhouanId = "813f61a35fbb9cc3adc28da525abf1fe";
     private static JSONObject menuJSON;
@@ -75,7 +55,7 @@ public class FoodRecommenderTest extends AgentTest {
     }
 
     @Before
-    public void setupMenuJSON() {
+    public void setupDatabase() {
         menuJSON = new JSONObject();
         menuJSON.put("userId", szhouanId);
         JSONArray menu = new JSONArray();
@@ -94,7 +74,15 @@ public class FoodRecommenderTest extends AgentTest {
         menu.put(dish2);
         menuJSON.put("menu", menu);
         log.info(menuJSON.toString(4));
-        menus.put(userId, menuJSON);
+        menuManager.storeMenuJSON(userId, menuJSON);
+        
+        JSONObject userJSON = new JSONObject();
+        userJSON.put("id", userId)
+                .put("age", 20)
+                .put("gender", "male")
+                .put("weight", 60)
+                .put("height", 180);
+        userManager.storeUserJSON(userId, userJSON);
     }
 
     private static JSONObject getNutrientJSON(int index) {

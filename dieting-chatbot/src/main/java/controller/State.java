@@ -1,5 +1,6 @@
 package controller;
 
+
 import java.util.Date;
 
 /**
@@ -8,6 +9,7 @@ import java.util.Date;
  * @version v2.0.0
  */
 public enum State {
+
     /**
      * Invalid state.
      * This state is an indicator of errors.

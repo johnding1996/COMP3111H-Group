@@ -99,6 +99,7 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
     public void accept(Event<FormatterMessageJSON> ev) {
         FormatterMessageJSON fmt = ev.getData();
         String userId = fmt.getUserId();
+
         if (noReplyFutures.containsKey(userId)) {
             ScheduledFuture<?> future = noReplyFutures.remove(userId);
             if (future != null)
@@ -119,7 +120,8 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
                 messages.add(new TextMessage(obj.getString("textContent")));
                 break;
             case "image":
-                messages.add(new ImageMessage(obj.getString("originalContentUrl"), obj.getString("previewContentUrl")));
+                messages.add(new ImageMessage(obj.getString("originalContentUrl"),
+                    obj.getString("previewContentUrl")));
                 break;
             default:
                 log.info("Invalid message type {}", obj.getString("type"));
@@ -206,9 +208,12 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
     @EventMapping
     public void handleImageMessageEvent(MessageEvent<ImageMessageContent> event) {
         ImageControl.servletUriComponentsBuilder = ServletUriComponentsBuilder.fromCurrentContextPath();
-        log.info("Get IMAGE message from user: {}", event.getSource().getUserId());
+        String userId = event.getSource().getUserId();
         String messageId = event.getMessage().getId();
         String replyToken = event.getReplyToken();
+        userId = userId.substring(1);
+        log.info("Get IMAGE message from user: {}", userId);
+
         final MessageContentResponse response;
         try {
             response = lineMessagingClient.getMessageContent(messageId).get();
@@ -217,8 +222,6 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
             throw new RuntimeException(e);
         }
         
-        String userId = event.getSource().getUserId();
-        userId = userId.substring(1);
         ParserMessageJSON psr = new ParserMessageJSON(userId, "image");
         String uri = ImageControl.saveContent(response, "TempFile")[0];
         psr.set("messageId", messageId).setState(getUserState(userId).toString())
@@ -238,6 +241,7 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
      *         is no record for this user
      */
     public State getUserState(String userId) {
+
         StateKeeper keeper = new StateKeeper();
         String stateName = keeper.get(userId);
         keeper.close();
@@ -310,6 +314,7 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
                 setUserState(userId, nextState);
             }
         };
+
     }
 
     private static final String[] replies = { "Sorry, but I don't understand what you said.",
@@ -340,8 +345,8 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
                 case IDLE:
                     fmt.appendTextMessage(
                             "To set your personal info, " + "send 'setting'.\nIf you want to obtain recommendation, "
-                                    + "please say 'recommendation'.\n"
-                                    + "You can aways cancel an operation by saying 'CANCEL'");
+                            + "please say 'recommendation'.\n"
+                            + "You can aways cancel an operation by saying 'CANCEL'");
                     break;
 
                 default:

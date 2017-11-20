@@ -354,6 +354,7 @@ abstract class Querier {
                     }
                     if (value.equals("t") || value.equals("f")) {
                         jsonObject.put(field, value.equals("t"));
+                        continue;
                     }
                     Object valueObject;
                     Scanner scanner = new Scanner(value);
