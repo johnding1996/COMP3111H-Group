@@ -1,387 +1,334 @@
 package agent;
 
-import database.querier.FoodQuerier;
-import org.json.JSONObject;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import reactor.bus.Event;
-import reactor.bus.EventBus;
-import reactor.fn.Consumer;
-import utility.*;
-import controller.ChatbotController;
-import controller.Publisher;
+import utility.FormatterMessageJSON;
+import utility.ParserMessageJSON;
+import utility.TextProcessor;
+import utility.Validator;
+import utility.JsonUtility;
 import controller.State;
-import database.connection.SQLPool;
-import database.keeper.MenuKeeper;
-import database.querier.FuzzyFoodQuerier;
-import database.querier.PartialFoodQuerier;
-
-import java.util.*;
-
-import static java.lang.Integer.parseInt;
-import static reactor.bus.selector.Selectors.$;
-import javax.annotation.PostConstruct;
+import database.querier.FoodQuerier;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * MealAsker: interact with user to get the appropriate menu.
  * @author szhouan
- * @version v2.0.0
+ * @version v2.1.0
  */
 @Slf4j
 @Component
-public class MealAsker
-        implements Consumer<Event<ParserMessageJSON>> {
+public class MealAsker extends Agent {
 
     @Autowired
-    private EventBus eventBus;
+    private MenuManager menuManager;
 
-    @Autowired
-    private Publisher publisher;
-
-    @Autowired
-    private PortionAsker portionAsker;
-
-    @Autowired(required = false)
-    private ChatbotController controller;
-
-    static private HashMap<String, JSONObject> menus = new HashMap<>();
-    private static Map<String, Integer> userStates = new HashMap<>();
-    private static Map<String, NewFood> userNewFood = new HashMap<>();
+    private HashMap<Integer, JSONObject> askerConfig = new HashMap<>();
 
     /**
-     * Register on eventBus.
+     * Initialize initial input recorder agent.
      */
-    @PostConstruct
+    @Override
     public void init() {
-        if (eventBus != null) {
-            eventBus.on($("ParserMessageJSON"), this);
-            log.info("MealAsker register on event bus");
+        agentName = "MealAsker";
+        agentStates = new HashSet<>(
+            Arrays.asList(State.ASK_MEAL)
+        );
+        handleImage = false;
+        useSpellChecker = false;
+        this.addHandler(0, (psr) -> showMenu(psr))
+            .addHandler(1, (psr) -> acceptMenuChange(psr))
+            .addHandler(2, (psr) -> askFoodName(psr))
+            .addHandler(3, (psr) -> askNutrient(psr))
+            .addHandler(4, (psr) -> askNutrient(psr))
+            .addHandler(5, (psr) -> askNutrient(psr))
+            .addHandler(6, (psr) -> addNewFood(psr));
+        
+        askerConfig.put(4, (new JSONObject())
+            .put("name", "energy").put("unit", "kcal/100g"));
+        askerConfig.put(5, (new JSONObject())
+            .put("name", "protein").put("unit", "g/100g"));
+        askerConfig.put(6, (new JSONObject())
+            .put("name", "lipid").put("unit", "g/100g"));
+    }
+
+    /**
+     * Handler for showing menu.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int showMenu(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+
+        JSONObject menuJSON = menuManager.getMenuJSON(userId);
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        if (menuJSON == null) {
+            fmt.appendTextMessage("Looks like your menu is empty. Session cancelled.");
+            publisher.publish(fmt);
+            controller.setUserState(userId, State.IDLE);
+            return END_STATE;
+        } else {
+            // query database for food content
+            JsonUtility.getFoodContent(menuJSON);
+
+            // check no empty food content
+            if (!checkNoEmptyFoodContent(menuJSON)) {
+                fmt.appendTextMessage("Your menu input is invalid. Session cancelled.");
+                publisher.publish(fmt);
+                controller.setUserState(userId, State.IDLE);
+                return END_STATE;
+            }
+
+            fmt.appendTextMessage("Well, I got your menu.")
+               .appendTextMessage("The menu I got is\n" +
+                        JsonUtility.formatMenuJSON(menuJSON, false))
+               .appendTextMessage("And this is the food " +
+                        "content of each dish I found:")
+               .appendTextMessage(JsonUtility.formatMenuJSON(menuJSON, true))
+               .appendTextMessage("Do you want to revise some dish names? " +
+                    "You can type 'confirm' to go to next step. " +
+                    "Please show me your revision in this format: " +
+                    "<dish index>:<revised name>, such as '1:beef'");
+
+            states.get(userId).put("menuJSON", menuJSON);
+
+            publisher.publish(fmt);
+            return 1;
+        }
+    }
+    
+    /**
+     * Handler for accepting menu change from user.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int acceptMenuChange(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+        String text = psr.get("textContent");
+
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        if (TextProcessor.getMatch(TextProcessor.getTokens(text),
+            Arrays.asList("confirm", "yes")) != null) {
+            fmt.appendTextMessage("Bravo! Your update has been saved")
+               .appendTextMessage("Is there any missing food on this list? " +
+                    "Tell me Yes or No");
+            publisher.publish(fmt);
+
+            // update menu keeper
+            menuManager.storeMenuJSON(userId,
+                states.get(userId).getJSONObject("menuJSON"));
+            return 2;
+        }
+
+        JSONObject menuJSON = states.get(userId).getJSONObject("menuJSON");
+        JSONArray menu = menuJSON.getJSONArray("menu");
+        String[] tokens = psr.get("textContent").split(":");
+        boolean valid = true;
+        int index = 0;
+        String newName = "";
+
+        if (!Validator.isInteger(tokens[0]) || tokens.length != 2) {
+            valid = false;
+        } else {
+            index = Integer.parseInt(tokens[0]);
+            newName = tokens[1];
+            if (index < 1 || index > menu.length()) valid = false;
+        }
+
+        if (!valid) {
+            rejectUserInput(psr, "Please enter in this format: " +
+                "<dish index>:<new name>, " +
+                "or type 'confirm' if no more update is desired.");
+        } else {
+            menu.getJSONObject(index-1).put("name", newName);
+            JsonUtility.getFoodContent(menuJSON);
+
+            // check no empty food content
+            if (!checkNoEmptyFoodContent(menuJSON)) {
+                fmt.appendTextMessage("Your menu input is invalid. Session cancelled.");
+                publisher.publish(fmt);
+                controller.setUserState(userId, State.IDLE);
+                return END_STATE;
+            }
+
+            fmt.appendTextMessage("The Menu I got is\n" +
+                JsonUtility.formatMenuJSON(menuJSON, true))
+               .appendTextMessage("You could keep updating or confirm the menu");
+            publisher.publish(fmt);
+        }
+        return 1;
+    }
+    
+    /**
+     * Handler for asking food name.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int askFoodName(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+        String text = psr.get("textContent").trim().toLowerCase();
+
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        if(text.equals("yes")) {
+            fmt.appendTextMessage("So what is the name of this dish?");
+            publisher.publish(fmt);
+
+            states.get(userId).put("userNewFood", new JSONObject());
+            return 3;
+        } else if(text.equals("no")) {
+            fmt.appendTextMessage("Alright, let's move on.");
+            publisher.publish(fmt);
+
+            controller.setUserState(userId, State.ASK_PORTION);
+            return END_STATE;
+        } else {
+            rejectUserInput(psr, "Please tell me yes or no.");
+            return 2;
         }
     }
 
     /**
-     * Change user state, for testing purpose.
-     * @param userId String of user Id.
-     * @param state New user state.
+     * Handler for asking new food nutrient.
+     * @param psr Input ParserMessageJSON
+     * @return next state
      */
-    public void changeUserState(String userId, int state) {
-        userStates.put(userId, state);
-        log.info("Change state of user {} to {}", userId, state);
-    }
+    public int askNutrient(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+        String text = psr.get("textContent");
+        int state = getUserState(userId);
 
-    /**
-     * Clear all QueryJSON.
-     */
-    public void clearMenuJSON() {
-        log.info("Removing all MenuJSON object");
-        menus.clear();
-    }
-
-    /**
-     * Set MenuJSON for a user.
-     * @param json MenuJSON to add.
-     */
-    public void setMenuJSON(JSONObject json) {
-        menus.put(json.getString("userId"), json);
-    }
-
-    /**
-     * get MenuJSON for a user.
-     * @param userId String of user Id.
-     * @return JSONObject, null if no such user.
-     */
-    public JSONObject getMenuJSON(String userId) {
-        return menus.getOrDefault(userId, null);
-    }
-
-    /**
-     * Store the new dish supplied by user.
-     * @param newDish a new dish supplied by user to store in database.
-     * @return idx i that used for database storage.
-     */
-    public int getFoodQuerier(JSONObject newDish){
-        int i = 250;
-        FoodQuerier fq = new FoodQuerier();
-        boolean flag = false;
-        while (!flag){
-            i++;
-            newDish.put("ndb_no", i);
-            flag = fq.add(newDish);
+        int nutrient = 0;
+        JSONObject config = null;
+        if (state == 3) {
+            states.get(userId).getJSONObject("userNewFood").put("name", text);
+        } else {
+            config = askerConfig.get(state);
+            if(!Validator.isInteger(text)) {
+                rejectUserInput(psr, "Please use an integer");
+                return state;
+            } else {
+                nutrient = Integer.parseInt(text);
+                if (nutrient <= 0 || nutrient > 1000) {
+                    rejectUserInput(psr, "Your input is not in valid range.");
+                    return state;
+                }
+                states.get(userId).getJSONObject("userNewFood")
+                    .put(config.getString("name"), nutrient);
+            }
         }
-        fq.close();
-        return i;
+
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+
+        config = askerConfig.get(state+1);
+        fmt.appendTextMessage(String.format("Okay, so what is the %s contained " +
+            "in this dish? (in terms of %s). Give me an integer please ~",
+            config.getString("name"), config.getString("unit")));
+        publisher.publish(fmt);
+        return state+1;
+    }
+    
+    /**
+     * Handler for adding new food.
+     * @param psr Input ParserMessageJSON
+     * @return next state
+     */
+    public int addNewFood(ParserMessageJSON psr) {
+        String userId = psr.getUserId();
+        String text = psr.get("textContent");
+        int state = getUserState(userId);
+
+        if (!Validator.isInteger(text)) {
+            rejectUserInput(psr, "Your input is not an integer.");
+            return state;
+        } else {
+            int nutrient = Integer.parseInt(text);
+            JSONObject config = askerConfig.get(state);
+            if (nutrient > 0 && nutrient <= 1000) {
+                states.get(userId).getJSONObject("userNewFood")
+                .put(config.getString("name"), nutrient);
+            } else {
+                rejectUserInput(psr, "Your input is not in valid range.");
+                return state;
+            }
+        }
+
+        // add new food to database and keeper
+        storeNewFood(userId);
+
+        FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
+        fmt.appendTextMessage("Alright, I have recorded the new food.");
+        publisher.publish(fmt);
+
+        controller.setUserState(userId, State.ASK_PORTION);
+        return END_STATE;
     }
 
     /**
-     * update food revised by user.
-     * @param dishIndex the index of dish in menu, started by 1.
-     * @param name name of the dish.
+     * Store new food to database and menu keeper.
      * @param userId String of user Id.
      */
-    public void updateFood(int dishIndex, String name, String userId) {
-        JSONObject queryJSON = getMenuJSON(userId);
-        JSONObject dish = queryJSON.getJSONArray("menu").getJSONObject(dishIndex - 1);
-        dish.put("name", name);
-        queryJSON.getJSONArray("menu").put(dishIndex - 1, dish);
-        setMenuJSON(queryJSON);
-    }
+    void storeNewFood(String userId){
+        JSONObject food = states.get(userId).getJSONObject("userNewFood");
+        String name = food.getString("name");
+        int energy = food.getInt("energy");
+        int protein = food.getInt("protein");
+        int lipid = food.getInt("lipid");
 
-    /**
-     * updates new food to menus, as well as update this new dish in MenuKeeper.
-     * @param name String of the food name.
-     * @param energy energy amount in new food.
-     * @param protein protein amount in new food.
-     * @param lipid lipid amount in new food.
-     * @param userId String of user Id.
-     */
-    public void updateNewFood(String name, int energy, int protein, int lipid, String userId){
         JSONObject newDish = new JSONObject();
-
-        newDish.put("shrt_desc", name);
-        newDish.put("energ_kcal", energy);
-        newDish.put("protein", protein);
-        newDish.put("lipid_tot", lipid);
-
-        int i = getFoodQuerier(newDish);
+        newDish.put("shrt_desc", name)
+               .put("energ_kcal", energy)
+               .put("protein", protein)
+               .put("lipid_tot", lipid);
+        int id = getNewFoodId(newDish);
 
         JSONObject foodContent = new JSONObject();
-        foodContent.put("idx", i);
+        foodContent.put("idx", id);
         foodContent.put("description", name);
         JSONObject newFood = new JSONObject();
-        newFood.put("name", userId);
+        newFood.put("name", name);
         newFood.put("foodContent", foodContent);
+        JSONObject menuJSON = states.get(userId).getJSONObject("menuJSON");
+        menuJSON.getJSONArray("menu").put(newFood);
 
-        JSONObject queryJSON = new JSONObject();
-        queryJSON = getMenuJSON(userId);
-        queryJSON.getJSONArray("menu").put(newFood);
-        setMenuJSON(queryJSON);
+        menuManager.storeMenuJSON(userId, menuJSON);
     }
 
     /**
-     * Event handler for ParserMessageJSON.
-     * @param ev Event object.
+     * Store the new dish to database, and return its id.
+     * @param newDish a new dish supplied by user to store in database.
+     * @return id of the row inserted
      */
-    public void accept(Event<ParserMessageJSON> ev) {
-        ParserMessageJSON psr = ev.getData();
-
-        // only handle message if state is `AskMeal`
-        String userId = psr.getUserId();
-        State state = psr.getState();
-        if (state != State.ASK_MEAL) {
-            if (menus.containsKey(userId)) {
-                menus.remove(userId);
-                log.info("Remove menu of user {}", userId);
-            }
-            return;
+    int getNewFoodId(JSONObject newDish){
+        int id = 250;
+        FoodQuerier querier = new FoodQuerier();
+        boolean flag = false;
+        while (!flag){
+            newDish.put("ndb_no", ++id);
+            flag = querier.add(newDish);
         }
-
-        log.info("Entering MealAsker");
-        publisher.publish(new FormatterMessageJSON(userId));
-
-        FormatterMessageJSON response = new FormatterMessageJSON(userId);
-        // if the input is image
-        if(psr.getType().equals("image")) {
-            response.appendTextMessage(
-                    "I am sorry that I can't understand this image");
-            publisher.publish(response);
-            log.info("Cannot handle image message");
-            return;
-        }
-
-        // register user if it is new
-        if (!userStates.containsKey(userId)) {
-            log.info("register new user {}", userId);
-            userStates.put(userId, 0);
-        }
-
-        int userState = userStates.get(userId).intValue();
-        if (menus.containsKey(userId)) {
-
-            if(userState == 0){
-                JSONObject menuJSON = menus.get(userId);
-                JsonUtility.getFoodContent(menuJSON);
-                response.appendTextMessage("Well, I got your menu.")
-                        .appendTextMessage("The Menu I got is\n" +
-                                JsonUtility.formatMenuJSON(menuJSON, false))
-                        .appendTextMessage("And this is the food " +
-                                "content of each dish I found:")
-                        .appendTextMessage(JsonUtility.formatMenuJSON(menuJSON, true))
-
-
-                        .appendTextMessage("Do you want to revise some food names? " +
-                                "If no, you can type 'confirm' to leave. " +
-                                "Plz show me your revise in this format: " +
-                                "'dish index':'revised name', such as 1:beef");
-                log.info("MenuJSON:\n{}", menuJSON.toString(4));
-                changeUserState(userId, userState + 1);
-            }
-
-            //State for feature 6
-            else if(userState == 1){
-                String update = psr.get("textContent").toLowerCase();
-                if(update.equals("confirm")){
-                    response.appendTextMessage("Bravo! Your update has been saved")
-                            .appendTextMessage("Is there any missing food on this list? " +
-                                    "Tell me Yes or No");
-                    changeUserState(userId, userState + 1);
-                }
-                else{
-                    int menuNum = menus.get(userId).getJSONArray("menu").length();
-                    String[] revised = psr.get("textContent").split(":");
-                    boolean done = true;
-                    int index = 0;
-                    String newName = "";
-
-                    if (!Validator.isInteger(revised[0]))
-                        done = false;
-                    else if(revised.length != 2)
-                        done = false;
-                    else {
-                        index = parseInt(revised[0]);
-                        newName = revised[1];
-                        if (index < 1 || index > menuNum)
-                            done = false;
-                    }
-
-                    if (!done) {
-                        response.appendTextMessage("Plz enter in this format, " +
-                                "'dish index':'new name', " +
-                                "Or type 'confirm' if no more update desired.");
-                    }
-                    else{
-                        updateFood(index, newName, userId);
-                        JSONObject menuJSON = menus.get(userId);
-                        response.appendTextMessage("The Menu I got is\n" +
-                                JsonUtility.formatMenuJSON(menuJSON, false));
-                    }
-                }
-            }
-
-            //State for feature 7
-            else if(userState == 2){
-                String update = psr.get("textContent").toLowerCase();
-                if(update.equals("yes")){
-                    response.appendTextMessage("So what is the name of this food?");
-                    userStates.put(userId, userState + 1);
-                    userNewFood.put(userId, new NewFood());
-                }
-                else if(update.equals("no")){
-                    userStates.remove(userId);
-                    menus.remove(userId);
-                    response.appendTextMessage("Alright, let's move on");
-                    if (controller != null) {
-                        publisher.publish(response);
-
-                        JSONObject menuJSON = menus.get(userId);
-                        menus.remove(userId);
-                        userStates.remove(userId);
-                        portionAsker.setMenuJSON(menuJSON);
-                        controller.setUserState(userId, State.ASK_PORTION);
-                        return;
-                    }
-                }
-                else
-                    response.appendTextMessage("Sorry, I'm not sure about this. " +
-                            "Plz key in 'Yes' or 'No' at this moment");
-            }
-
-            //State for feature 7, continued
-            else if(userState == 3){
-                String dishName = psr.get("textContent");
-                userNewFood.get(userId).name = dishName;
-                userStates.put(userId, userState + 1);
-                response.appendTextMessage("Okay, I need you provide some nutrition details" +
-                        " So what is the energy contained in this dish? (in terms of kcal)" +
-                        "Give me an integer please ~");
-            }
-            //State for feature 7, continued
-            else if(userState == 4){
-                String energy = psr.get("textContent");
-                if(!Validator.isInteger(energy))
-                    response.appendTextMessage("Give me an integer please ~");
-                else{
-                    userNewFood.get(userId).energy = parseInt(energy);
-                    userStates.put(userId, userState + 1);
-                    response.appendTextMessage("Okay, so what is the protein contained in this dish? " +
-                            "(in terms of gram) Give me an integer please ~");
-                }
-            }
-            //State for feature 7, continued
-            else if(userState == 5){
-                String protein = psr.get("textContent");
-                if(!Validator.isInteger(protein))
-                    response.appendTextMessage("Give me an integer please ~");
-                else{
-                    userNewFood.get(userId).protein = parseInt(protein);
-                    userStates.put(userId, userState + 1);
-                    response.appendTextMessage("Okay, so what is the lipid contained in this dish? " +
-                            "(in terms of tot) Give me an integer please ~");
-                }
-            }
-            //State for feature 7, continued
-            else if(userState == 6){
-                String lipid = psr.get("textContent");
-                if(!Validator.isInteger(lipid))
-                    response.appendTextMessage("Give me an integer please ~");
-                else{
-                    userNewFood.get(userId).lipid = parseInt(lipid);
-                    String n = userNewFood.get(userId).name;
-                    int en = userNewFood.get(userId).energy;
-                    int pro = userNewFood.get(userId).protein;
-                    int lip = userNewFood.get(userId).lipid;
-                    userNewFood.remove(userId);
-                    updateNewFood(n, en, pro, lip, userId);
-
-                    response.appendTextMessage("Alright, I have recorded your meal");
-                    if (controller != null) {
-                        publisher.publish(response);
-
-                        JSONObject menuJSON = menus.get(userId);
-                        menus.remove(userId);
-                        userStates.remove(userId);
-                        portionAsker.setMenuJSON(menuJSON);
-                        controller.setUserState(userId, State.ASK_PORTION);
-                        return;
-                    }
-                }
-            }
-
-
-
-            publisher.publish(response);
-
-//            menus.remove(userId);
-//            log.info("MenuJSON:\n{}", menuJSON.toString(4));
-//            portionAsker.setMenuJSON(menuJSON);
-//            if (controller != null) {
-//                controller.setUserState(userId, State.ASK_PORTION);
-//            }
-
-        }
-
-
-
-
-        else {
-            response.appendTextMessage(
-                    "Oops, looks like your menu is empty. Session cancelled.");
-            publisher.publish(response);
-            if (controller != null) {
-                controller.setUserState(userId, State.IDLE);
-            }
-        }
+        querier.close();
+        return id;
     }
-}
 
-/**
- * record user's new food information.
- */
-class NewFood {
-    String name;
-    int energy;
-    int protein;
-    int lipid;
+    /**
+     * Check empty food content for a MenuJSON.
+     * @param menuJSON input MenuJSON
+     * @return whether there is no dish with empty food content
+     */
+    boolean checkNoEmptyFoodContent(JSONObject menuJSON) {
+        JSONArray menu = menuJSON.getJSONArray("menu");
+        for (int i=0; i<menu.length(); ++i) {
+            JSONArray foodContent = menu.getJSONObject(i).getJSONArray("foodContent");
+            if (foodContent.length() == 0) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
