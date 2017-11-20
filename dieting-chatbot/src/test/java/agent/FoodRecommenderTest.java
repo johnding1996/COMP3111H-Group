@@ -116,7 +116,7 @@ public class FoodRecommenderTest extends AgentTest {
     public void testTransition() {
         recommender.registerUser(userId);
         checkHandler("", 
-            Arrays.asList("Ok, let us analyze", "According to", "Please CONFIRM"),
+            Arrays.asList("Ok, let me analyze", "According to", "Please CONFIRM"),
             0, 1);
         checkHandler("whatever", "", 1, 1);
         checkHandler("confirm",

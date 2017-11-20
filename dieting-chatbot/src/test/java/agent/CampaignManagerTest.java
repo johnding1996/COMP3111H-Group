@@ -100,7 +100,7 @@ public class CampaignManagerTest extends AgentTest {
 
         agentState = State.CLAIM_COUPON;
         campaignManager.registerUser(userId);
-        checkHandler("", "Great! What is your code", 0, 5);
+        checkHandler("", "Great! What is your sharing code", 0, 5);
         checkHandler("blah", Arrays.asList("Sorry, the format",
             "The correct format"), 5, Agent.END_STATE);
 
@@ -111,7 +111,7 @@ public class CampaignManagerTest extends AgentTest {
 
         campaignManager.registerUser(userId);
         campaignManager.setUserState(userId, 5);
-        checkHandler("123456", "Sorry, the campaign is not open",
+        checkHandler("123456", "Sorry, the campaign is not ongoing",
             5, Agent.END_STATE);
 
         // campaignManager.availableCoupon = 10;

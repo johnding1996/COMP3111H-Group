@@ -85,7 +85,7 @@ public class FeedbackManager extends Agent {
         String userId = psr.getUserId();
 
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("Ok, how many dates do you want for feedback? Please input a positive integer.");
+        fmt.appendTextMessage("Ok! How many dates do you want for feedback? Please input a positive integer.");
         publisher.publish(fmt);
         return 1;
     }
@@ -109,7 +109,7 @@ public class FeedbackManager extends Agent {
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         JSONArray histJSON = getHist(userId, resultDuration);
         if (histJSON == null || histJSON.length() == 0) {
-            fmt.appendTextMessage("Sorry you don't have any recorded history, session cancelled.");
+            fmt.appendTextMessage("Sorry, you don't have any recorded history. The session is cancelled.");
             publisher.publish(fmt);
             controller.setUserState(userId, State.IDLE);
             return END_STATE;
@@ -124,7 +124,7 @@ public class FeedbackManager extends Agent {
         JSONObject nutrients = states.get(userId).getJSONObject("nutrients");
         log.info("FEEDBACK: user nutrition hist" + nutrients.toString(4));
         fmt.appendTextMessage("Great, We've analyzed the history of your weights and meals, " +
-                "and generated two charts for you. Which chart would you like to have a look at? " +
+                "and generated two charts for you. Which chart would you want to have a look at? " +
                 "Please reply \'weight\' or \'nutrient\'.");
         publisher.publish(fmt);
         return 2;
@@ -141,11 +141,11 @@ public class FeedbackManager extends Agent {
 
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         if (text.equals("weight")) {
-            fmt.appendTextMessage("Loading your chart, please wait...");
+            fmt.appendTextMessage("Your chart is being loaded, please wait...");
             publisher.publish(fmt);
             drawLineChart(userId);
         } else if (text.equals("nutrient")) {
-            fmt.appendTextMessage("Loading your chart, please wait...");
+            fmt.appendTextMessage("Your chart is being loaded, please wait...");
             publisher.publish(fmt);
             drawPieChart(userId);
         } else {

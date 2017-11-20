@@ -122,8 +122,8 @@ public class InitialInputRecorder extends Agent {
         }
         states.get(userId).put("gender", isMale ? "male" : "female");
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("Hey, what is your weight? " +
-            "Just simply give me an integer (in terms of kg)");
+        fmt.appendTextMessage("Hey, what is your weight (in terms of kg)? " +
+            "Just simply give me an integer");
         publisher.publish(fmt);
         return 3;
     }
@@ -141,7 +141,7 @@ public class InitialInputRecorder extends Agent {
         }
         states.get(userId).put("weight", Integer.parseInt(psr.get("textContent")));
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
-        fmt.appendTextMessage("How about the height in cm?");
+        fmt.appendTextMessage("How about your height (in cm)?");
         publisher.publish(fmt);
         return 4;
     }
@@ -160,7 +160,7 @@ public class InitialInputRecorder extends Agent {
         states.get(userId).put("height", Integer.parseInt(psr.get("textContent")));
         FormatterMessageJSON fmt = new FormatterMessageJSON(userId);
         fmt.appendTextMessage("Emmm... What is your desired weight?" +
-            "(give an integer in terms of kg)");
+            "(Please give an integer in terms of kg)");
         publisher.publish(fmt);
         return 5;
     }

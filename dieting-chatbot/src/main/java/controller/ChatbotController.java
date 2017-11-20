@@ -482,9 +482,13 @@ public class ChatbotController implements Consumer<reactor.bus.Event<FormatterMe
                 switch (state) {
                 case IDLE:
                     fmt.appendTextMessage(
-                            "To set your personal info, " + "send 'setting'.\nIf you want to obtain recommendation, "
+                            "To set your personal info, " + "please send 'setting'.\nIf you want to obtain recommendation, "
                             + "please say 'recommendation'.\n"
-                            + "You can aways cancel an operation by saying 'CANCEL'");
+                                    + "If you want to obtain feedback, please say 'feedback'.\n"
+                                    + "If you want to invite a friend by the coupon, please say 'friend'.\n"
+                                    + "If you want to collect the coupon by your code, please say 'code'.\n"
+                                    + "If you are the admin and want to upload the coupon image, please say 'admin mode'.\n"
+                            + "You can always cancel an operation by saying 'CANCEL'");
                     break;
 
                 default:
