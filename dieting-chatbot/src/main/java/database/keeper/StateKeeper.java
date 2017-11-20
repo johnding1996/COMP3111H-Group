@@ -36,6 +36,11 @@ public class StateKeeper extends Keeper {
         super();
     }
 
+    /**
+     * Constuctor with input parameter.
+     * @param jedids input Jedis object
+     * @param lifeTime input lifetime of the cache
+     */
     StateKeeper(Jedis jedids, int lifeTime) {
         this.jedis = jedis;
         this.lifeTime = lifeTime;

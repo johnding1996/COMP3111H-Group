@@ -19,6 +19,10 @@ public class MenuKeeper extends SerializeKeeper {
      * The identifier of all user logs.
      */
     private static final String prefix = "menu";
+
+    /**
+     * private List storing the name of all the fields.
+     */
     private static final List<String> fields = Arrays.asList(
             "userId", "menu"
     );

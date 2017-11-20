@@ -15,14 +15,35 @@ import java.util.Date;
  */
 @Slf4j
 public class CampaignKeeper extends Keeper {
+
     /**
      * The prefix string of redis key.
      */
     private static final String KEY_PREFIX = "campaign";
+
+    /**
+     * The prefix string of coupon image.
+     */
     private static final String KEY_IMG = "image";
+
+    /**
+     * The prefix string of coupon count.
+     */
     private static final String KEY_CNT = "count";
+
+    /**
+     * The prefix string of coupon extention.
+     */
     private static final String KEY_EXT = "extension";
+
+    /**
+     * The prefix string of parent user name.
+     */
     private static final String KEY_PARENT = "parent";
+
+    /**
+     * The prefix string of date.
+     */
     private static final String KEY_DATE = "date";
 
     /**
@@ -32,6 +53,10 @@ public class CampaignKeeper extends Keeper {
         super();
     }
 
+    /**
+     * Constructor with jedis parameter.
+     * @param jedis Jedis class object
+     */
     CampaignKeeper(Jedis jedis) {
         this.jedis = jedis;
     }

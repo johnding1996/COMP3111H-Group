@@ -25,6 +25,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 abstract class Querier {
+
+    /**
+     * protected connection object.
+     */
     protected Connection sql;
     /**
      * Table name of a specific Querier.
@@ -299,6 +303,7 @@ abstract class Querier {
      * @param jsonObject input JSONObject
      * @param fields list of fields
      * @param critical_fields set of not-nullable fields
+     * @param isStrict Boolean check if isStrict
      * @return map of fileds to values
      */
     protected Map<String, String> parseInput(JSONObject jsonObject, List<String> fields, Set<String> critical_fields, boolean isStrict) {

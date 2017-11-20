@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FuzzyFoodQuerier extends FoodQuerier {
     /**
-     * levenshtein algorithm parameters, {insert cost, delete cost, replace cost}
+     * levenshtein algorithm parameters, {insert cost, delete cost, replace cost}.
      */
     private int[] levenshteinCosts = {1, 10, 10};
 

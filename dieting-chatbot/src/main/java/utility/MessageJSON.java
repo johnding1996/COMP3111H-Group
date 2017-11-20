@@ -8,6 +8,9 @@ import org.json.JSONObject;
  * @version v2.0.0
  */
 public abstract class MessageJSON {
+    /**
+     * JSONObject json initialization.
+     */
     JSONObject json = new JSONObject();
 
     /**

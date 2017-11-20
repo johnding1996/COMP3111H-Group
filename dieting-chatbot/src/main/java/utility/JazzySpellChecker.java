@@ -27,9 +27,24 @@ import java.util.List;
 @Slf4j
 @Component
 public class JazzySpellChecker implements SpellCheckListener {
+    /**
+     * pricate attribute SpellChecker.
+     */
     private SpellChecker spellChecker;
+
+    /**
+     * pricate attribute List storing miss spelling words.
+     */
     private List<String> misspelledWords = new ArrayList<>();
+
+    /**
+     * pricate attribute SpellDictionaryHashMap.
+     */
     private SpellDictionaryHashMap dictionaryHashMap;
+
+    /**
+     * pricate attribute string storing the path to dict.
+     */
     private static final String dictPath = "/static/english.txt";
 
     /**

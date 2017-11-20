@@ -40,17 +40,31 @@ import reactor.bus.EventBus;
 @EnableScheduling
 @ComponentScan(basePackages = {"controller", "agent", "misc", "database", "utility"})
 public class DietingChatbotApplication {
+
+    /**
+     * This method is used to initialize the environment.
+     * @return Environment.
+     */
     @Bean
     Environment env() {
         return Environment.initializeIfEmpty()
                           .assignErrorJournal();
     }
-    
+
+    /**
+     * This method is used to create eventBus.
+     * @param env environment
+     * @return EventBus.
+     */
     @Bean
     EventBus createEventBus(Environment env) {
 	    return EventBus.create(env, Environment.THREAD_POOL);
     }
 
+    /**
+     * This method is used to create task scheduler.
+     * @return TaskScheduler.
+     */
     @Bean
     TaskScheduler createTaskScheduler() {
         return new ThreadPoolTaskScheduler();
@@ -60,6 +74,10 @@ public class DietingChatbotApplication {
      * Path to downloaded contents.
      */
     static Path downloadedContentDir;
+
+    /**
+     * Static attribute staticPath Path object.
+     */
     static Path staticPath;
     static {
         try {
